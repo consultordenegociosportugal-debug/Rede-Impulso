@@ -4,7 +4,7 @@ export function Footer() {
   return (
     <footer>
       <div className="wrap" style={{ display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center", alignItems: "center" }}>
-        <span>Rede Impulso — protótipo de produto para uso interno.</span>
+        <span>© 2026 Rede Impulso. Todos os direitos reservados.</span>
         <span style={{ display: "flex", gap: 16 }}>
           <Link href="/termos-de-uso" style={{ textDecoration: "underline" }}>
             Termos de Uso
