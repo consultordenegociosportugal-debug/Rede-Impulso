@@ -1,0 +1,35 @@
+.layout {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 48px 0 80px;
+}
+.matchRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.matchLeft {
+  display: flex;
+  gap: 12px;
+}
+.matchMeta {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.matchMeta strong {
+  color: var(--ink);
+}
+.corretorCard {
+  margin-bottom: 14px;
+}
+.footerNote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--line);
+  margin-top: 22px;
+  padding-top: 18px;
+  flex-wrap: wrap;
+}

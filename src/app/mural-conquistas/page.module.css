@@ -1,0 +1,28 @@
+.dealCard {
+  overflow: hidden;
+  padding: 0;
+}
+.dealPhoto {
+  aspect-ratio: 16 / 10;
+  background: linear-gradient(135deg, var(--surface-2), var(--primary-tint));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.dealBody {
+  padding: 16px;
+}
+.dealQuote {
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-style: italic;
+  margin: 10px 0 0;
+}
+.dealWho {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}

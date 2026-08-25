@@ -1,0 +1,26 @@
+.layout {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 48px 0 80px;
+}
+.head {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.testi {
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  margin-bottom: 10px;
+}
+.testi p {
+  margin: 0;
+  font-size: 13.5px;
+}
+.who {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+  font-family: var(--font-mono), monospace;
+}

@@ -1,0 +1,24 @@
+.layout {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 32px;
+  margin-top: 16px;
+}
+@media (max-width: 780px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.galeria {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+.foto {
+  aspect-ratio: 16 / 10;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--surface-2);
+  border-radius: var(--radius);
+}

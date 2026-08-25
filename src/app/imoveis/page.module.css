@@ -1,0 +1,29 @@
+.imovelCard {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  padding: 0;
+  overflow: hidden;
+  transition: transform 0.12s;
+}
+.imovelCard:hover {
+  transform: translateY(-2px);
+}
+.imovelFoto {
+  aspect-ratio: 4 / 3;
+  background-size: cover;
+  background-position: center;
+  background-color: var(--surface-2);
+}
+.imovelBody {
+  padding: 14px 16px;
+}
+
+.sugestaoCadastro {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--primary-tint);
+  border-color: transparent;
+  font-size: 13.5px;
+}

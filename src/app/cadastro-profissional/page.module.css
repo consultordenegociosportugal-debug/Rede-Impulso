@@ -1,0 +1,46 @@
+.layout {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 40px;
+  align-items: start;
+  padding: 48px 0 80px;
+}
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}
+.previewCard {
+  position: sticky;
+  top: 90px;
+}
+.previewHead {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+}
+.docGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 520px) {
+  .docGrid {
+    grid-template-columns: 1fr;
+  }
+}
+.checkRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  padding: 8px 0;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--primary);
+  flex: none;
+}
