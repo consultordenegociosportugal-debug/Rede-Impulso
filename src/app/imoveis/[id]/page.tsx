@@ -27,6 +27,8 @@ type ImovelDetalhe = {
   vagas: number | null;
   area_m2: number | null;
   comodidades: string[];
+  latitude: number | null;
+  longitude: number | null;
   imovel_fotos: { arquivo_url: string; ordem: number }[];
 };
 
@@ -50,7 +52,7 @@ export default async function ImovelDetalhePage({
   const { data } = await supabase
     .from("imoveis")
     .select(
-      "id, titulo, bairro, cidade, descricao, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, imovel_fotos(arquivo_url, ordem)",
+      "id, titulo, bairro, cidade, descricao, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, latitude, longitude, imovel_fotos(arquivo_url, ordem)",
     )
     .eq("id", id)
     .single();
@@ -174,6 +176,25 @@ export default async function ImovelDetalhePage({
                 quando você demonstra interesse.
               </p>
             </div>
+
+            {imovel.latitude && imovel.longitude && (
+              <div className="mt-16">
+                <p className="hint" style={{ marginBottom: 6 }}>Localização aproximada</p>
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${imovel.latitude},${imovel.longitude}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img
+                    src={`https://maps.googleapis.com/maps/api/staticmap?center=${imovel.latitude},${imovel.longitude}&zoom=15&size=640x240&scale=2&markers=color:0x00e6a8%7C${imovel.latitude},${imovel.longitude}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+                    alt={`Mapa de localização de ${imovel.titulo}`}
+                    width={640}
+                    height={240}
+                    style={{ width: "100%", height: "auto", borderRadius: 12, display: "block" }}
+                  />
+                </a>
+              </div>
+            )}
 
             <div className="mt-16" style={{ textAlign: "center" }}>
               <DenunciarBotao imovelId={imovel.id} />

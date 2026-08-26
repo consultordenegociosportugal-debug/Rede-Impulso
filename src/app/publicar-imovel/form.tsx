@@ -444,17 +444,26 @@ export function PublicarImovelForm() {
                 <div className="field">
                   <label>Localização no mapa</label>
                   {coords ? (
-                    <div className="upload-slot">
-                      <div className="ic">📍</div>
-                      <div>
-                        <div style={{ fontWeight: 600, fontSize: 13.5 }}>
-                          Localização marcada
-                        </div>
-                        <div className="hint" style={{ margin: 0 }}>
-                          {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+                    <>
+                      <img
+                        src={`https://maps.googleapis.com/maps/api/staticmap?center=${coords.lat},${coords.lng}&zoom=15&size=640x200&scale=2&markers=color:0x00e6a8%7C${coords.lat},${coords.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
+                        alt="Localização marcada no mapa"
+                        width={640}
+                        height={200}
+                        style={{ width: "100%", height: "auto", borderRadius: 12, display: "block", marginBottom: 8 }}
+                      />
+                      <div className="upload-slot">
+                        <div className="ic">📍</div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13.5 }}>
+                            Localização marcada
+                          </div>
+                          <div className="hint" style={{ margin: 0 }}>
+                            {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </>
                   ) : (
                     <button
                       type="button"
