@@ -766,3 +766,123 @@ footer {
     opacity: 0;
   }
 }
+
+/* ---------- Assistente de IA ---------- */
+.assistente-raiz {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 200;
+}
+.assistente-botao {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: var(--primary);
+  color: #052a20;
+  font-size: 22px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.assistente-botao:active {
+  transform: scale(0.96);
+}
+.assistente-painel {
+  position: absolute;
+  right: 0;
+  bottom: 68px;
+  width: min(360px, calc(100vw - 40px));
+  height: min(520px, calc(100vh - 120px));
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.assistente-cabecalho {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  background: var(--surface-2);
+}
+.assistente-fechar {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 14px;
+}
+.assistente-corpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.assistente-boasvindas {
+  background: var(--primary-tint);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+}
+.assistente-msg {
+  max-width: 85%;
+  padding: 9px 13px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.assistente-msg-user {
+  align-self: flex-end;
+  background: var(--primary);
+  color: #052a20;
+}
+.assistente-msg-assistant {
+  align-self: flex-start;
+  background: var(--surface-2);
+  color: var(--ink);
+}
+.assistente-resultados {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.assistente-card-imovel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.assistente-card-imovel:hover {
+  border-color: var(--primary);
+}
+.assistente-rodape {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+.assistente-rodape input {
+  flex: 1;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 9px 14px;
+  color: var(--ink);
+  font-size: 13.5px;
+}
+.assistente-rodape input:focus {
+  outline: none;
+  border-color: var(--primary);
+}
