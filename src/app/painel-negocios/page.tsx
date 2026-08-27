@@ -4,6 +4,7 @@ import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
+import { AnuncioStatus } from "./anuncio-status";
 
 const STATUS_BADGE: Record<string, { label: string; className: string }> = {
   negociacao: { label: "Negociação", className: "badge-primary" },
@@ -18,6 +19,24 @@ const formatoMoeda = new Intl.NumberFormat("pt-BR", {
   currency: "BRL",
   maximumFractionDigits: 0,
 });
+
+const STATUS_ANUNCIO: Record<string, { label: string; className: string }> = {
+  rascunho: { label: "Rascunho", className: "badge-outline" },
+  publicado: { label: "Publicado", className: "badge-primary" },
+  em_negociacao: { label: "Em negociação", className: "badge-amber" },
+  vendido: { label: "Vendido", className: "badge-amber" },
+  arquivado: { label: "Pausado", className: "badge-outline" },
+};
+
+type ImovelRow = {
+  id: string;
+  titulo: string;
+  bairro: string;
+  cidade: string;
+  preco: number | null;
+  status: string;
+  finalidade: "venda" | "aluguel";
+};
 
 type NegocioRow = {
   id: string;
@@ -48,11 +67,13 @@ export default async function PainelNegociosPage({
     redirect("/entrar");
   }
 
-  const { data: meusImoveis } = await supabase
+  const { data: dadosImoveis } = await supabase
     .from("imoveis")
-    .select("id")
-    .eq("vendedor_id", user.id);
-  const meusImovelIds = (meusImoveis ?? []).map((i) => i.id);
+    .select("id, titulo, bairro, cidade, preco, status, finalidade")
+    .eq("vendedor_id", user.id)
+    .order("created_at", { ascending: false });
+  const meusImoveis = (dadosImoveis ?? []) as unknown as ImovelRow[];
+  const meusImovelIds = meusImoveis.map((i) => i.id);
 
   let query = supabase
     .from("negocios")
@@ -133,6 +154,78 @@ export default async function PainelNegociosPage({
             </div>
           ))}
         </div>
+
+        {!visaoImobiliaria && (
+          <div className="mb-24">
+            <div className="flex between items-center mb-12" style={{ gap: 12 }}>
+              <h2 style={{ fontSize: 18, margin: 0 }}>Meus anúncios</h2>
+              <Link href="/publicar-imovel" className="btn btn-ghost btn-sm">
+                + Publicar imóvel
+              </Link>
+            </div>
+
+            {meusImoveis.length === 0 ? (
+              <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
+                <p className="muted" style={{ margin: 0 }}>
+                  Você ainda não publicou nenhum imóvel.
+                </p>
+                <p className="hint" style={{ marginTop: 8 }}>
+                  Publicar leva poucos minutos — e corretores da região são
+                  avisados na hora.
+                </p>
+                <Link href="/publicar-imovel" className="btn btn-primary btn-sm mt-16">
+                  Publicar meu primeiro imóvel
+                </Link>
+              </div>
+            ) : (
+              <div className="card" style={{ padding: "8px 20px" }}>
+                {meusImoveis.map((imovel) => {
+                  const badge = STATUS_ANUNCIO[imovel.status] ?? {
+                    label: imovel.status,
+                    className: "badge-outline",
+                  };
+                  return (
+                    <div key={imovel.id} className="list-row">
+                      <div
+                        className="flex between items-center"
+                        style={{ width: "100%", gap: 12, flexWrap: "wrap" }}
+                      >
+                        <div style={{ minWidth: 200, flex: 1 }}>
+                          <div style={{ fontWeight: 600, fontSize: 14 }}>
+                            <Link href={`/imoveis/${imovel.id}`}>{imovel.titulo}</Link>
+                          </div>
+                          <div className="hint" style={{ margin: 0 }}>
+                            {imovel.bairro}, {imovel.cidade} ·{" "}
+                            {imovel.finalidade === "venda" ? "Venda" : "Aluguel"} ·{" "}
+                            {imovel.preco
+                              ? formatoMoeda.format(imovel.preco)
+                              : "Preço a combinar"}
+                          </div>
+                        </div>
+                        <span className={`badge ${badge.className}`}>
+                          {badge.label}
+                        </span>
+                        <div className="flex gap-8 items-center">
+                          <Link
+                            href={`/publicar-imovel/${imovel.id}/editar`}
+                            className="btn btn-primary btn-sm"
+                          >
+                            ✏️ Editar
+                          </Link>
+                          <AnuncioStatus imovelId={imovel.id} status={imovel.status} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {!visaoImobiliaria && (
+          <h2 style={{ fontSize: 18, margin: "0 0 12px" }}>Negócios em andamento</h2>
+        )}
 
         {negocios.length === 0 ? (
           <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>

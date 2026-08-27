@@ -1,0 +1,93 @@
+.grade {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+.foto {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  border-radius: var(--radius-sm);
+  background-size: cover;
+  background-position: center;
+  background-color: var(--surface-2);
+  border: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.fotoCapa {
+  border-color: var(--primary);
+}
+
+.selo {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+}
+
+.acoes {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+  padding: 6px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
+}
+
+.acao {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.acao:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.acaoRemover:not(:disabled):hover {
+  background: var(--coral);
+}
+
+.adicionar {
+  aspect-ratio: 4 / 3;
+  border: 1.5px dashed var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink-soft);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  padding: 8px;
+}
+
+.adicionar:hover {
+  border-color: var(--primary);
+  color: var(--primary-dark);
+}
+
+.adicionarIcone {
+  font-size: 20px;
+}
+
+.entradaArquivo {
+  display: none;
+}

@@ -15,6 +15,8 @@ const formatoMoeda = new Intl.NumberFormat("pt-BR", {
 
 type ImovelDetalhe = {
   id: string;
+  vendedor_id: string;
+  status: string;
   titulo: string;
   bairro: string;
   cidade: string;
@@ -41,6 +43,14 @@ const TIPO_LABEL: Record<string, string> = {
   outro: "Outro",
 };
 
+const STATUS_ANUNCIO: Record<string, { label: string; className: string }> = {
+  rascunho: { label: "Rascunho", className: "badge-outline" },
+  publicado: { label: "Publicado", className: "badge-primary" },
+  em_negociacao: { label: "Em negociação", className: "badge-amber" },
+  vendido: { label: "Vendido", className: "badge-amber" },
+  arquivado: { label: "Pausado", className: "badge-outline" },
+};
+
 export default async function ImovelDetalhePage({
   params,
 }: {
@@ -52,10 +62,10 @@ export default async function ImovelDetalhePage({
   const { data } = await supabase
     .from("imoveis")
     .select(
-      "id, titulo, bairro, cidade, descricao, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, latitude, longitude, imovel_fotos(arquivo_url, ordem)",
+      "id, vendedor_id, status, titulo, bairro, cidade, descricao, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, latitude, longitude, imovel_fotos(arquivo_url, ordem)",
     )
     .eq("id", id)
-    .single();
+    .maybeSingle();
 
   const imovel = data as unknown as ImovelDetalhe | null;
 
@@ -63,8 +73,10 @@ export default async function ImovelDetalhePage({
     data: { user },
   } = await supabase.auth.getUser();
 
+  const ehDono = Boolean(user && imovel && user.id === imovel.vendedor_id);
+
   let favoritado = false;
-  if (user && imovel) {
+  if (user && imovel && !ehDono) {
     const { data: favorito } = await supabase
       .from("favoritos")
       .select("id")
@@ -101,6 +113,43 @@ export default async function ImovelDetalhePage({
         <Link href="/imoveis" className="hint">
           ← Voltar para a vitrine
         </Link>
+
+        {ehDono && (
+          <div
+            className="card flex between items-center gap-16 mb-16"
+            style={{ flexWrap: "wrap", marginTop: 12 }}
+          >
+            <div>
+              <span
+                className={`badge ${
+                  (STATUS_ANUNCIO[imovel.status] ?? STATUS_ANUNCIO.publicado)
+                    .className
+                }`}
+              >
+                {(STATUS_ANUNCIO[imovel.status] ?? { label: imovel.status }).label}
+              </span>
+              <div style={{ fontWeight: 600, fontSize: 14, marginTop: 6 }}>
+                Este anúncio é seu
+              </div>
+              <p className="hint" style={{ margin: 0 }}>
+                {fotos.length === 0
+                  ? "Ele ainda não tem nenhuma foto — anúncios com foto recebem muito mais contatos."
+                  : "Você pode atualizar os dados, trocar as fotos e escolher a capa a qualquer momento."}
+              </p>
+            </div>
+            <div className="flex gap-8">
+              <Link
+                href={`/publicar-imovel/${imovel.id}/editar`}
+                className="btn btn-primary btn-sm"
+              >
+                ✏️ Editar anúncio
+              </Link>
+              <Link href="/painel-negocios" className="btn btn-ghost btn-sm">
+                Meus anúncios
+              </Link>
+            </div>
+          </div>
+        )}
 
         <div className={styles.layout}>
           <div>
@@ -162,20 +211,35 @@ export default async function ImovelDetalhePage({
               </div>
             )}
 
-            <div className="card mt-16">
-              <InteresseButton imovelId={imovel.id} />
-              <div className="mt-8">
-                <FavoritoButton
-                  imovelId={imovel.id}
-                  favoritadoInicial={favoritado}
-                  logado={Boolean(user)}
-                />
+            {ehDono ? (
+              <div className="card mt-16">
+                <Link
+                  href={`/publicar-imovel/${imovel.id}/editar`}
+                  className="btn btn-primary btn-block"
+                >
+                  ✏️ Editar anúncio
+                </Link>
+                <p className="hint" style={{ textAlign: "center", marginBottom: 0 }}>
+                  Esta é a visão pública do seu anúncio. Quem se interessar vai
+                  aparecer no seu painel de negócios.
+                </p>
               </div>
-              <p className="hint" style={{ textAlign: "center", marginBottom: 0 }}>
-                O contato acontece pela Rede Impulso — o vendedor é notificado
-                quando você demonstra interesse.
-              </p>
-            </div>
+            ) : (
+              <div className="card mt-16">
+                <InteresseButton imovelId={imovel.id} />
+                <div className="mt-8">
+                  <FavoritoButton
+                    imovelId={imovel.id}
+                    favoritadoInicial={favoritado}
+                    logado={Boolean(user)}
+                  />
+                </div>
+                <p className="hint" style={{ textAlign: "center", marginBottom: 0 }}>
+                  O contato acontece pela Rede Impulso — o vendedor é notificado
+                  quando você demonstra interesse.
+                </p>
+              </div>
+            )}
 
             {imovel.latitude && imovel.longitude && (
               <div className="mt-16">
@@ -196,9 +260,11 @@ export default async function ImovelDetalhePage({
               </div>
             )}
 
-            <div className="mt-16" style={{ textAlign: "center" }}>
-              <DenunciarBotao imovelId={imovel.id} />
-            </div>
+            {!ehDono && (
+              <div className="mt-16" style={{ textAlign: "center" }}>
+                <DenunciarBotao imovelId={imovel.id} />
+              </div>
+            )}
           </div>
         </div>
       </div>
