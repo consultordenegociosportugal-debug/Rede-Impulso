@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/server";
@@ -81,9 +82,14 @@ export default async function PainelCorretoresPage() {
               Gestão de corretores
             </h1>
           </div>
-          <button className="btn btn-outline btn-sm" disabled title="Em breve">
-            + Convidar corretor
-          </button>
+          <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+            <Link href="/modelos-contratos" className="btn btn-outline btn-sm">
+              📄 Modelos de contrato e checklist
+            </Link>
+            <button className="btn btn-outline btn-sm" disabled title="Em breve">
+              + Convidar corretor
+            </button>
+          </div>
         </div>
 
         {perfil?.role !== "imobiliaria" ? (

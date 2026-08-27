@@ -47,6 +47,7 @@ const NAV_ITEMS: NavItem[] = [
     label: "Negócios",
     children: [
       { href: "/painel-negocios", label: "Painel de negócios" },
+      { href: "/modelos-contratos", label: "Contratos e documentos" },
       { href: "/mural-conquistas", label: "Mural de conquistas" },
       { href: "/oferta-pos-negocio", label: "Oferta pós-negócio" },
     ],
