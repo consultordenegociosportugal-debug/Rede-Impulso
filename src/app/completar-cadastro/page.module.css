@@ -1,0 +1,140 @@
+.layout {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 48px 0 80px;
+}
+.notice {
+  background: var(--primary-tint);
+  border-radius: var(--radius-sm);
+  padding: 14px 16px;
+  font-size: 13.5px;
+  color: var(--primary-dark);
+  display: flex;
+  gap: 10px;
+}
+
+/* ---------- Cartões de escolha (papel) ---------- */
+.escolhaGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 560px) {
+  .escolhaGrid {
+    grid-template-columns: 1fr;
+  }
+}
+.escolha {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  cursor: pointer;
+  font-weight: 400;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+.escolha:hover {
+  border-color: var(--primary-dark);
+}
+.escolha:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.escolhaAtiva {
+  border-color: var(--primary);
+  background: var(--primary-tint);
+}
+/* escondido visualmente, mas continua no fluxo de foco e na árvore de acessibilidade */
+.escolhaInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+.escolhaTitulo {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.escolhaDesc {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+}
+
+/* ---------- Campos ---------- */
+/* classe dobrada só para vencer a especificidade de input[type="..."] em globals.css */
+.campoInvalido.campoInvalido {
+  border-color: var(--coral);
+}
+.erroCampo {
+  font-size: 12px;
+  color: var(--coral);
+  margin: 5px 0 0;
+}
+
+/* ---------- Quem está logado ---------- */
+.resumo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  background: var(--surface-2);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  margin-bottom: 18px;
+}
+.resumo strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* ---------- Aceite dos termos ---------- */
+.termos {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  cursor: pointer;
+}
+.termosCheck {
+  flex: none;
+  width: auto;
+  margin-top: 2px;
+  accent-color: var(--primary);
+}
+
+/* ---------- Recuperação de erro ---------- */
+.erroBloco {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--coral);
+  border-radius: var(--radius-sm);
+  background: var(--coral-tint);
+  font-size: 13px;
+  color: var(--ink);
+}

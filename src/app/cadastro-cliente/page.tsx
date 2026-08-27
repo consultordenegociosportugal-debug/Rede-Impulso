@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
+import { BotoesSocial } from "@/components/botoes-social";
 import { formatarTelefone, formatarInstagram } from "@/lib/mascaras";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
@@ -359,6 +360,44 @@ export default function CadastroClientePage() {
                     </p>
                   )}
                 </div>
+
+                {/* Atalho: quem prefere não criar mais uma senha entra com a
+                    conta que já tem. O papel escolhido acima segue junto, e o
+                    WhatsApp é pedido depois em /completar-cadastro. */}
+                <BotoesSocial
+                  papel={papel}
+                  bloqueado={!aceitouTermos}
+                  avisoBloqueado="Marque o aceite abaixo para continuar com Google ou Facebook."
+                />
+                <label className={styles.termos} style={{ marginTop: 12 }}>
+                  <input
+                    type="checkbox"
+                    checked={aceitouTermos}
+                    onChange={(e) => setAceitouTermos(e.target.checked)}
+                    className={styles.termosCheck}
+                  />
+                  <span>
+                    Li e aceito os{" "}
+                    <Link
+                      href="/termos-de-uso"
+                      target="_blank"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ textDecoration: "underline" }}
+                    >
+                      Termos de Uso
+                    </Link>{" "}
+                    e a{" "}
+                    <Link
+                      href="/privacidade"
+                      target="_blank"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ textDecoration: "underline" }}
+                    >
+                      Política de Privacidade
+                    </Link>
+                    .
+                  </span>
+                </label>
               </>
             )}
 

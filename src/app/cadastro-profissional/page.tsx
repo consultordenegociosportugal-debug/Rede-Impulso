@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
+import { BotoesSocial } from "@/components/botoes-social";
 import { formatarTelefone, formatarCnpj, formatarCreci, formatarInstagram } from "@/lib/mascaras";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
@@ -448,6 +449,50 @@ export default function CadastroProfissionalPage() {
                     </div>
                   </div>
                 )}
+
+                {/* Atalho para quem prefere não criar mais uma senha. O CRECI
+                    ou o CNPJ não viajam com o login social, então esses dados
+                    são pedidos de novo em /completar-cadastro — por isso o
+                    aviso logo abaixo. */}
+                <BotoesSocial
+                  papel={papel}
+                  bloqueado={!aceitouTermos}
+                  avisoBloqueado="Marque o aceite abaixo para continuar com Google ou Facebook."
+                />
+                <p className="hint" style={{ textAlign: "center" }}>
+                  Entrando com Google ou Facebook, você confirma{" "}
+                  {papel === "corretor" ? "CRECI e bairros" : "CNPJ e nome fantasia"}{" "}
+                  na tela seguinte, e depois envia os documentos de verificação.
+                </p>
+                <label className={styles.termos} style={{ marginTop: 12 }}>
+                  <input
+                    type="checkbox"
+                    checked={aceitouTermos}
+                    onChange={(e) => setAceitouTermos(e.target.checked)}
+                    className={styles.termosCheck}
+                  />
+                  <span>
+                    Li e aceito os{" "}
+                    <Link
+                      href="/termos-de-uso"
+                      target="_blank"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ textDecoration: "underline" }}
+                    >
+                      Termos de Uso
+                    </Link>{" "}
+                    e a{" "}
+                    <Link
+                      href="/privacidade"
+                      target="_blank"
+                      onClick={(e) => e.stopPropagation()}
+                      style={{ textDecoration: "underline" }}
+                    >
+                      Política de Privacidade
+                    </Link>
+                    .
+                  </span>
+                </label>
               </>
             )}
 

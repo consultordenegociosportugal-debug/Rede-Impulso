@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
+import { BotoesSocial } from "@/components/botoes-social";
+import { destinoPosLogin } from "@/lib/destino-pos-login";
 import { Footer } from "@/components/footer";
 
 function traduzErro(mensagem: string) {
@@ -26,6 +28,9 @@ function EntrarForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const depois = searchParams.get("depois");
+  // O /auth/callback devolve o usuário para cá com ?erro=... quando o
+  // login social não se completa (janela fechada, provedor desligado).
+  const erroLoginSocial = searchParams.get("erro");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [verSenha, setVerSenha] = useState(false);
@@ -49,39 +54,9 @@ function EntrarForm() {
       return;
     }
 
-    if (depois && depois.startsWith("/")) {
-      router.push(depois);
-      router.refresh();
-      return;
-    }
-
-    const precisaDocumentos = ["vendedor", "corretor", "imobiliaria", "cartorio"];
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", data.user.id)
-      .single();
-
-    if (profile && precisaDocumentos.includes(profile.role)) {
-      const { count } = await supabase
-        .from("documentos_verificacao")
-        .select("id", { count: "exact", head: true })
-        .eq("profile_id", data.user.id);
-
-      if (!count) {
-        router.push("/verificacao");
-        router.refresh();
-        return;
-      }
-    }
-
-    if (profile?.role === "comprador") {
-      router.push("/imoveis");
-      router.refresh();
-      return;
-    }
-
-    router.push("/");
+    // Mesma decisão usada no retorno do login social (/auth/callback),
+    // para os dois caminhos não pararem em telas diferentes.
+    router.push(await destinoPosLogin(supabase, data.user.id, { depois }));
     router.refresh();
   }
 
@@ -94,6 +69,16 @@ function EntrarForm() {
           <span className="eyebrow">Entrar</span>
           <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>Acesse sua conta</h1>
           <p className="muted">Use o e-mail e a senha do seu cadastro.</p>
+
+          {erroLoginSocial && (
+            <p
+              className="hint mt-16"
+              role="alert"
+              style={{ color: "var(--coral)" }}
+            >
+              {erroLoginSocial}
+            </p>
+          )}
 
           <form className="card mt-24" onSubmit={handleSubmit}>
             <div className="field">
@@ -157,6 +142,8 @@ function EntrarForm() {
               {status === "loading" ? "Entrando…" : "Entrar"}
             </button>
           </form>
+
+          <BotoesSocial depois={depois} />
 
           <div
             className="mt-24"
