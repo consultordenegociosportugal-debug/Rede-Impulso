@@ -561,6 +561,7 @@ input[type="email"],
 input[type="tel"],
 input[type="number"],
 input[type="password"],
+input[type="datetime-local"],
 select,
 textarea {
   width: 100%;

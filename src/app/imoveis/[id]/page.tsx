@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/server";
 import { InteresseButton } from "./interesse-button";
+import { AgendarVisitaButton } from "./agendar-visita-button";
 import { DenunciarBotao } from "./denunciar-botao";
 import { FavoritoButton } from "../favorito-button";
 import styles from "./page.module.css";
@@ -227,6 +228,12 @@ export default async function ImovelDetalhePage({
             ) : (
               <div className="card mt-16">
                 <InteresseButton imovelId={imovel.id} />
+                <div className="mt-8">
+                  <AgendarVisitaButton
+                    imovelId={imovel.id}
+                    logado={Boolean(user)}
+                  />
+                </div>
                 <div className="mt-8">
                   <FavoritoButton
                     imovelId={imovel.id}
