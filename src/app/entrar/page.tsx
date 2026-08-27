@@ -28,6 +28,7 @@ function EntrarForm() {
   const depois = searchParams.get("depois");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
+  const [verSenha, setVerSenha] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [erro, setErro] = useState<string | null>(null);
 
@@ -103,17 +104,41 @@ function EntrarForm() {
                 placeholder="voce@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
               />
             </div>
             <div className="field">
-              <label htmlFor="senha">Senha</label>
+              <div
+                className="flex between items-center"
+                style={{ marginBottom: 6 }}
+              >
+                <label htmlFor="senha" style={{ marginBottom: 0 }}>
+                  Senha
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setVerSenha((v) => !v)}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "var(--primary-dark)",
+                    cursor: "pointer",
+                  }}
+                >
+                  {verSenha ? "Ocultar" : "Mostrar"}
+                </button>
+              </div>
               <input
-                type="password"
+                type={verSenha ? "text" : "password"}
                 id="senha"
                 placeholder="sua senha"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
+                autoComplete="current-password"
                 required
               />
             </div>
@@ -133,23 +158,29 @@ function EntrarForm() {
             </button>
           </form>
 
-          <p
-            className="muted mt-16"
-            style={{ textAlign: "center", fontSize: 13.5 }}
+          <div
+            className="mt-24"
+            style={{
+              borderTop: "1px solid var(--line)",
+              paddingTop: 20,
+              textAlign: "center",
+            }}
           >
-            Ainda não tem conta?{" "}
-            <Link href="/cadastro-cliente" style={{ textDecoration: "underline" }}>
-              Cadastre-se como cliente
-            </Link>{" "}
-            ou{" "}
-            <Link
-              href="/cadastro-profissional"
-              style={{ textDecoration: "underline" }}
+            <p className="muted" style={{ margin: 0, fontSize: 13.5 }}>
+              Ainda não tem conta? Criar é gratuito.
+            </p>
+            <div
+              className="flex gap-8 mt-12"
+              style={{ justifyContent: "center", flexWrap: "wrap" }}
             >
-              como profissional
-            </Link>
-            .
-          </p>
+              <Link href="/cadastro-cliente" className="btn btn-ghost btn-sm">
+                Comprar ou vender
+              </Link>
+              <Link href="/cadastro-profissional" className="btn btn-ghost btn-sm">
+                Sou corretor ou imobiliária
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
 
