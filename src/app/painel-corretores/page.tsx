@@ -83,6 +83,9 @@ export default async function PainelCorretoresPage() {
             </h1>
           </div>
           <div className="flex items-center gap-8" style={{ flexWrap: "wrap" }}>
+            <Link href="/editar-perfil" className="btn btn-outline btn-sm">
+              ✏️ Editar perfil
+            </Link>
             <Link href="/modelos-contratos" className="btn btn-outline btn-sm">
               📄 Modelos de contrato e checklist
             </Link>

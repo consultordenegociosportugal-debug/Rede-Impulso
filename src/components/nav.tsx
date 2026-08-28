@@ -177,9 +177,17 @@ export function Nav({ active }: { active: string }) {
           <div className="nav-auth">
             {user ? (
               <>
-                <span className="muted mono" style={{ fontSize: 12 }}>
+                <Link
+                  href="/editar-perfil"
+                  className={
+                    "muted mono" +
+                    (active === "/editar-perfil" ? " active" : "")
+                  }
+                  style={{ fontSize: 12 }}
+                  onClick={() => setOpen(false)}
+                >
                   {nome ?? user.email}
-                </span>
+                </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
