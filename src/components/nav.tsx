@@ -177,17 +177,44 @@ export function Nav({ active }: { active: string }) {
           <div className="nav-auth">
             {user ? (
               <>
-                <Link
-                  href="/editar-perfil"
-                  className={
-                    "muted mono" +
-                    (active === "/editar-perfil" ? " active" : "")
-                  }
-                  style={{ fontSize: 12 }}
-                  onClick={() => setOpen(false)}
-                >
-                  {nome ?? user.email}
-                </Link>
+                <div className="nav-group" key="conta">
+                  <span
+                    className={
+                      "nav-group-label mono" +
+                      (active === "/editar-perfil" || active === "/painel-negocios"
+                        ? " active"
+                        : "")
+                    }
+                    style={{ fontSize: 12 }}
+                  >
+                    {nome ?? user.email}
+                    <svg
+                      width="9"
+                      height="9"
+                      viewBox="0 0 9 9"
+                      aria-hidden="true"
+                      className="nav-group-arrow"
+                    >
+                      <path d="M1 3l3.5 3L8 3" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+                    </svg>
+                  </span>
+                  <div className="nav-dropdown" style={{ left: "auto", right: 0 }}>
+                    <Link
+                      href="/painel-negocios"
+                      className={active === "/painel-negocios" ? "active" : undefined}
+                      onClick={() => setOpen(false)}
+                    >
+                      Minhas negociações
+                    </Link>
+                    <Link
+                      href="/editar-perfil"
+                      className={active === "/editar-perfil" ? "active" : undefined}
+                      onClick={() => setOpen(false)}
+                    >
+                      Editar perfil
+                    </Link>
+                  </div>
+                </div>
                 <button
                   type="button"
                   onClick={handleLogout}
