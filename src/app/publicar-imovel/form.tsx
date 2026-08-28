@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
 import { Footer } from "@/components/footer";
+import { LocalizacaoImovel } from "@/components/localizacao-imovel";
 
 type Finalidade = "venda" | "aluguel";
 type Tipo = "apartamento" | "casa" | "kitnet" | "terreno" | "comercial" | "outro";
@@ -48,37 +49,10 @@ export function PublicarImovelForm() {
   const [descricao, setDescricao] = useState("");
   const [preco, setPreco] = useState("");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [buscandoLocalizacao, setBuscandoLocalizacao] = useState(false);
   const [status, setStatus] = useState<Status>("idle");
   const [erro, setErro] = useState<string | null>(null);
   const [imovelId, setImovelId] = useState<string | null>(null);
   const [fotos, setFotos] = useState<File[]>([]);
-
-  function usarLocalizacaoAtual() {
-    if (!navigator.geolocation) {
-      setErro("Seu navegador não suporta geolocalização.");
-      return;
-    }
-    setBuscandoLocalizacao(true);
-    setErro(null);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setCoords({
-          lat: position.coords.latitude,
-          lng: position.coords.longitude,
-        });
-        setBuscandoLocalizacao(false);
-      },
-      (geoError) => {
-        setErro(
-          geoError.code === geoError.PERMISSION_DENIED
-            ? "Você precisa permitir o acesso à localização para marcar o imóvel no mapa."
-            : "Não foi possível obter sua localização.",
-        );
-        setBuscandoLocalizacao(false);
-      },
-    );
-  }
 
   function alternarComodidade(item: string) {
     setComodidades((atual) =>
@@ -441,46 +415,7 @@ export function PublicarImovelForm() {
 
             {passo === 3 && (
               <>
-                <div className="field">
-                  <label>Localização no mapa</label>
-                  {coords ? (
-                    <>
-                      <img
-                        src={`https://maps.googleapis.com/maps/api/staticmap?center=${coords.lat},${coords.lng}&zoom=15&size=640x200&scale=2&markers=color:0x00e6a8%7C${coords.lat},${coords.lng}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`}
-                        alt="Localização marcada no mapa"
-                        width={640}
-                        height={200}
-                        style={{ width: "100%", height: "auto", borderRadius: 12, display: "block", marginBottom: 8 }}
-                      />
-                      <div className="upload-slot">
-                        <div className="ic">📍</div>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 13.5 }}>
-                            Localização marcada
-                          </div>
-                          <div className="hint" style={{ margin: 0 }}>
-                            {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <button
-                      type="button"
-                      className="btn btn-ghost btn-block"
-                      onClick={usarLocalizacaoAtual}
-                      disabled={buscandoLocalizacao}
-                    >
-                      {buscandoLocalizacao
-                        ? "Obtendo localização…"
-                        : "📍 Marcar localização atual"}
-                    </button>
-                  )}
-                  <p className="hint">
-                    Estar no imóvel ao publicar ajuda quem passar perto a
-                    encontrá-lo depois.
-                  </p>
-                </div>
+                <LocalizacaoImovel coords={coords} onChange={setCoords} />
                 <div className="card-flat" style={{ fontSize: 13.5 }}>
                   <strong>{titulo}</strong>
                   <div className="muted">

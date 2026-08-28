@@ -1,3 +1,19 @@
+.anuncioInfo {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  margin: -6px -8px;
+  padding: 6px 8px;
+  transition: background 0.15s;
+}
+.anuncioInfo:hover {
+  background: var(--surface-2);
+}
+.anuncioInfo:hover > div:first-child {
+  text-decoration: underline;
+}
+
 .topBar {
   display: flex;
   justify-content: space-between;

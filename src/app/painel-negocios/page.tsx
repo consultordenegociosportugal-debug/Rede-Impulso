@@ -110,6 +110,9 @@ export default async function PainelNegociosPage({
     .order("created_at", { ascending: false });
   const meusImoveis = (dadosImoveis ?? []) as unknown as ImovelRow[];
   const meusImovelIds = meusImoveis.map((i) => i.id);
+  const imoveisAtivos = meusImoveis.filter(
+    (i) => i.status === "publicado" || i.status === "em_negociacao",
+  ).length;
 
   let query = supabase
     .from("negocios")
@@ -242,7 +245,16 @@ export default async function PainelNegociosPage({
         {!visaoImobiliaria && (
           <div className="mb-24">
             <div className="flex between items-center mb-12" style={{ gap: 12 }}>
-              <h2 style={{ fontSize: 18, margin: 0 }}>Meus anúncios</h2>
+              <h2 style={{ fontSize: 18, margin: 0 }}>
+                Meus anúncios
+                {meusImoveis.length > 0 && (
+                  <span className="muted" style={{ fontWeight: 400, fontSize: 14 }}>
+                    {" "}
+                    · {imoveisAtivos} ativo{imoveisAtivos === 1 ? "" : "s"} de{" "}
+                    {meusImoveis.length}
+                  </span>
+                )}
+              </h2>
               <Link href="/publicar-imovel" className="btn btn-ghost btn-sm">
                 + Publicar imóvel
               </Link>
@@ -274,9 +286,13 @@ export default async function PainelNegociosPage({
                         className="flex between items-center"
                         style={{ width: "100%", gap: 12, flexWrap: "wrap" }}
                       >
-                        <div style={{ minWidth: 200, flex: 1 }}>
+                        <Link
+                          href={`/imoveis/${imovel.id}`}
+                          className={styles.anuncioInfo}
+                          style={{ minWidth: 200, flex: 1 }}
+                        >
                           <div style={{ fontWeight: 600, fontSize: 14 }}>
-                            <Link href={`/imoveis/${imovel.id}`}>{imovel.titulo}</Link>
+                            {imovel.titulo}
                           </div>
                           <div className="hint" style={{ margin: 0 }}>
                             {imovel.bairro}, {imovel.cidade} ·{" "}
@@ -285,7 +301,7 @@ export default async function PainelNegociosPage({
                               ? formatoMoeda.format(imovel.preco)
                               : "Preço a combinar"}
                           </div>
-                        </div>
+                        </Link>
                         <span className={`badge ${badge.className}`}>
                           {badge.label}
                         </span>
