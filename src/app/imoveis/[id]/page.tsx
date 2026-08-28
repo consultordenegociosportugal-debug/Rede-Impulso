@@ -33,6 +33,7 @@ type ImovelDetalhe = {
   latitude: number | null;
   longitude: number | null;
   imovel_fotos: { arquivo_url: string; ordem: number }[];
+  vendedor: { nome: string; role: string; verification_status: string } | null;
 };
 
 const TIPO_LABEL: Record<string, string> = {
@@ -63,7 +64,7 @@ export default async function ImovelDetalhePage({
   const { data } = await supabase
     .from("imoveis")
     .select(
-      "id, vendedor_id, status, titulo, bairro, cidade, descricao, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, latitude, longitude, imovel_fotos(arquivo_url, ordem)",
+      "id, vendedor_id, status, titulo, bairro, cidade, descricao, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, latitude, longitude, imovel_fotos(arquivo_url, ordem), vendedor:vendedor_id(nome, role, verification_status)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -184,6 +185,22 @@ export default async function ImovelDetalhePage({
             <p className="muted" style={{ margin: 0 }}>
               {imovel.bairro}, {imovel.cidade}
             </p>
+
+            {imovel.vendedor?.verification_status === "aprovado" && (
+              <p
+                className="hint"
+                style={{
+                  margin: "6px 0 0",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 6,
+                  color: "var(--primary)",
+                }}
+              >
+                <span aria-hidden="true">✓</span>
+                Anunciante com identidade verificada
+              </p>
+            )}
 
             {(imovel.quartos || imovel.banheiros || imovel.vagas || imovel.area_m2) && (
               <div className="flex gap-16 mt-12" style={{ fontSize: 13.5 }}>

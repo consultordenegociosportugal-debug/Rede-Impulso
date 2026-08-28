@@ -2,14 +2,9 @@ import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/server";
 import { FavoritoButton } from "./favorito-button";
+import { ImovelCard } from "@/components/imovel-card";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
-
-const formatoMoeda = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
 
 type ImovelRow = {
   id: string;
@@ -35,18 +30,30 @@ const TIPO_LABEL: Record<string, string> = {
   outro: "Outro",
 };
 
+const ANUNCIANTE_LABEL: Record<string, string> = {
+  vendedor: "Proprietário",
+  corretor: "Corretor",
+  imobiliaria: "Imobiliária",
+};
+
 export default async function ImoveisPage({
   searchParams,
 }: {
-  searchParams: Promise<{ finalidade?: string; bairro?: string; tipo?: string; quartos?: string }>;
+  searchParams: Promise<{
+    finalidade?: string;
+    bairro?: string;
+    tipo?: string;
+    quartos?: string;
+    anunciante?: string;
+  }>;
 }) {
-  const { finalidade, bairro, tipo, quartos } = await searchParams;
+  const { finalidade, bairro, tipo, quartos, anunciante } = await searchParams;
 
   const supabase = await createClient();
   let query = supabase
     .from("imoveis")
     .select(
-      "id, titulo, bairro, cidade, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, imovel_fotos(arquivo_url, ordem)",
+      "id, titulo, bairro, cidade, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, imovel_fotos(arquivo_url, ordem), vendedor:vendedor_id!inner(role)",
     )
     .eq("status", "publicado")
     .order("created_at", { ascending: false })
@@ -63,6 +70,9 @@ export default async function ImoveisPage({
   }
   if (quartos) {
     query = query.gte("quartos", Number(quartos));
+  }
+  if (anunciante && anunciante in ANUNCIANTE_LABEL) {
+    query = query.eq("vendedor.role", anunciante);
   }
 
   const { data } = await query;
@@ -141,6 +151,14 @@ export default async function ImoveisPage({
               <option value="3">3+</option>
               <option value="4">4+</option>
             </select>
+            <select name="anunciante" defaultValue={anunciante ?? ""} style={{ width: 160 }}>
+              <option value="">Qualquer anunciante</option>
+              {Object.entries(ANUNCIANTE_LABEL).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
             <button type="submit" className="btn btn-outline btn-sm">
               Buscar
             </button>
@@ -179,56 +197,37 @@ export default async function ImoveisPage({
           <div className="grid grid-3">
             {imoveis.map((imovel) => {
               const foto = [...imovel.imovel_fotos].sort((a, b) => a.ordem - b.ordem)[0];
+              const specs = [
+                imovel.quartos ? `${imovel.quartos}q` : null,
+                imovel.banheiros ? `${imovel.banheiros}ban` : null,
+                imovel.vagas ? `${imovel.vagas}vg` : null,
+                imovel.area_m2 ? `${imovel.area_m2}m²` : null,
+              ]
+                .filter(Boolean)
+                .join(" · ");
               return (
-                <Link
+                <ImovelCard
                   key={imovel.id}
-                  href={`/imoveis/${imovel.id}`}
-                  className={`card ${styles.imovelCard}`}
-                >
-                  <div style={{ position: "relative" }}>
-                    {foto ? (
-                      <div
-                        className={styles.imovelFoto}
-                        style={{ backgroundImage: `url(${foto.arquivo_url})` }}
-                      />
-                    ) : (
-                      <div className="photo-slot">sem foto</div>
-                    )}
+                  imovel={{
+                    id: imovel.id,
+                    titulo: imovel.titulo,
+                    bairro: imovel.bairro,
+                    cidade: imovel.cidade,
+                    preco: imovel.preco,
+                    finalidade: imovel.finalidade,
+                    tipoLabel: TIPO_LABEL[imovel.tipo] ?? imovel.tipo,
+                    specs: specs || undefined,
+                    fotoUrl: foto?.arquivo_url ?? null,
+                  }}
+                  favoritoSlot={
                     <FavoritoButton
                       imovelId={imovel.id}
                       favoritadoInicial={favoritados.has(imovel.id)}
                       logado={Boolean(user)}
                       variant="icon"
                     />
-                  </div>
-                  <div className={styles.imovelBody}>
-                    <span
-                      className={`badge ${imovel.finalidade === "venda" ? "badge-primary" : "badge-amber"}`}
-                    >
-                      {imovel.finalidade === "venda" ? "Venda" : "Aluguel"}
-                    </span>{" "}
-                    <span className="hint" style={{ margin: 0 }}>
-                      {TIPO_LABEL[imovel.tipo] ?? imovel.tipo}
-                    </span>
-                    <div style={{ fontWeight: 600, fontSize: 15, marginTop: 8 }}>
-                      {imovel.titulo}
-                    </div>
-                    <div className="muted" style={{ fontSize: 13 }}>
-                      {imovel.bairro}, {imovel.cidade}
-                    </div>
-                    {(imovel.quartos || imovel.banheiros || imovel.vagas || imovel.area_m2) && (
-                      <div className="hint mono" style={{ margin: "6px 0 0" }}>
-                        {imovel.quartos ? `${imovel.quartos}q` : null}
-                        {imovel.banheiros ? ` · ${imovel.banheiros}ban` : null}
-                        {imovel.vagas ? ` · ${imovel.vagas}vg` : null}
-                        {imovel.area_m2 ? ` · ${imovel.area_m2}m²` : null}
-                      </div>
-                    )}
-                    <div className="mono" style={{ marginTop: 8, fontSize: 14 }}>
-                      {imovel.preco ? formatoMoeda.format(imovel.preco) : "Preço a combinar"}
-                    </div>
-                  </div>
-                </Link>
+                  }
+                />
               );
             })}
           </div>
