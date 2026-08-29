@@ -307,6 +307,12 @@ export default async function PainelNegociosPage({
                         </span>
                         <div className="flex gap-8 items-center">
                           <Link
+                            href={`/publicar-imovel/${imovel.id}/destacar`}
+                            className="btn btn-outline btn-sm"
+                          >
+                            🚀 Destacar
+                          </Link>
+                          <Link
                             href={`/publicar-imovel/${imovel.id}/editar`}
                             className="btn btn-primary btn-sm"
                           >

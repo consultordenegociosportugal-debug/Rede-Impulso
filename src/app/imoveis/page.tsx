@@ -18,8 +18,12 @@ type ImovelRow = {
   banheiros: number | null;
   vagas: number | null;
   area_m2: number | null;
+  destaque_ate: string | null;
   imovel_fotos: { arquivo_url: string; ordem: number }[];
 };
+
+const COLUNAS_IMOVEL =
+  "id, titulo, bairro, cidade, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, destaque_ate, imovel_fotos(arquivo_url, ordem), vendedor:vendedor_id!inner(role)";
 
 const TIPO_LABEL: Record<string, string> = {
   apartamento: "Apartamento",
@@ -48,35 +52,60 @@ export default async function ImoveisPage({
   }>;
 }) {
   const { finalidade, bairro, tipo, quartos, anunciante } = await searchParams;
+  const LIMITE = 24;
 
   const supabase = await createClient();
-  let query = supabase
+
+  // Anúncios em destaque (pagos) aparecem primeiro — mesmos filtros da
+  // busca, só que restritos a quem tem destaque_ate no futuro. O resto
+  // vem depois, ordenado por mais recente, excluindo quem já apareceu.
+  let queryDestaque = supabase
     .from("imoveis")
-    .select(
-      "id, titulo, bairro, cidade, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, imovel_fotos(arquivo_url, ordem), vendedor:vendedor_id!inner(role)",
-    )
+    .select(COLUNAS_IMOVEL)
+    .eq("status", "publicado")
+    .gt("destaque_ate", new Date().toISOString())
+    .order("destaque_ate", { ascending: true })
+    .limit(LIMITE);
+
+  let queryResto = supabase
+    .from("imoveis")
+    .select(COLUNAS_IMOVEL)
     .eq("status", "publicado")
     .order("created_at", { ascending: false })
-    .limit(24);
+    .limit(LIMITE);
 
   if (finalidade === "venda" || finalidade === "aluguel") {
-    query = query.eq("finalidade", finalidade);
+    queryDestaque = queryDestaque.eq("finalidade", finalidade);
+    queryResto = queryResto.eq("finalidade", finalidade);
   }
   if (bairro) {
-    query = query.ilike("bairro", `%${bairro}%`);
+    queryDestaque = queryDestaque.ilike("bairro", `%${bairro}%`);
+    queryResto = queryResto.ilike("bairro", `%${bairro}%`);
   }
   if (tipo) {
-    query = query.eq("tipo", tipo);
+    queryDestaque = queryDestaque.eq("tipo", tipo);
+    queryResto = queryResto.eq("tipo", tipo);
   }
   if (quartos) {
-    query = query.gte("quartos", Number(quartos));
+    queryDestaque = queryDestaque.gte("quartos", Number(quartos));
+    queryResto = queryResto.gte("quartos", Number(quartos));
   }
   if (anunciante && anunciante in ANUNCIANTE_LABEL) {
-    query = query.eq("vendedor.role", anunciante);
+    queryDestaque = queryDestaque.eq("vendedor.role", anunciante);
+    queryResto = queryResto.eq("vendedor.role", anunciante);
   }
 
-  const { data } = await query;
-  const imoveis = (data ?? []) as unknown as ImovelRow[];
+  const { data: dadosDestaque } = await queryDestaque;
+  const destacados = (dadosDestaque ?? []) as unknown as ImovelRow[];
+  const idsDestacados = destacados.map((i) => i.id);
+
+  if (idsDestacados.length > 0) {
+    queryResto = queryResto.not("id", "in", `(${idsDestacados.join(",")})`);
+  }
+  const { data: dadosResto } = await queryResto;
+  const resto = (dadosResto ?? []) as unknown as ImovelRow[];
+
+  const imoveis = [...destacados, ...resto].slice(0, LIMITE);
 
   const {
     data: { user },
@@ -218,6 +247,9 @@ export default async function ImoveisPage({
                     tipoLabel: TIPO_LABEL[imovel.tipo] ?? imovel.tipo,
                     specs: specs || undefined,
                     fotoUrl: foto?.arquivo_url ?? null,
+                    destaque: Boolean(
+                      imovel.destaque_ate && new Date(imovel.destaque_ate) > new Date(),
+                    ),
                   }}
                   favoritoSlot={
                     <FavoritoButton

@@ -14,23 +14,45 @@ type ImovelDestaque = {
   preco: number | null;
   finalidade: "venda" | "aluguel";
   quartos: number | null;
+  destaque_ate: string | null;
   imovel_fotos: { arquivo_url: string; ordem: number }[];
 };
 
+const LIMITE_HOME = 6;
+const COLUNAS_HOME =
+  "id, titulo, bairro, cidade, preco, finalidade, quartos, destaque_ate, imovel_fotos(arquivo_url, ordem)";
+
 export default async function Home() {
   const supabase = await createClient();
-  const [{ count: imoveisCount }, { count: negociosCount }, { data: dadosRecentes }] =
+  const [{ count: imoveisCount }, { count: negociosCount }, { data: dadosDestaque }] =
     await Promise.all([
       supabase.from("imoveis").select("id", { count: "exact", head: true }).eq("status", "publicado"),
       supabase.from("negocios").select("id", { count: "exact", head: true }).eq("status", "concluido"),
       supabase
         .from("imoveis")
-        .select("id, titulo, bairro, cidade, preco, finalidade, quartos, imovel_fotos(arquivo_url, ordem)")
+        .select(COLUNAS_HOME)
         .eq("status", "publicado")
-        .order("created_at", { ascending: false })
-        .limit(6),
+        .gt("destaque_ate", new Date().toISOString())
+        .order("destaque_ate", { ascending: true })
+        .limit(LIMITE_HOME),
     ]);
-  const imoveisRecentes = (dadosRecentes ?? []) as unknown as ImovelDestaque[];
+
+  const destacados = (dadosDestaque ?? []) as unknown as ImovelDestaque[];
+  const idsDestacados = destacados.map((i) => i.id);
+
+  let queryResto = supabase
+    .from("imoveis")
+    .select(COLUNAS_HOME)
+    .eq("status", "publicado")
+    .order("created_at", { ascending: false })
+    .limit(LIMITE_HOME);
+  if (idsDestacados.length > 0) {
+    queryResto = queryResto.not("id", "in", `(${idsDestacados.join(",")})`);
+  }
+  const { data: dadosResto } = await queryResto;
+  const resto = (dadosResto ?? []) as unknown as ImovelDestaque[];
+
+  const imoveisRecentes = [...destacados, ...resto].slice(0, LIMITE_HOME);
 
   return (
     <>
@@ -86,6 +108,9 @@ export default async function Home() {
                     finalidade: imovel.finalidade,
                     specs: imovel.quartos ? `${imovel.quartos}q` : undefined,
                     fotoUrl: foto?.arquivo_url ?? null,
+                    destaque: Boolean(
+                      imovel.destaque_ate && new Date(imovel.destaque_ate) > new Date(),
+                    ),
                   }}
                 />
               );

@@ -34,6 +34,7 @@ type ImovelDetalhe = {
   longitude: number | null;
   imovel_fotos: { arquivo_url: string; ordem: number }[];
   vendedor: { nome: string; role: string; verification_status: string } | null;
+  destaque_ate: string | null;
 };
 
 const TIPO_LABEL: Record<string, string> = {
@@ -64,7 +65,7 @@ export default async function ImovelDetalhePage({
   const { data } = await supabase
     .from("imoveis")
     .select(
-      "id, vendedor_id, status, titulo, bairro, cidade, descricao, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, latitude, longitude, imovel_fotos(arquivo_url, ordem), vendedor:vendedor_id(nome, role, verification_status)",
+      "id, vendedor_id, status, titulo, bairro, cidade, descricao, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, latitude, longitude, destaque_ate, imovel_fotos(arquivo_url, ordem), vendedor:vendedor_id(nome, role, verification_status)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -181,6 +182,11 @@ export default async function ImovelDetalhePage({
             <span className="hint" style={{ marginLeft: 6 }}>
               {TIPO_LABEL[imovel.tipo] ?? imovel.tipo}
             </span>
+            {imovel.destaque_ate && new Date(imovel.destaque_ate) > new Date() && (
+              <span className="badge badge-amber" style={{ marginLeft: 6 }}>
+                🚀 Destaque
+              </span>
+            )}
             <h1 style={{ fontSize: 24, margin: "10px 0 4px" }}>{imovel.titulo}</h1>
             <p className="muted" style={{ margin: 0 }}>
               {imovel.bairro}, {imovel.cidade}

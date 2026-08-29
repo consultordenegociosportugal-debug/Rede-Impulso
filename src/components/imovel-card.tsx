@@ -11,6 +11,7 @@ export type ImovelCardData = {
   tipoLabel?: string;
   specs?: string;
   fotoUrl?: string | null;
+  destaque?: boolean;
 };
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", {
@@ -38,6 +39,14 @@ export function ImovelCard({
           <div className="photo-slot">sem foto</div>
         )}
         {favoritoSlot}
+        {imovel.destaque && (
+          <span
+            className="badge badge-amber"
+            style={{ position: "absolute", top: 10, left: 10 }}
+          >
+            🚀 Destaque
+          </span>
+        )}
       </div>
       <div className={styles.imovelBody}>
         <span
