@@ -10,6 +10,10 @@ const ICONES: Record<string, string> = {
   Encanador: "🔧",
   "Instalacao de ar-condicionado": "❄️",
   Consorcio: "💰",
+  Financiamento: "🏦",
+  "Corretor de credito": "📊",
+  "Seguro residencial": "🛡️",
+  "Mudanca e frete": "🚚",
 };
 
 const CATEGORIA_LABEL: Record<string, string> = {

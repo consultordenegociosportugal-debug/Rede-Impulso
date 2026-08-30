@@ -9,9 +9,23 @@ import { Footer } from "@/components/footer";
 
 type Status = "idle" | "enviando" | "sucesso" | "erro";
 
+const TIPOS_SERVICO = [
+  "Pintor",
+  "Eletricista",
+  "Encanador",
+  "Instalacao de ar-condicionado",
+  "Consorcio",
+  "Financiamento",
+  "Corretor de credito",
+  "Seguro residencial",
+  "Mudanca e frete",
+  "Outro",
+];
+
 export function OferecerServicoForm() {
   const router = useRouter();
-  const [nome, setNome] = useState("");
+  const [tipo, setTipo] = useState(TIPOS_SERVICO[0]);
+  const [nomeOutro, setNomeOutro] = useState("");
   const [contato, setContato] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [erro, setErro] = useState<string | null>(null);
@@ -30,6 +44,8 @@ export function OferecerServicoForm() {
       router.push("/entrar");
       return;
     }
+
+    const nome = tipo === "Outro" ? nomeOutro.trim() : tipo;
 
     const { error } = await supabase.from("parceiros_servico").insert({
       profile_id: user.id,
@@ -58,7 +74,7 @@ export function OferecerServicoForm() {
               <div className="celebra-icone">✓</div>
               <span className="badge badge-primary">Serviço cadastrado</span>
               <h1 style={{ fontSize: 24, margin: "12px 0 4px" }}>
-                {nome} já está no diretório!
+                {tipo === "Outro" ? nomeOutro : tipo} já está no diretório!
               </h1>
               <p className="muted">
                 A partir de agora você aparece pra clientes que concluírem um
@@ -96,16 +112,36 @@ export function OferecerServicoForm() {
 
           <form className="card mt-24" onSubmit={handleSubmit}>
             <div className="field">
-              <label htmlFor="nome">Tipo de serviço</label>
-              <input
-                type="text"
-                id="nome"
-                placeholder="Pintor, eletricista, encanador…"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-                required
-              />
+              <label htmlFor="tipo">Tipo de serviço</label>
+              <select
+                id="tipo"
+                value={tipo}
+                onChange={(e) => setTipo(e.target.value)}
+              >
+                {TIPOS_SERVICO.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+              <p className="hint">
+                Consórcio, financiamento e corretagem de crédito também têm
+                lugar aqui — não é só serviço de casa.
+              </p>
             </div>
+            {tipo === "Outro" && (
+              <div className="field">
+                <label htmlFor="nomeOutro">Qual serviço?</label>
+                <input
+                  type="text"
+                  id="nomeOutro"
+                  placeholder="Descreva o serviço"
+                  value={nomeOutro}
+                  onChange={(e) => setNomeOutro(e.target.value)}
+                  required
+                />
+              </div>
+            )}
             <div className="field">
               <label htmlFor="contato">WhatsApp</label>
               <input
