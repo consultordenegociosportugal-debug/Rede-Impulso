@@ -99,3 +99,90 @@ export function statusInterno(statusMp: string): "aprovado" | "rejeitado" | "pen
   if (statusMp === "rejected" || statusMp === "cancelled") return "rejeitado";
   return "pendente";
 }
+
+// ---------- Plano Profissional (assinatura recorrente) ----------
+
+export type PlanoProfissional = {
+  id: "5" | "15" | "20";
+  limite: number;
+  valor: number;
+  label: string;
+  destaque?: string;
+};
+
+export const PLANOS_PROFISSIONAL: PlanoProfissional[] = [
+  { id: "5", limite: 5, valor: 139.9, label: "Profissional 5" },
+  { id: "15", limite: 15, valor: 259.9, label: "Profissional 15", destaque: "Mais escolhido" },
+  { id: "20", limite: 20, valor: 279.9, label: "Profissional 20" },
+];
+
+/** Cria a assinatura recorrente (preapproval). Null se não configurado ou a chamada falhar. */
+export async function criarAssinatura(params: {
+  reason: string;
+  valor: number;
+  payerEmail: string;
+  externalReference: string;
+  backUrl: string;
+  notificationUrl: string;
+}): Promise<PreferenciaResposta | null> {
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  if (!token) return null;
+
+  try {
+    const resposta = await fetch(`${MP_API}/preapproval`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        reason: params.reason,
+        external_reference: params.externalReference,
+        payer_email: params.payerEmail,
+        back_url: params.backUrl,
+        notification_url: params.notificationUrl,
+        auto_recurring: {
+          frequency: 1,
+          frequency_type: "months",
+          transaction_amount: params.valor,
+          currency_id: "BRL",
+        },
+        status: "pending",
+      }),
+    });
+
+    if (!resposta.ok) return null;
+    const dados = await resposta.json();
+    if (!dados.id || !dados.init_point) return null;
+    return { id: dados.id, initPoint: dados.init_point };
+  } catch {
+    return null;
+  }
+}
+
+/** Busca uma assinatura pelo id direto na API — nunca confiar só no corpo do webhook. */
+export async function buscarAssinatura(preapprovalId: string): Promise<PagamentoMP | null> {
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  if (!token) return null;
+
+  try {
+    const resposta = await fetch(`${MP_API}/preapproval/${preapprovalId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!resposta.ok) return null;
+    const dados = await resposta.json();
+    return { status: dados.status, external_reference: dados.external_reference ?? null };
+  } catch {
+    return null;
+  }
+}
+
+/** Preapproval tem seu próprio vocabulário de status, diferente de payments. */
+export function statusAssinaturaInterno(
+  statusMp: string,
+): "ativa" | "pausada" | "cancelada" | "pendente" {
+  if (statusMp === "authorized") return "ativa";
+  if (statusMp === "paused") return "pausada";
+  if (statusMp === "cancelled") return "cancelada";
+  return "pendente";
+}

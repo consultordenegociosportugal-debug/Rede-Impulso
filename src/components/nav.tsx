@@ -39,6 +39,7 @@ const NAV_ITEMS: NavItem[] = [
       { href: "/sugestao-corretores", label: "Sugestão de corretores" },
       { href: "/perfil-corretor", label: "Perfil do corretor" },
       { href: "/painel-corretores", label: "Painel de corretores" },
+      { href: "/planos", label: "Plano Profissional" },
       { href: "/cursos", label: "Cursos e capacitação" },
       { href: "/meus-cursos", label: "Meus cursos" },
     ],

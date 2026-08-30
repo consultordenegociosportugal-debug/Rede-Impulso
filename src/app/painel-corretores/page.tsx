@@ -89,6 +89,9 @@ export default async function PainelCorretoresPage() {
             <Link href="/modelos-contratos" className="btn btn-outline btn-sm">
               📄 Modelos de contrato e checklist
             </Link>
+            <Link href="/planos" className="btn btn-outline btn-sm">
+              🏅 Plano Profissional
+            </Link>
             <button className="btn btn-outline btn-sm" disabled title="Em breve">
               + Convidar corretor
             </button>
