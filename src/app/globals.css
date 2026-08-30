@@ -150,6 +150,32 @@ section {
   justify-content: space-between;
   gap: 24px;
 }
+.nav-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+.nav-back {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+.nav-back:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
 .nav-brand {
   display: flex;
   align-items: center;
@@ -886,4 +912,34 @@ footer {
 .assistente-rodape input:focus {
   outline: none;
   border-color: var(--primary);
+}
+
+/* ---------- Impressão ---------- */
+.print-only {
+  display: none;
+}
+@media print {
+  .nav,
+  footer,
+  .assistente-raiz,
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block;
+  }
+  body {
+    background: #fff !important;
+  }
+  .contrato-imprimir .card {
+    background: #fff !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 0 16px !important;
+  }
+  .contrato-imprimir,
+  .contrato-imprimir * {
+    color: #000 !important;
+  }
 }

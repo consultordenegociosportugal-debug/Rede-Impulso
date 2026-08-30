@@ -111,18 +111,18 @@ export default async function ModelosContratosPage({
 
       <div className="wrap" style={{ padding: "48px 0 80px" }}>
         <div style={{ maxWidth: 880, margin: "0 auto" }}>
-          <span className="eyebrow">Documentos do negócio</span>
-          <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>
+          <span className="eyebrow no-print">Documentos do negócio</span>
+          <h1 className="no-print" style={{ fontSize: 28, margin: "8px 0 4px" }}>
             Modelos de contrato e checklist de documentos
           </h1>
-          <p className="hint">
+          <p className="hint no-print">
             Três modelos de contrato para adaptar ao seu negócio e a relação de
             documentos exigidos de cada parte. Última revisão do texto-base: a
             definir na publicação.
           </p>
 
           {negocio && camposPreenchidos > 0 && (
-            <div className="card" style={{ background: "var(--primary-tint)", margin: "16px 0 0" }}>
+            <div className="card no-print" style={{ background: "var(--primary-tint)", margin: "16px 0 0" }}>
               <p style={{ margin: 0, fontSize: 13.5 }}>
                 📄 Modelos abertos a partir do negócio{" "}
                 <strong>{negocio.imoveis?.titulo ?? "selecionado"}</strong>. Os
@@ -140,7 +140,7 @@ export default async function ModelosContratosPage({
             <ModelosContratos preenchido={preenchido} negocioId={negocio?.id} />
           </div>
 
-          <p className="hint mt-24">
+          <p className="hint mt-24 no-print">
             Precisa de apoio jurídico para revisar o contrato?{" "}
             <Link href="/servicos" style={{ textDecoration: "underline" }}>
               Veja os serviços parceiros

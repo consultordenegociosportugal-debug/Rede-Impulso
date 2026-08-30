@@ -114,6 +114,101 @@ function AvisoLegal() {
   );
 }
 
+function nomeArquivo(modelo: ModeloContrato) {
+  return modelo.titulo
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+function baixarBlob(blob: Blob, nome: string) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = nome;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function exportarPdf(modelo: ModeloContrato, preenchido: Preenchimento) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "pt", format: "a4" });
+  const margem = 56;
+  const larguraUtil = doc.internal.pageSize.getWidth() - margem * 2;
+  const alturaPagina = doc.internal.pageSize.getHeight();
+  let y = margem;
+
+  function quebraSeNecessario(alturaLinha: number) {
+    if (y + alturaLinha > alturaPagina - margem) {
+      doc.addPage();
+      y = margem;
+    }
+  }
+
+  function escreverParagrafo(texto: string, tamanho: number, negrito: boolean) {
+    doc.setFont("helvetica", negrito ? "bold" : "normal");
+    doc.setFontSize(tamanho);
+    const linhas = doc.splitTextToSize(texto, larguraUtil) as string[];
+    for (const linha of linhas) {
+      quebraSeNecessario(tamanho * 1.4);
+      doc.text(linha, margem, y);
+      y += tamanho * 1.4;
+    }
+  }
+
+  escreverParagrafo(modelo.titulo.toUpperCase(), 14, true);
+  y += 6;
+  escreverParagrafo(
+    "AVISO: rascunho de trabalho gerado pela Rede Impulso, sem revisão de advogado. Não assine nem trate como vinculante antes da validação por profissional habilitado.",
+    9,
+    false,
+  );
+  y += 10;
+
+  for (const clausula of modelo.clausulas) {
+    y += 6;
+    escreverParagrafo(clausula.titulo, 11, true);
+    for (const paragrafo of clausula.paragrafos) {
+      escreverParagrafo(
+        paragrafo.replace(TOKEN, (m, chave: string) => preenchido[chave] ?? m),
+        10,
+        false,
+      );
+    }
+  }
+
+  doc.save(`${nomeArquivo(modelo)}.pdf`);
+}
+
+function exportarWord(modelo: ModeloContrato, preenchido: Preenchimento) {
+  const paragrafosHtml = modelo.clausulas
+    .map((c) => {
+      const corpo = c.paragrafos
+        .map(
+          (p) =>
+            `<p>${p.replace(TOKEN, (m, chave: string) => preenchido[chave] ?? m)}</p>`,
+        )
+        .join("");
+      return `<h2>${c.titulo}</h2>${corpo}`;
+    })
+    .join("");
+
+  const html = `<!DOCTYPE html><html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>${modelo.titulo}</title></head>
+<body style="font-family: Calibri, Arial, sans-serif; font-size: 12pt;">
+<h1>${modelo.titulo}</h1>
+<p style="background:#fff3cd; padding:8px;"><strong>AVISO:</strong> rascunho de trabalho gerado pela Rede Impulso, sem revisão de advogado. Não assine nem trate como vinculante antes da validação por profissional habilitado.</p>
+${paragrafosHtml}
+</body></html>`;
+
+  const blob = new Blob(["﻿", html], { type: "application/msword" });
+  baixarBlob(blob, `${nomeArquivo(modelo)}.doc`);
+}
+
 function VisaoContrato({
   modelo,
   preenchido,
@@ -124,6 +219,7 @@ function VisaoContrato({
   // O estado de "copiado" é reiniciado a cada troca de modelo pela `key`
   // aplicada na chamada deste componente — não é preciso um efeito.
   const [copiado, setCopiado] = useState(false);
+  const [gerandoPdf, setGerandoPdf] = useState(false);
 
   async function copiar() {
     try {
@@ -134,22 +230,58 @@ function VisaoContrato({
     }
   }
 
+  async function baixarPdf() {
+    setGerandoPdf(true);
+    try {
+      await exportarPdf(modelo, preenchido);
+    } finally {
+      setGerandoPdf(false);
+    }
+  }
+
   return (
-    <>
+    <div className="contrato-imprimir">
       <AvisoLegal />
 
       <div className="card">
         <div
-          className="flex between items-center"
+          className="flex between items-center no-print"
           style={{ gap: 12, flexWrap: "wrap", marginBottom: 8 }}
         >
           <h2 style={{ fontSize: 18, margin: 0, flex: 1, minWidth: 240 }}>
             {modelo.titulo}
           </h2>
-          <button type="button" className="btn btn-outline btn-sm" onClick={copiar}>
-            {copiado ? "✓ Copiado" : "Copiar texto"}
-          </button>
+          <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+            <button type="button" className="btn btn-outline btn-sm" onClick={copiar}>
+              {copiado ? "✓ Copiado" : "Copiar texto"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={() => window.print()}
+            >
+              🖨️ Imprimir
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={baixarPdf}
+              disabled={gerandoPdf}
+            >
+              {gerandoPdf ? "Gerando…" : "⬇️ Baixar PDF"}
+            </button>
+            <button
+              type="button"
+              className="btn btn-outline btn-sm"
+              onClick={() => exportarWord(modelo, preenchido)}
+            >
+              ⬇️ Baixar Word
+            </button>
+          </div>
         </div>
+        <h2 className="print-only" style={{ fontSize: 18, margin: "0 0 8px" }}>
+          {modelo.titulo}
+        </h2>
 
         <p className="muted" style={{ fontSize: 14, marginTop: 0 }}>
           {modelo.resumo}
@@ -177,7 +309,7 @@ function VisaoContrato({
           <ClausulaBloco key={i} clausula={c} preenchido={preenchido} />
         ))}
       </div>
-    </>
+    </div>
   );
 }
 
@@ -354,7 +486,7 @@ export function ModelosContratos({
   return (
     <>
       <div
-        className="segmented mb-24"
+        className="segmented mb-24 no-print"
         style={{ flexWrap: "wrap", maxWidth: "100%" }}
       >
         {abas.map((a) => (

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
@@ -61,6 +62,7 @@ function groupIsActive(item: Extract<NavItem, { type: "group" }>, active: string
 }
 
 export function Nav({ active }: { active: string }) {
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [nome, setNome] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -102,9 +104,30 @@ export function Nav({ active }: { active: string }) {
   return (
     <nav className="nav">
       <div className="nav-inner">
-        <div className="nav-brand">
-          <span className="node" />
-          Rede Impulso
+        <div className="nav-left">
+          {active !== "/" && (
+            <button
+              type="button"
+              className="nav-back"
+              aria-label="Voltar"
+              onClick={() => router.back()}
+            >
+              <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+                <path
+                  d="M10 3 5 8l5 5"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  fill="none"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          )}
+          <div className="nav-brand">
+            <span className="node" />
+            Rede Impulso
+          </div>
         </div>
         <button
           type="button"
