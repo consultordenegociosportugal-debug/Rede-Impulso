@@ -2,68 +2,35 @@
   display: none;
 }
 
-@media (min-width: 1600px) {
-  .ticker {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    position: fixed;
-    top: 130px;
-    right: 20px;
-    width: 190px;
-    z-index: 5;
-    pointer-events: none;
-  }
-}
-
 .cabecalho {
+  flex: none;
   font-family: var(--font-mono), monospace;
   font-size: 10px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-soft);
   opacity: 0.55;
+  white-space: nowrap;
 }
 
 .janela {
-  height: 380px;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    #000 32px,
-    #000 calc(100% - 32px),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0,
-    #000 32px,
-    #000 calc(100% - 32px),
-    transparent 100%
-  );
+  min-width: 0;
 }
 
 .trilho {
   display: flex;
-  flex-direction: column;
   gap: 20px;
-  animation: rolar 34s linear infinite;
-}
-
-.item {
-  border-left: 2px solid var(--line);
-  padding-left: 12px;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
 .tag {
-  display: block;
   font-family: var(--font-mono), monospace;
   font-size: 9.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--primary);
-  margin-bottom: 3px;
 }
 
 .texto {
@@ -74,12 +41,122 @@
   margin: 0;
 }
 
+/* Tablet e laptop: faixa horizontal, dentro do fluxo normal da página. */
+@media (min-width: 640px) and (max-width: 1399px) {
+  .ticker {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+    padding: 10px clamp(16px, 4vw, 40px);
+    border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
+    background: var(--surface);
+    box-sizing: border-box;
+  }
+
+  .janela {
+    flex: 1;
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 40px,
+      #000 calc(100% - 40px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 40px,
+      #000 calc(100% - 40px),
+      transparent 100%
+    );
+  }
+
+  .trilho {
+    flex-direction: row;
+    gap: 40px;
+    width: max-content;
+    animation-name: rolar-horizontal;
+    animation-duration: 42s;
+  }
+
+  .item {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    white-space: nowrap;
+  }
+
+  .texto {
+    white-space: nowrap;
+  }
+}
+
+/* Monitor bem largo: coluna fixa na lateral, fora do fluxo da página. */
+@media (min-width: 1400px) {
+  .ticker {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: fixed;
+    top: 130px;
+    right: 16px;
+    width: clamp(150px, calc((100vw - 1080px) / 2 - 30px), 220px);
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  .janela {
+    height: 380px;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 32px,
+      #000 calc(100% - 32px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0,
+      #000 32px,
+      #000 calc(100% - 32px),
+      transparent 100%
+    );
+  }
+
+  .trilho {
+    flex-direction: column;
+    animation-name: rolar;
+    animation-duration: 34s;
+  }
+
+  .item {
+    border-left: 2px solid var(--line);
+    padding-left: 12px;
+  }
+
+  .tag {
+    display: block;
+    margin-bottom: 3px;
+  }
+}
+
 @keyframes rolar {
   from {
     transform: translateY(0);
   }
   to {
     transform: translateY(-50%);
+  }
+}
+
+@keyframes rolar-horizontal {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
   }
 }
 
