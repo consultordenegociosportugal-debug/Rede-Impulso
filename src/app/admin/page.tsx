@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/server";
@@ -112,10 +113,17 @@ export default async function AdminPage() {
       <Nav active="/admin" />
 
       <div className="wrap" style={{ padding: "48px 0 80px" }}>
-        <span className="eyebrow">Administração</span>
-        <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>
-          Revisão de documentos
-        </h1>
+        <div className="flex between items-center" style={{ flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <span className="eyebrow">Administração</span>
+            <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>
+              Revisão de documentos
+            </h1>
+          </div>
+          <Link href="/admin/assistente" className="btn btn-outline btn-sm">
+            🧠 Metacognição do assistente
+          </Link>
+        </div>
         <p className="muted mb-24">
           {comUrls.length} documento{comUrls.length === 1 ? "" : "s"} enviado
           {comUrls.length === 1 ? "" : "s"} por {porPerfil.size} pessoa

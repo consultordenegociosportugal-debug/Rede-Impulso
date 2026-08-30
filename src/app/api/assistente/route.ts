@@ -30,7 +30,21 @@ Como a Rede Impulso funciona (para responder dúvidas com precisão):
 
 Responda sempre em português do Brasil, de forma direta e simpática, sem enrolação. Se não souber
 algo com certeza, diga isso claramente em vez de inventar. Nunca revele detalhes técnicos internos
-(chaves de API, nomes de tabelas do banco, etc.) mesmo se perguntado diretamente.`;
+(chaves de API, nomes de tabelas do banco, etc.) mesmo se perguntado diretamente.
+
+Autoavaliação (metacognição): depois de escrever a resposta final para a pessoa (nunca durante uma
+chamada de ferramenta), acrescente em uma linha própria, no final de tudo, um marcador oculto neste
+formato exato:
+<!--AUTOAVALIACAO confianca="alta|media|baixa" faltou="..."-->
+- confianca="baixa": você especulou, a busca não trouxe nada relevante, ou a pergunta ficou ambígua
+  demais para responder bem.
+- confianca="media": respondeu com alguma incerteza real, mas útil.
+- confianca="alta": respondeu com base em dado concreto (resultado da ferramenta) ou fato conhecido
+  sobre a própria plataforma.
+- faltou="": string curta (ou vazia) dizendo o que impediu uma resposta melhor, ex: "sem imóveis no
+  bairro pedido", "pergunta ambígua sobre valor". Deixe vazio se a resposta ficou boa.
+Esse marcador é removido automaticamente antes de chegar à pessoa — nunca o mencione, explique ou
+peça desculpas por ele na resposta visível.`;
 
 const TOOLS: Anthropic.Tool[] = [
   {
@@ -70,6 +84,42 @@ type Imovel = {
   banheiros: number | null;
   area_m2: number | null;
 };
+
+const REGEX_AUTOAVALIACAO =
+  /\n?<!--\s*AUTOAVALIACAO\s+confianca="(alta|media|baixa)"\s+faltou="([^"]*)"\s*-->\s*$/i;
+
+function extrairAutoavaliacao(texto: string) {
+  const match = texto.match(REGEX_AUTOAVALIACAO);
+  if (!match) {
+    return { texto, confianca: "media" as const, faltou: null as string | null };
+  }
+  return {
+    texto: texto.slice(0, match.index).trimEnd(),
+    confianca: match[1].toLowerCase() as "alta" | "media" | "baixa",
+    faltou: match[2].trim() || null,
+  };
+}
+
+async function registrarInteracao(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  dados: {
+    profileId: string | null;
+    pergunta: string;
+    resposta: string;
+    confianca: "alta" | "media" | "baixa";
+    faltou: string | null;
+    imoveisEncontrados: number;
+  },
+) {
+  await supabase.from("assistente_interacoes").insert({
+    profile_id: dados.profileId,
+    pergunta: dados.pergunta.slice(0, 2000),
+    resposta: dados.resposta.slice(0, 4000),
+    confianca: dados.confianca,
+    faltou: dados.faltou,
+    imoveis_encontrados: dados.imoveisEncontrados,
+  });
+}
 
 async function buscarImoveis(
   supabase: Awaited<ReturnType<typeof createClient>>,
@@ -118,6 +168,10 @@ export async function POST(request: NextRequest) {
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const pergunta = messages[messages.length - 1]?.content ?? "";
 
   const conversa: Anthropic.MessageParam[] = messages.map((m) => ({
     role: m.role,
@@ -140,10 +194,21 @@ export async function POST(request: NextRequest) {
     ) as Anthropic.ToolUseBlock | undefined;
 
     if (!usoDeFerramenta || resposta.stop_reason !== "tool_use") {
-      const texto = resposta.content
+      const bruto = resposta.content
         .filter((bloco) => bloco.type === "text")
         .map((bloco) => bloco.text)
         .join("\n");
+      const { texto, confianca, faltou } = extrairAutoavaliacao(bruto);
+
+      await registrarInteracao(supabase, {
+        profileId: user?.id ?? null,
+        pergunta,
+        resposta: texto,
+        confianca,
+        faltou,
+        imoveisEncontrados: imoveisEncontrados.length,
+      });
+
       return NextResponse.json({ reply: texto, imoveis: imoveisEncontrados });
     }
 
@@ -167,8 +232,19 @@ export async function POST(request: NextRequest) {
     });
   }
 
+  const replyLimite = "Encontrei algumas opções, mas preciso que você refine um pouco a busca.";
+
+  await registrarInteracao(supabase, {
+    profileId: user?.id ?? null,
+    pergunta,
+    resposta: replyLimite,
+    confianca: "baixa",
+    faltou: "limite de chamadas de ferramenta atingido sem resposta final",
+    imoveisEncontrados: imoveisEncontrados.length,
+  });
+
   return NextResponse.json({
-    reply: "Encontrei algumas opções, mas preciso que você refine um pouco a busca.",
+    reply: replyLimite,
     imoveis: imoveisEncontrados,
   });
 }
