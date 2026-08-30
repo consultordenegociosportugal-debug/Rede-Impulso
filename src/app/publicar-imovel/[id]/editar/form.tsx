@@ -7,6 +7,7 @@ import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
 import { Footer } from "@/components/footer";
 import { LocalizacaoImovel } from "@/components/localizacao-imovel";
+import { MelhorarTexto } from "@/components/melhorar-texto";
 import styles from "./page.module.css";
 
 type Finalidade = "venda" | "aluguel";
@@ -700,6 +701,7 @@ export function EditarImovelForm({
                 onChange={(e) => setDescricao(e.target.value)}
                 rows={4}
               />
+              <MelhorarTexto texto={descricao} onAplicar={setDescricao} />
             </div>
 
             <LocalizacaoImovel coords={coords} onChange={setCoords} />

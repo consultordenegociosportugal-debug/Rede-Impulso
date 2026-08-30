@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { MelhorarTexto } from "@/components/melhorar-texto";
 
 export function DepoimentoForm({
   negocioId,
@@ -88,6 +89,7 @@ export function DepoimentoForm({
           onChange={(e) => setTexto(e.target.value)}
           required
         />
+        <MelhorarTexto texto={texto} onAplicar={setTexto} />
       </div>
       {erro && (
         <p className="hint" style={{ color: "var(--coral)" }}>

@@ -6,6 +6,7 @@ import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
 import { Footer } from "@/components/footer";
 import { LocalizacaoImovel } from "@/components/localizacao-imovel";
+import { MelhorarTexto } from "@/components/melhorar-texto";
 
 type Finalidade = "venda" | "aluguel";
 type Tipo = "apartamento" | "casa" | "kitnet" | "terreno" | "comercial" | "outro";
@@ -388,6 +389,7 @@ export function PublicarImovelForm() {
                     onChange={(e) => setDescricao(e.target.value)}
                     rows={4}
                   />
+                  <MelhorarTexto texto={descricao} onAplicar={setDescricao} />
                 </div>
                 <div className="field">
                   <label htmlFor="fotos">
