@@ -1,0 +1,90 @@
+.ticker {
+  display: none;
+}
+
+@media (min-width: 1600px) {
+  .ticker {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: fixed;
+    top: 130px;
+    right: 20px;
+    width: 190px;
+    z-index: 5;
+    pointer-events: none;
+  }
+}
+
+.cabecalho {
+  font-family: var(--font-mono), monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  opacity: 0.55;
+}
+
+.janela {
+  height: 380px;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 32px,
+    #000 calc(100% - 32px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 32px,
+    #000 calc(100% - 32px),
+    transparent 100%
+  );
+}
+
+.trilho {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: rolar 34s linear infinite;
+}
+
+.item {
+  border-left: 2px solid var(--line);
+  padding-left: 12px;
+}
+
+.tag {
+  display: block;
+  font-family: var(--font-mono), monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+  margin-bottom: 3px;
+}
+
+.texto {
+  font-family: var(--font-display), serif;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-soft);
+  margin: 0;
+}
+
+@keyframes rolar {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trilho {
+    animation: none;
+  }
+}

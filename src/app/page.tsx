@@ -3,6 +3,7 @@ import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/server";
 import { BuscaHome } from "./busca-home";
 import { ImovelCard } from "@/components/imovel-card";
+import { TickerMercado } from "@/components/ticker-mercado";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 
@@ -57,6 +58,8 @@ export default async function Home() {
   return (
     <>
       <Nav active="/" />
+
+      <TickerMercado />
 
       <main className={styles.centro}>
         <div className={styles.wordmark}>
