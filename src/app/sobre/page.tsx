@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import { Nav } from "@/components/nav";
+import { EstatisticasRede } from "@/components/estatisticas-rede";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 
@@ -71,6 +72,9 @@ export default function SobrePage() {
               <Link href="/cadastro-profissional" className="btn btn-outline">
                 Sou profissional
               </Link>
+            </div>
+            <div style={{ marginTop: 36 }}>
+              <EstatisticasRede align="start" />
             </div>
           </div>
 

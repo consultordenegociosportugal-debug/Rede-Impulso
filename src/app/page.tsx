@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { BuscaHome } from "./busca-home";
 import { ImovelCard } from "@/components/imovel-card";
 import { TickerMercado } from "@/components/ticker-mercado";
+import { EstatisticasRede } from "@/components/estatisticas-rede";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 
@@ -25,18 +26,13 @@ const COLUNAS_HOME =
 
 export default async function Home() {
   const supabase = await createClient();
-  const [{ count: imoveisCount }, { count: negociosCount }, { data: dadosDestaque }] =
-    await Promise.all([
-      supabase.from("imoveis").select("id", { count: "exact", head: true }).eq("status", "publicado"),
-      supabase.from("negocios").select("id", { count: "exact", head: true }).eq("status", "concluido"),
-      supabase
-        .from("imoveis")
-        .select(COLUNAS_HOME)
-        .eq("status", "publicado")
-        .gt("destaque_ate", new Date().toISOString())
-        .order("destaque_ate", { ascending: true })
-        .limit(LIMITE_HOME),
-    ]);
+  const { data: dadosDestaque } = await supabase
+    .from("imoveis")
+    .select(COLUNAS_HOME)
+    .eq("status", "publicado")
+    .gt("destaque_ate", new Date().toISOString())
+    .order("destaque_ate", { ascending: true })
+    .limit(LIMITE_HOME);
 
   const destacados = (dadosDestaque ?? []) as unknown as ImovelDestaque[];
   const idsDestacados = destacados.map((i) => i.id);
@@ -74,14 +70,9 @@ export default async function Home() {
 
         <BuscaHome />
 
-        {Boolean(imoveisCount) && (
-          <p className={styles.provaSocial}>
-            {imoveisCount} imóve{imoveisCount === 1 ? "l" : "is"} publicado
-            {imoveisCount === 1 ? "" : "s"} na Rede Impulso
-            {Boolean(negociosCount) &&
-              ` · ${negociosCount} negócio${negociosCount === 1 ? "" : "s"} fechado${negociosCount === 1 ? "" : "s"}`}
-          </p>
-        )}
+        <div className={styles.provaSocial}>
+          <EstatisticasRede />
+        </div>
 
         <div className={styles.linksSecundarios}>
           <Link href="/sobre">Como funciona</Link>

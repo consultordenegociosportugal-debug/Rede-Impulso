@@ -1,0 +1,24 @@
+.linha {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.item {
+  text-align: center;
+}
+.numero {
+  font-family: var(--font-display), serif;
+  font-size: clamp(26px, 4vw, 36px);
+  font-weight: 600;
+  color: var(--primary);
+  line-height: 1.1;
+}
+.label {
+  margin-top: 4px;
+  font-family: var(--font-mono), monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
