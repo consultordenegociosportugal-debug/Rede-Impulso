@@ -22,6 +22,15 @@ export function mercadoPagoConfigurado(): boolean {
   return Boolean(process.env.MERCADOPAGO_ACCESS_TOKEN);
 }
 
+// Ticket bem menor que o destaque de imóvel — pensado pra prestador
+// autônomo (pintor, eletricista) no diretório de serviços, não pra
+// imobiliária. Ver migração 0029.
+export const PLANOS_DESTAQUE_PARCEIRO: PlanoDestaque[] = [
+  { dias: 7, valor: 9.9, label: "7 dias" },
+  { dias: 15, valor: 16.9, label: "15 dias" },
+  { dias: 30, valor: 29.9, label: "30 dias" },
+];
+
 type PreferenciaResposta = { id: string; initPoint: string };
 
 /** Cria a preferência de checkout. Null se a integração não estiver configurada ou a chamada falhar. */

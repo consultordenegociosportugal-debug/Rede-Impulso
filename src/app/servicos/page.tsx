@@ -25,17 +25,25 @@ type ParceiroRow = {
   id: string;
   categoria: string;
   nome: string;
+  destaque_ate: string | null;
 };
 
 export default async function ServicosPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("parceiros_servico")
-    .select("id, categoria, nome")
+    .select("id, categoria, nome, destaque_ate")
     .eq("ativo", true)
     .order("categoria");
 
-  const parceiros = (data ?? []) as ParceiroRow[];
+  // eslint-disable-next-line react-hooks/purity -- Server Component, runs once per request; needs wall-clock time
+  const agora = Date.now();
+  const emDestaque = (p: ParceiroRow) => Boolean(p.destaque_ate && new Date(p.destaque_ate).getTime() > agora);
+
+  const parceiros = ((data ?? []) as ParceiroRow[]).sort((a, b) => {
+    if (emDestaque(a) === emDestaque(b)) return 0;
+    return emDestaque(a) ? -1 : 1;
+  });
   const categorias = Array.from(new Set(parceiros.map((p) => p.categoria)));
 
   return (
@@ -70,7 +78,14 @@ export default async function ServicosPage() {
                   .map((p) => (
                     <div key={p.id} className={`card ${styles.card}`}>
                       <div className={styles.ic}>{ICONES[p.nome] ?? "🔧"}</div>
-                      <div style={{ fontWeight: 600, fontSize: 14 }}>{p.nome}</div>
+                      <div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>{p.nome}</div>
+                        {emDestaque(p) && (
+                          <span className="badge badge-amber" style={{ marginTop: 4 }}>
+                            🚀 Destaque
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
               </div>

@@ -29,6 +29,7 @@ export function OferecerServicoForm() {
   const [contato, setContato] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [erro, setErro] = useState<string | null>(null);
+  const [parceiroId, setParceiroId] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -47,13 +48,17 @@ export function OferecerServicoForm() {
 
     const nome = tipo === "Outro" ? nomeOutro.trim() : tipo;
 
-    const { error } = await supabase.from("parceiros_servico").insert({
-      profile_id: user.id,
-      categoria: "comprador",
-      nome,
-      contato,
-      ativo: true,
-    });
+    const { data, error } = await supabase
+      .from("parceiros_servico")
+      .insert({
+        profile_id: user.id,
+        categoria: "comprador",
+        nome,
+        contato,
+        ativo: true,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       setErro(error.message);
@@ -61,6 +66,7 @@ export function OferecerServicoForm() {
       return;
     }
 
+    setParceiroId(data.id);
     setStatus("sucesso");
   }
 
@@ -80,13 +86,24 @@ export function OferecerServicoForm() {
                 A partir de agora você aparece pra clientes que concluírem um
                 negócio pela Rede Impulso.
               </p>
-              <button
-                type="button"
-                className="btn btn-primary btn-sm mt-16"
-                onClick={() => router.push("/servicos")}
-              >
-                Ver diretório de serviços
-              </button>
+              <div className="flex gap-8 mt-16" style={{ justifyContent: "center", flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  onClick={() => router.push("/servicos")}
+                >
+                  Ver diretório de serviços
+                </button>
+                {parceiroId && (
+                  <button
+                    type="button"
+                    className="btn btn-outline btn-sm"
+                    onClick={() => router.push(`/servicos/${parceiroId}/destacar`)}
+                  >
+                    🚀 Destacar meu serviço
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
