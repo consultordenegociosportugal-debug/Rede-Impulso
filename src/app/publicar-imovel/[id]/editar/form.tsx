@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Footer } from "@/components/footer";
 import { LocalizacaoImovel } from "@/components/localizacao-imovel";
 import { MelhorarTexto } from "@/components/melhorar-texto";
+import { GerarDescricao } from "@/components/gerar-descricao";
 import styles from "./page.module.css";
 
 type Finalidade = "venda" | "aluguel";
@@ -701,7 +702,25 @@ export function EditarImovelForm({
                 onChange={(e) => setDescricao(e.target.value)}
                 rows={4}
               />
-              <MelhorarTexto texto={descricao} onAplicar={setDescricao} />
+              {descricao.trim() ? (
+                <MelhorarTexto texto={descricao} onAplicar={setDescricao} />
+              ) : (
+                <GerarDescricao
+                  dados={{
+                    finalidade,
+                    tipo,
+                    bairro,
+                    cidade,
+                    quartos: quartos ? Number(quartos) : undefined,
+                    banheiros: banheiros ? Number(banheiros) : undefined,
+                    vagas: vagas ? Number(vagas) : undefined,
+                    areaM2: areaM2 ? Number(areaM2) : undefined,
+                    comodidades,
+                    preco: preco ? Number(preco) : undefined,
+                  }}
+                  onAplicar={setDescricao}
+                />
+              )}
             </div>
 
             <LocalizacaoImovel coords={coords} onChange={setCoords} />

@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Footer } from "@/components/footer";
 import { LocalizacaoImovel } from "@/components/localizacao-imovel";
 import { MelhorarTexto } from "@/components/melhorar-texto";
+import { GerarDescricao } from "@/components/gerar-descricao";
 
 type Finalidade = "venda" | "aluguel";
 type Tipo = "apartamento" | "casa" | "kitnet" | "terreno" | "comercial" | "outro";
@@ -389,7 +390,25 @@ export function PublicarImovelForm() {
                     onChange={(e) => setDescricao(e.target.value)}
                     rows={4}
                   />
-                  <MelhorarTexto texto={descricao} onAplicar={setDescricao} />
+                  {descricao.trim() ? (
+                    <MelhorarTexto texto={descricao} onAplicar={setDescricao} />
+                  ) : (
+                    <GerarDescricao
+                      dados={{
+                        finalidade,
+                        tipo,
+                        bairro,
+                        cidade,
+                        quartos: quartos ? Number(quartos) : undefined,
+                        banheiros: banheiros ? Number(banheiros) : undefined,
+                        vagas: vagas ? Number(vagas) : undefined,
+                        areaM2: areaM2 ? Number(areaM2) : undefined,
+                        comodidades,
+                        preco: preco ? Number(preco) : undefined,
+                      }}
+                      onAplicar={setDescricao}
+                    />
+                  )}
                 </div>
                 <div className="field">
                   <label htmlFor="fotos">
