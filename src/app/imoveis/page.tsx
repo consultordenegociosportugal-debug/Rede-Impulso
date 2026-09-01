@@ -46,12 +46,14 @@ export default async function ImoveisPage({
   searchParams: Promise<{
     finalidade?: string;
     bairro?: string;
+    cidade?: string;
     tipo?: string;
     quartos?: string;
+    precoMax?: string;
     anunciante?: string;
   }>;
 }) {
-  const { finalidade, bairro, tipo, quartos, anunciante } = await searchParams;
+  const { finalidade, bairro, cidade, tipo, quartos, precoMax, anunciante } = await searchParams;
   const LIMITE = 24;
 
   const supabase = await createClient();
@@ -81,6 +83,14 @@ export default async function ImoveisPage({
   if (bairro) {
     queryDestaque = queryDestaque.ilike("bairro", `%${bairro}%`);
     queryResto = queryResto.ilike("bairro", `%${bairro}%`);
+  }
+  if (cidade) {
+    queryDestaque = queryDestaque.ilike("cidade", `%${cidade}%`);
+    queryResto = queryResto.ilike("cidade", `%${cidade}%`);
+  }
+  if (precoMax) {
+    queryDestaque = queryDestaque.lte("preco", Number(precoMax));
+    queryResto = queryResto.lte("preco", Number(precoMax));
   }
   if (tipo) {
     queryDestaque = queryDestaque.eq("tipo", tipo);

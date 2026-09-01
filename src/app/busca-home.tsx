@@ -15,8 +15,9 @@ export function BuscaHome() {
   const router = useRouter();
   const [finalidade, setFinalidade] = useState<"venda" | "aluguel" | "vender">("venda");
   const [bairro, setBairro] = useState("");
+  const [buscando, setBuscando] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
     if (finalidade === "vender") {
@@ -26,7 +27,30 @@ export function BuscaHome() {
 
     const params = new URLSearchParams();
     params.set("finalidade", finalidade);
-    if (bairro) params.set("bairro", bairro);
+
+    const texto = bairro.trim();
+    if (texto) {
+      setBuscando(true);
+      try {
+        const resposta = await fetch("/api/busca/interpretar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texto }),
+        });
+        const filtros = resposta.ok ? await resposta.json() : { bairro: texto };
+
+        if (filtros.bairro) params.set("bairro", filtros.bairro);
+        if (filtros.cidade) params.set("cidade", filtros.cidade);
+        if (filtros.tipo) params.set("tipo", filtros.tipo);
+        if (filtros.quartos_min) params.set("quartos", String(filtros.quartos_min));
+        if (filtros.preco_max) params.set("precoMax", String(filtros.preco_max));
+      } catch {
+        // Camada opcional: se a interpretação falhar, busca pelo texto
+        // literal como bairro — o mesmo que sempre funcionou.
+        params.set("bairro", texto);
+      }
+    }
+
     router.push(`/imoveis?${params.toString()}`);
   }
 
@@ -62,10 +86,12 @@ export function BuscaHome() {
           value={bairro}
           onChange={(e) => setBairro(e.target.value)}
           placeholder={
-            finalidade === "vender" ? "Anuncie seu imóvel em minutos" : "Bairro, ex: Jóquei"
+            finalidade === "vender"
+              ? "Anuncie seu imóvel em minutos"
+              : "Ex: apê 2 quartos até 400 mil na Savassi"
           }
-          aria-label="Bairro"
-          disabled={finalidade === "vender"}
+          aria-label="O que você procura"
+          disabled={finalidade === "vender" || buscando}
         />
         {finalidade !== "vender" && (
           <Link
@@ -85,8 +111,8 @@ export function BuscaHome() {
             </svg>
           </Link>
         )}
-        <button type="submit" className="btn btn-primary">
-          {finalidade === "vender" ? "Anunciar" : "Buscar"}
+        <button type="submit" className="btn btn-primary" disabled={buscando}>
+          {finalidade === "vender" ? "Anunciar" : buscando ? "Buscando…" : "Buscar"}
         </button>
       </div>
     </form>
