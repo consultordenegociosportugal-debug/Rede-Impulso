@@ -44,13 +44,15 @@
 .item {
   color: inherit;
   text-decoration: none;
+}
+.itemLink {
   cursor: pointer;
   transition: opacity 0.15s;
 }
-.item:hover {
+.itemLink:hover {
   opacity: 0.75;
 }
-.item:hover .texto {
+.itemLink:hover .texto {
   color: var(--ink);
   text-decoration: underline;
 }

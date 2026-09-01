@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/mercado-imobiliario/atualizar",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/radar-mercado/atualizar",
+      "schedule": "0 8 * * *"
+    }
+  ]
+}
