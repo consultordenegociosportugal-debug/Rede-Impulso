@@ -40,6 +40,32 @@ const ANUNCIANTE_LABEL: Record<string, string> = {
   imobiliaria: "Imobiliária",
 };
 
+// Ainda não temos imóveis publicados em Portugal — quando a busca
+// claramente menciona o país ou uma cidade portuguesa conhecida, vale
+// mais mostrar a visão de expansão do que um "nenhum resultado" seco.
+// Ver /visao-global e o scaffold de sincronização em src/lib/portais-externos.ts.
+const PALAVRAS_PORTUGAL = [
+  "portugal",
+  "lisboa",
+  "porto",
+  "cascais",
+  "braga",
+  "coimbra",
+  "faro",
+  "sintra",
+  "oeiras",
+  "algarve",
+  "setubal",
+  "setúbal",
+  "matosinhos",
+  "aveiro",
+];
+
+function mencionaPortugal(...textos: (string | undefined)[]) {
+  const junto = textos.filter(Boolean).join(" ").toLowerCase();
+  return PALAVRAS_PORTUGAL.some((palavra) => junto.includes(palavra));
+}
+
 export default async function ImoveisPage({
   searchParams,
 }: {
@@ -55,6 +81,7 @@ export default async function ImoveisPage({
 }) {
   const { finalidade, bairro, cidade, tipo, quartos, precoMax, anunciante } = await searchParams;
   const LIMITE = 24;
+  const buscaPortugal = mencionaPortugal(bairro, cidade);
 
   const supabase = await createClient();
 
@@ -226,10 +253,38 @@ export default async function ImoveisPage({
           </div>
         )}
 
+        {buscaPortugal && (
+          <div
+            className="card mb-24"
+            style={{ background: "var(--primary-tint)", border: "none", display: "flex", gap: 14, alignItems: "flex-start" }}
+          >
+            <span style={{ fontSize: 22 }}>🇵🇹</span>
+            <div>
+              <p style={{ margin: 0, fontWeight: 600 }}>
+                Ainda não temos imóveis publicados em Portugal
+              </p>
+              <p className="muted" style={{ margin: "4px 0 0", fontSize: 13.5 }}>
+                Mas essa ponte já está em construção — a Rede Impulso está montando a primeira
+                plataforma que conecta o mercado imobiliário do Brasil ao de Portugal, do anúncio
+                ao registro, dos dois lados.
+              </p>
+              <Link
+                href="/visao-global"
+                className="btn btn-primary btn-sm mt-12"
+                style={{ display: "inline-flex" }}
+              >
+                Conheça a visão →
+              </Link>
+            </div>
+          </div>
+        )}
+
         {imoveis.length === 0 ? (
           <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
             <p className="muted" style={{ margin: 0 }}>
-              Nenhum imóvel encontrado com esses filtros.
+              {buscaPortugal
+                ? "Assim que tivermos parceiros publicando por lá, os imóveis aparecem aqui direto."
+                : "Nenhum imóvel encontrado com esses filtros."}
             </p>
           </div>
         ) : (
