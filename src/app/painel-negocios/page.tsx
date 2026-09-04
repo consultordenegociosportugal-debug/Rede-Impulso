@@ -316,6 +316,12 @@ export default async function PainelNegociosPage({
                             🚀 Destacar
                           </Link>
                           <Link
+                            href={`/publicar-imovel/${imovel.id}/portugal`}
+                            className="btn btn-outline btn-sm"
+                          >
+                            🇵🇹 Portugal
+                          </Link>
+                          <Link
                             href={`/publicar-imovel/${imovel.id}/editar`}
                             className="btn btn-primary btn-sm"
                           >
