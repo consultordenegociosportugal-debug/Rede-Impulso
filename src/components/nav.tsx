@@ -100,6 +100,9 @@ export function Nav({ active }: { active: string }) {
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
+    setOpen(false);
+    router.push("/");
+    router.refresh();
   }
 
   return (
