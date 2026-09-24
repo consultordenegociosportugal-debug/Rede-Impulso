@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { buscarCotacoes } from "@/lib/cotacoes";
 import styles from "./ticker-mercado.module.css";
 
 type ItemTicker = { id: string; tag: string; texto: string; href?: string };
@@ -68,8 +69,9 @@ async function buscarManchetesDoDia(): Promise<ItemTicker[] | null> {
 }
 
 export async function TickerMercado() {
-  const doDia = await buscarManchetesDoDia();
-  const itens = [...(doDia ?? FALLBACK_BRASIL), ...NOTICIAS_FIXAS];
+  const [doDia, cotacoes] = await Promise.all([buscarManchetesDoDia(), buscarCotacoes()]);
+  const itensCotacao: ItemTicker[] = cotacoes.map((c) => ({ id: `cotacao-${c.tag}`, ...c }));
+  const itens = [...itensCotacao, ...(doDia ?? FALLBACK_BRASIL), ...NOTICIAS_FIXAS];
 
   return (
     <aside className={styles.ticker}>
