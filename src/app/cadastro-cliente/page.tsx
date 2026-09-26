@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
+import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
 import { BotoesSocial } from "@/components/botoes-social";
 import { formatarTelefone, formatarInstagram } from "@/lib/mascaras";
 import styles from "./page.module.css";
@@ -221,8 +222,11 @@ export default function CadastroClientePage() {
                 </p>
               )}
               {status === "logado" && papel === "comprador" && (
-                <Link href="/imoveis" className="btn btn-primary btn-sm mt-16">
-                  Ver imóveis disponíveis →
+                <Link
+                  href={IMOBILIARIO_ATIVO ? "/imoveis" : "/motorista/raio-x"}
+                  className="btn btn-primary btn-sm mt-16"
+                >
+                  {IMOBILIARIO_ATIVO ? "Ver imóveis disponíveis →" : "Fazer meu Raio-X do lucro →"}
                 </Link>
               )}
             </div>
@@ -239,10 +243,14 @@ export default function CadastroClientePage() {
 
       <div className="wrap">
         <div className={styles.layout}>
-          <span className="eyebrow">Cadastro de cliente</span>
+          <span className="eyebrow">{IMOBILIARIO_ATIVO ? "Cadastro de cliente" : "Criar conta"}</span>
           <div className={styles.passoTopo}>
             <h1 style={{ fontSize: 28, margin: "8px 0 0" }}>
-              {passo === 1 ? "Você quer comprar ou vender?" : "Só falta o acesso"}
+              {passo === 1
+                ? IMOBILIARIO_ATIVO
+                  ? "Você quer comprar ou vender?"
+                  : "Crie sua conta grátis"
+                : "Só falta o acesso"}
             </h1>
             <span className={styles.passoContador}>
               Passo {passo} de {TOTAL_PASSOS}
@@ -250,7 +258,9 @@ export default function CadastroClientePage() {
           </div>
           <p className="muted">
             {passo === 1
-              ? "A documentação pedida muda de acordo com o seu papel no negócio."
+              ? IMOBILIARIO_ATIVO
+                ? "A documentação pedida muda de acordo com o seu papel no negócio."
+                : "Para salvar seu Raio-X, anunciar seu elétrico e participar da comunidade."
               : "Esse e-mail e essa senha serão usados para entrar na Rede Impulso."}
           </p>
           <div className="progresso-etapas mt-16" style={{ maxWidth: 320 }}>
@@ -265,46 +275,52 @@ export default function CadastroClientePage() {
           <form className="card mt-16" onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
             {passo === 1 && (
               <>
-                <div
-                  className={`${styles.escolhaGrid} mb-16`}
-                  role="radiogroup"
-                  aria-label="Você quer comprar ou vender?"
-                >
-                  {PAPEIS.map((opcao) => (
-                    <label
-                      key={opcao.valor}
-                      className={`${styles.escolha} ${papel === opcao.valor ? styles.escolhaAtiva : ""}`}
+                {/* Sem imobiliário não há papel a escolher: a conta nasce
+                    como "comprador", que não exige documentos. */}
+                {IMOBILIARIO_ATIVO && (
+                  <>
+                    <div
+                      className={`${styles.escolhaGrid} mb-16`}
+                      role="radiogroup"
+                      aria-label="Você quer comprar ou vender?"
                     >
-                      <input
-                        type="radio"
-                        name="papel"
-                        value={opcao.valor}
-                        checked={papel === opcao.valor}
-                        onChange={() => setPapel(opcao.valor)}
-                        className={styles.escolhaInput}
-                      />
-                      <span className={styles.escolhaTitulo}>{opcao.titulo}</span>
-                      <span className={styles.escolhaDesc}>{opcao.descricao}</span>
-                    </label>
-                  ))}
-                </div>
+                      {PAPEIS.map((opcao) => (
+                        <label
+                          key={opcao.valor}
+                          className={`${styles.escolha} ${papel === opcao.valor ? styles.escolhaAtiva : ""}`}
+                        >
+                          <input
+                            type="radio"
+                            name="papel"
+                            value={opcao.valor}
+                            checked={papel === opcao.valor}
+                            onChange={() => setPapel(opcao.valor)}
+                            className={styles.escolhaInput}
+                          />
+                          <span className={styles.escolhaTitulo}>{opcao.titulo}</span>
+                          <span className={styles.escolhaDesc}>{opcao.descricao}</span>
+                        </label>
+                      ))}
+                    </div>
 
-                <div className={`${styles.notice} mb-24`}>
-                  <span aria-hidden="true">ℹ️</span>
-                  {papel === "comprador" ? (
-                    <span>
-                      <strong>Como comprador</strong>, você não precisa enviar
-                      documento de identidade agora — só quando iniciar uma
-                      negociação por um imóvel específico.
-                    </span>
-                  ) : (
-                    <span>
-                      <strong>Como vendedor</strong>, depois de entrar você envia
-                      seu documento de identidade — é ele que libera a publicação.
-                      Fotos e documentos do imóvel entram na hora de anunciar.
-                    </span>
-                  )}
-                </div>
+                    <div className={`${styles.notice} mb-24`}>
+                      <span aria-hidden="true">ℹ️</span>
+                      {papel === "comprador" ? (
+                        <span>
+                          <strong>Como comprador</strong>, você não precisa enviar
+                          documento de identidade agora — só quando iniciar uma
+                          negociação por um imóvel específico.
+                        </span>
+                      ) : (
+                        <span>
+                          <strong>Como vendedor</strong>, depois de entrar você envia
+                          seu documento de identidade — é ele que libera a publicação.
+                          Fotos e documentos do imóvel entram na hora de anunciar.
+                        </span>
+                      )}
+                    </div>
+                  </>
+                )}
 
                 <div className="field">
                   <label htmlFor="nome">Nome completo</label>

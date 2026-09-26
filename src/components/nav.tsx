@@ -5,14 +5,39 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
+import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
 
 type NavLink = { href: string; label: string };
 type NavItem =
   | { type: "link"; href: string; label: string }
   | { type: "group"; label: string; children: NavLink[] };
 
-const NAV_ITEMS: NavItem[] = [
+// Núcleo atual da plataforma: motoristas de aplicativo e elétricos.
+const NAV_ITEMS_NUCLEO: NavItem[] = [
   { type: "link", href: "/", label: "Início" },
+  {
+    type: "group",
+    label: "Motorista",
+    children: [
+      { href: "/motorista", label: "Radar do motorista" },
+      { href: "/motorista/raio-x", label: "Raio-X do lucro real" },
+    ],
+  },
+  {
+    type: "group",
+    label: "Elétricos",
+    children: [
+      { href: "/eletricos", label: "Visão geral" },
+      { href: "/eletricos/veiculos", label: "Comprar e vender" },
+      { href: "/eletricos/eletropostos", label: "Eletropostos" },
+      { href: "/eletricos/oficinas", label: "Oficinas especializadas" },
+      { href: "/eletricos/comunidade", label: "Comunidade" },
+    ],
+  },
+];
+
+// Módulo imobiliário — adormecido desde 2026-09 (ver src/lib/modulos.ts).
+const NAV_ITEMS_IMOBILIARIO: NavItem[] = [
   {
     type: "group",
     label: "Imóveis",
@@ -54,9 +79,12 @@ const NAV_ITEMS: NavItem[] = [
       { href: "/oferta-pos-negocio", label: "Oferta pós-negócio" },
     ],
   },
-  { type: "link", href: "/cadastro-cliente", label: "Cadastro cliente" },
   { type: "link", href: "/sobre", label: "Como funciona" },
 ];
+
+const NAV_ITEMS: NavItem[] = IMOBILIARIO_ATIVO
+  ? [...NAV_ITEMS_NUCLEO, ...NAV_ITEMS_IMOBILIARIO, { type: "link", href: "/cadastro-cliente", label: "Cadastro cliente" }]
+  : [...NAV_ITEMS_NUCLEO, { type: "link", href: "/cadastro-cliente", label: "Criar conta" }];
 
 function groupIsActive(item: Extract<NavItem, { type: "group" }>, active: string) {
   return item.children.some((c) => c.href === active);
@@ -226,13 +254,23 @@ export function Nav({ active }: { active: string }) {
                     </svg>
                   </span>
                   <div className="nav-dropdown" style={{ left: "auto", right: 0 }}>
-                    <Link
-                      href="/painel-negocios"
-                      className={active === "/painel-negocios" ? "active" : undefined}
-                      onClick={() => setOpen(false)}
-                    >
-                      Minhas negociações
-                    </Link>
+                    {IMOBILIARIO_ATIVO ? (
+                      <Link
+                        href="/painel-negocios"
+                        className={active === "/painel-negocios" ? "active" : undefined}
+                        onClick={() => setOpen(false)}
+                      >
+                        Minhas negociações
+                      </Link>
+                    ) : (
+                      <Link
+                        href="/motorista/raio-x"
+                        className={active === "/motorista/raio-x" ? "active" : undefined}
+                        onClick={() => setOpen(false)}
+                      >
+                        Meu Raio-X
+                      </Link>
+                    )}
                     <Link
                       href="/editar-perfil"
                       className={active === "/editar-perfil" ? "active" : undefined}

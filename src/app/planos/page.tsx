@@ -42,7 +42,7 @@ export default async function PlanosPage({
     <>
       <Nav active="/planos" />
 
-      <div className="wrap" style={{ padding: "48px 0 80px" }}>
+      <div className="wrap" style={{ paddingTop: 48, paddingBottom: 80 }}>
         <div style={{ maxWidth: 760, margin: "0 auto" }}>
           <span className="eyebrow">Plano Profissional</span>
           <h1 style={{ fontSize: 30, margin: "8px 0 4px" }}>

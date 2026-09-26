@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -246,41 +247,44 @@ export function CompletarCadastroForm({
           </p>
         ) : (
           <p className="hint">
-            É por aqui que a outra parte da negociação fala com você. Não aparece
-            no anúncio.
+            {IMOBILIARIO_ATIVO
+              ? "É por aqui que a outra parte da negociação fala com você. Não aparece no anúncio."
+              : "É por aqui que compradores do seu elétrico falam com você. Não aparece publicamente."}
           </p>
         )}
       </div>
 
-      <div className="field">
-        <label>Qual é o seu papel na Rede?</label>
-        <div
-          className={`${styles.escolhaGrid} mb-16`}
-          role="radiogroup"
-          aria-label="Qual é o seu papel na Rede?"
-        >
-          {PAPEIS.map((opcao) => (
-            <label
-              key={opcao.valor}
-              className={`${styles.escolha} ${papel === opcao.valor ? styles.escolhaAtiva : ""}`}
-            >
-              <input
-                type="radio"
-                name="papel"
-                value={opcao.valor}
-                checked={papel === opcao.valor}
-                onChange={() => {
-                  setPapel(opcao.valor);
-                  setErrosCampo({});
-                }}
-                className={styles.escolhaInput}
-              />
-              <span className={styles.escolhaTitulo}>{opcao.titulo}</span>
-              <span className={styles.escolhaDesc}>{opcao.descricao}</span>
-            </label>
-          ))}
+      {IMOBILIARIO_ATIVO && (
+        <div className="field">
+          <label>Qual é o seu papel na Rede?</label>
+          <div
+            className={`${styles.escolhaGrid} mb-16`}
+            role="radiogroup"
+            aria-label="Qual é o seu papel na Rede?"
+          >
+            {PAPEIS.map((opcao) => (
+              <label
+                key={opcao.valor}
+                className={`${styles.escolha} ${papel === opcao.valor ? styles.escolhaAtiva : ""}`}
+              >
+                <input
+                  type="radio"
+                  name="papel"
+                  value={opcao.valor}
+                  checked={papel === opcao.valor}
+                  onChange={() => {
+                    setPapel(opcao.valor);
+                    setErrosCampo({});
+                  }}
+                  className={styles.escolhaInput}
+                />
+                <span className={styles.escolhaTitulo}>{opcao.titulo}</span>
+                <span className={styles.escolhaDesc}>{opcao.descricao}</span>
+              </label>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {papel === "corretor" && (
         <div className="grid grid-2">

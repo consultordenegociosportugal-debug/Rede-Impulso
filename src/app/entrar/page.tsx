@@ -1,6 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Nav } from "@/components/nav";
@@ -160,12 +161,20 @@ function EntrarForm() {
               className="flex gap-8 mt-12"
               style={{ justifyContent: "center", flexWrap: "wrap" }}
             >
-              <Link href="/cadastro-cliente" className="btn btn-ghost btn-sm">
-                Comprar ou vender
-              </Link>
-              <Link href="/cadastro-profissional" className="btn btn-ghost btn-sm">
-                Sou corretor ou imobiliária
-              </Link>
+              {IMOBILIARIO_ATIVO ? (
+                <>
+                  <Link href="/cadastro-cliente" className="btn btn-ghost btn-sm">
+                    Comprar ou vender
+                  </Link>
+                  <Link href="/cadastro-profissional" className="btn btn-ghost btn-sm">
+                    Sou corretor ou imobiliária
+                  </Link>
+                </>
+              ) : (
+                <Link href="/cadastro-cliente" className="btn btn-ghost btn-sm">
+                  Criar minha conta
+                </Link>
+              )}
             </div>
           </div>
         </div>

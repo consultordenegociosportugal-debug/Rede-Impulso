@@ -78,7 +78,7 @@ export default async function CursoDetalhePage({
     <>
       <Nav active="/cursos" />
 
-      <div className="wrap" style={{ padding: "48px 0 80px" }}>
+      <div className="wrap" style={{ paddingTop: 48, paddingBottom: 80 }}>
         <Link href="/cursos" className="hint">
           ← Voltar para cursos
         </Link>

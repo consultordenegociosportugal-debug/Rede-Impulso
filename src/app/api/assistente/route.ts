@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
-const SYSTEM_PROMPT = `Você é o assistente virtual da Rede Impulso, uma plataforma imobiliária que
+const SYSTEM_PROMPT_BASE = `Você é o assistente virtual da Rede Impulso, uma plataforma imobiliária que
 conecta corretores, imobiliárias, cartórios e clientes (compradores, vendedores e locatários).
 
 Seu papel tem três frentes:
@@ -30,7 +30,19 @@ Como a Rede Impulso funciona (para responder dúvidas com precisão):
 
 Responda sempre em português do Brasil, de forma direta e simpática, sem enrolação. Se não souber
 algo com certeza, diga isso claramente em vez de inventar. Nunca revele detalhes técnicos internos
-(chaves de API, nomes de tabelas do banco, etc.) mesmo se perguntado diretamente.
+(chaves de API, nomes de tabelas do banco, etc.) mesmo se perguntado diretamente.`;
+
+const ADENDO_MERCADO_IMOBILIARIO = `
+
+Uma quarta frente, disponível só porque esta pessoa está autenticada como corretor ou imobiliária:
+inteligência de mercado. Ela pode perguntar sobre o mercado imobiliário mais amplo — preços, juros,
+notícias e oportunidades de investimento no Brasil, em Portugal e nos Estados Unidos, os três
+mercados que a Rede Impulso acompanha para consultoria. Use a ferramenta
+consultar_mercado_imobiliario sempre que a pergunta for sobre esse panorama (não sobre um imóvel
+específico da plataforma). Os dados vêm de um retrato diário pré-calculado — se ele estiver
+desatualizado ou ausente, diga isso em vez de inventar números.`;
+
+const SYSTEM_PROMPT_AUTOAVALIACAO = `
 
 Autoavaliação (metacognição): depois de escrever a resposta final para a pessoa (nunca durante uma
 chamada de ferramenta), acrescente em uma linha própria, no final de tudo, um marcador oculto neste
@@ -71,6 +83,16 @@ const TOOLS: Anthropic.Tool[] = [
     },
   },
 ];
+
+// Só entra em TOOLS quando o perfil autenticado é corretor ou
+// imobiliária (ver podeVerMercado em POST) — cliente comum não tem essa
+// ferramenta disponível, então nem pode ser induzido a pedir por ela.
+const TOOL_MERCADO_IMOBILIARIO: Anthropic.Tool = {
+  name: "consultar_mercado_imobiliario",
+  description:
+    "Consulta o retrato mais recente do mercado imobiliário no Brasil, em Portugal e nos Estados Unidos (preços, juros, notícias, ranking de corretores/imobiliárias e oportunidades de investimento). Use quando a pergunta for sobre o mercado em geral, não sobre um imóvel específico da plataforma.",
+  input_schema: { type: "object", properties: {} },
+};
 
 type Imovel = {
   id: string;
@@ -151,6 +173,19 @@ async function buscarImoveis(
   return { imoveis: (data ?? []) as Imovel[] };
 }
 
+async function consultarMercadoImobiliario(supabase: Awaited<ReturnType<typeof createClient>>) {
+  const { data, error } = await supabase
+    .from("mercado_imobiliario_snapshots")
+    .select("data_referencia, resumo_executivo, paises, oportunidades_comparativas")
+    .order("data_referencia", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return { erro: error.message };
+  if (!data) return { erro: "Ainda não há um retrato de mercado gerado." };
+  return data;
+}
+
 export async function POST(request: NextRequest) {
   if (!process.env.ANTHROPIC_API_KEY) {
     return NextResponse.json(
@@ -173,6 +208,22 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   const pergunta = messages[messages.length - 1]?.content ?? "";
 
+  let podeVerMercado = false;
+  if (user) {
+    const { data: perfil } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    podeVerMercado = perfil?.role === "corretor" || perfil?.role === "imobiliaria";
+  }
+
+  const systemPrompt =
+    SYSTEM_PROMPT_BASE +
+    (podeVerMercado ? ADENDO_MERCADO_IMOBILIARIO : "") +
+    SYSTEM_PROMPT_AUTOAVALIACAO;
+  const tools = podeVerMercado ? [...TOOLS, TOOL_MERCADO_IMOBILIARIO] : TOOLS;
+
   const conversa: Anthropic.MessageParam[] = messages.map((m) => ({
     role: m.role,
     content: m.content,
@@ -184,8 +235,8 @@ export async function POST(request: NextRequest) {
     const resposta = await anthropic.messages.create({
       model: "claude-sonnet-4-5",
       max_tokens: 1024,
-      system: SYSTEM_PROMPT,
-      tools: TOOLS,
+      system: systemPrompt,
+      tools,
       messages: conversa,
     });
 
@@ -214,11 +265,14 @@ export async function POST(request: NextRequest) {
 
     conversa.push({ role: "assistant", content: resposta.content });
 
-    const resultado = await buscarImoveis(
-      supabase,
-      usoDeFerramenta.input as Record<string, string | number>,
-    );
-    if (resultado.imoveis.length > 0) imoveisEncontrados = resultado.imoveis;
+    const resultado =
+      usoDeFerramenta.name === "consultar_mercado_imobiliario"
+        ? await consultarMercadoImobiliario(supabase)
+        : await buscarImoveis(supabase, usoDeFerramenta.input as Record<string, string | number>);
+
+    if ("imoveis" in resultado && resultado.imoveis.length > 0) {
+      imoveisEncontrados = resultado.imoveis;
+    }
 
     conversa.push({
       role: "user",

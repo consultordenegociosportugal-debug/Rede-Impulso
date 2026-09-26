@@ -168,7 +168,7 @@ export default async function ImoveisPage({
     <>
       <Nav active="/imoveis" />
 
-      <div className="wrap" style={{ padding: "48px 0 80px" }}>
+      <div className="wrap" style={{ paddingTop: 48, paddingBottom: 80 }}>
         <span className="eyebrow">Vitrine</span>
         <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>
           Imóveis publicados na Rede Impulso

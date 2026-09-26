@@ -112,7 +112,7 @@ export default async function AdminPage() {
     <>
       <Nav active="/admin" />
 
-      <div className="wrap" style={{ padding: "48px 0 80px" }}>
+      <div className="wrap" style={{ paddingTop: 48, paddingBottom: 80 }}>
         <div className="flex between items-center" style={{ flexWrap: "wrap", gap: 12 }}>
           <div>
             <span className="eyebrow">Administração</span>
@@ -120,9 +120,14 @@ export default async function AdminPage() {
               Revisão de documentos
             </h1>
           </div>
-          <Link href="/admin/assistente" className="btn btn-outline btn-sm">
-            🧠 Metacognição do assistente
-          </Link>
+          <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+            <Link href="/admin/agentes" className="btn btn-outline btn-sm">
+              ⚡ Agentes de elétricos
+            </Link>
+            <Link href="/admin/assistente" className="btn btn-outline btn-sm">
+              🧠 Metacognição do assistente
+            </Link>
+          </div>
         </div>
         <p className="muted mb-24">
           {comUrls.length} documento{comUrls.length === 1 ? "" : "s"} enviado

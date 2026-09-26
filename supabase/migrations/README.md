@@ -20,6 +20,66 @@
 - **depoimentos** — depoimento + estrelas, vinculado ao negócio e ao corretor que intermediou (alimenta tanto o mural quanto o perfil público do corretor).
 - **parceiros_servico / ofertas_pos_negocio** — cadastro simples dos prestadores (pintor, eletricista etc.) e o registro de qual oferta foi feita em qual negócio. Como o relatório trata isso como narrativa secundária, o modelo aqui é propositalmente simples — sem funil próprio de conversão.
 
+## Inteligência de mercado (0028)
+- **mercado_imobiliario_snapshots** — retrato diário comparativo do mercado imobiliário em Brasil, Portugal e EUA (preços/índices, juros/financiamento, notícias, ranking de corretores/imobiliárias e oportunidades de investimento), gerado 1x por dia por um cron (`/api/mercado-imobiliario/atualizar`) e consumido pelo assistente de IA via a ferramenta `consultar_mercado_imobiliario`. Só corretor e imobiliária enxergam essa ferramenta/tabela — decisão de produto, não limitação técnica. Escrita é feita sem sessão de usuário (é um cron), então segue o mesmo padrão de `confirmar_assinatura`: function `security definer`, endpoint protegido por `CRON_SECRET`.
+
+## Rede Impulso Elétricos (0032)
+
+Novo braço da rede, para o mundo dos carros elétricos no Brasil (visão de
+expandir depois, como `/visao-global` já faz para o imobiliário em Portugal).
+Quatro tabelas de diretório/vitrine, cada uma com o mesmo padrão de RLS do
+resto do produto (leitura pública, escrita restrita ao dono):
+
+- **ev_veiculos / ev_veiculo_fotos** — marketplace de compra e venda,
+  mesma lógica de `imoveis` (vitrine pública quando `status = 'publicado'`),
+  com bucket de storage próprio (`ev-veiculo-fotos`).
+- **ev_eletropostos** — diretório de recarga alimentado pela comunidade;
+  lat/long é opcional (começa como lista por cidade, mapa vem depois).
+- **ev_oficinas** — diretório de oficinas/assistência especializada em
+  elétricos, cadastro aberto (auto-serviço) por ainda ser escasso no Brasil.
+- **ev_posts / ev_comentarios** — feed de comunidade (dúvida, comparação,
+  experiência, notícia), sem threading nem moderação em v1.
+
+**Decisão de design**: não reaproveita `user_role`/as extensões de perfil do
+imobiliário (corretor/imobiliaria/cartorio) — aqui qualquer `profile`, seja
+qual for seu papel do lado imóveis, pode vender um carro, cadastrar um
+eletroposto/oficina ou postar. Um papel dedicado (ex: "concessionaria") fica
+para quando o produto precisar mesmo diferenciar permissões.
+
+## Agentes autônomos de elétricos (0033)
+
+Quatro agentes diários (`/api/agentes-eletricos/executar?agente=…`, um
+horário por agente no `vercel.json`) que pesquisam na web e propõem mudanças:
+curadoria do marketplace (selo de preço vs. FIPE), mapa de eletropostos
+(novos pontos e pontos fechados), atendimento da comunidade (resposta para
+posts sem resposta) e prospecção de oficinas (novas oficinas + mensagem de
+convite, enviada à mão pelo admin).
+
+- **ev_agentes** — modo de cada agente: `aprovacao` (padrão) ou `autonomo`.
+- **ev_agente_sugestoes** — fila; o admin aprova/rejeita em `/admin/agentes`
+  via `aplicar_sugestao_agente` / `rejeitar_sugestao_agente`.
+
+**Decisão de design**: ao contrário do radar (0030), os agentes escrevem com a
+**service role** (`SUPABASE_SERVICE_ROLE_KEY`), não por function liberada para
+`anon` — no modo autônomo eles escrevem direto nos diretórios públicos, e uma
+function aberta para `anon` deixaria qualquer um com a chave pública fazer o
+mesmo. `ev_comentarios.autor_id` virou opcional para permitir comentário com
+`autor_agente` (sempre exatamente um dos dois).
+
+## Rede Impulso Motorista (0034)
+
+Guia para motoristas de aplicativo (Uber, 99, inDrive…), rotas `/motorista`
+e `/motorista/raio-x`.
+
+- **motorista_perfis** — números do "Raio-X do lucro real" (rotina, carro,
+  custos, faturamento). Dado sensível de renda: RLS só para o próprio dono.
+  O cálculo em si é no navegador (`src/lib/motorista/raio-x.ts`).
+- **motorista_radar** — resumo diário público (combustível, recarga, eventos
+  que aumentam a demanda, clima, regras das plataformas), gerado pelo cron
+  `/api/motorista/radar/atualizar` com a service role, como os agentes de 0033.
+
+Sem integração com as contas das plataformas — o motorista informa os ganhos.
+
 ## O que ficou fora de propósito (v1)
 - **Metas históricas do corretor**: `corretor_perfis.meta_mensal` guarda só a meta atual. O relatório mostra "88% da meta" no painel, mas não define se metas mudam mês a mês nem se precisamos do histórico — modelar isso agora seria adivinhar um requisito. Dá pra evoluir para uma tabela `metas_mensais` quando isso for decidido.
 - **Regra de desempate cartório**: o relatório deixa em aberto o que acontece quando corretor e cliente indicam cartórios diferentes (seção 13, "próximos passos"). O schema só guarda o `cartorio_id` final — a regra de negócio de como ele é decidido é lógica de aplicação, não de dados, e ainda não foi definida.

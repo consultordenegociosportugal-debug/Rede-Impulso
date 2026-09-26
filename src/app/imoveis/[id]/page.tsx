@@ -112,7 +112,7 @@ export default async function ImovelDetalhePage({
     <>
       <Nav active="/imoveis" />
 
-      <div className="wrap" style={{ padding: "48px 0 80px" }}>
+      <div className="wrap" style={{ paddingTop: 48, paddingBottom: 80 }}>
         <Link href="/imoveis" className="hint">
           ← Voltar para a vitrine
         </Link>

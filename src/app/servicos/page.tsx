@@ -50,7 +50,7 @@ export default async function ServicosPage() {
     <>
       <Nav active="/servicos" />
 
-      <div className="wrap" style={{ padding: "48px 0 80px" }}>
+      <div className="wrap" style={{ paddingTop: 48, paddingBottom: 80 }}>
         <span className="eyebrow">Serviços</span>
         <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>
           Parceiros da Rede Impulso

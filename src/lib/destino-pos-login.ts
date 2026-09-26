@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
 
 /**
  * Papéis cujo acesso só abre depois de enviar documento de verificação.
@@ -54,6 +55,10 @@ export async function destinoPosLogin(
   }
 
   if (depois) return depois;
+
+  // Com o imobiliário adormecido, ninguém cai em /verificacao ou /imoveis
+  // (iriam para a página de pausa) — todo mundo começa pelo motorista.
+  if (!IMOBILIARIO_ATIVO) return "/motorista";
 
   if (profile && PRECISA_DOCUMENTOS.includes(profile.role)) {
     const { count } = await supabase

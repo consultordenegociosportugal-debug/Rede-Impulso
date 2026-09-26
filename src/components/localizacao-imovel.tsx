@@ -38,8 +38,7 @@ export function LocalizacaoImovel({
     );
   }
 
-  async function buscarPorEndereco(e: React.FormEvent) {
-    e.preventDefault();
+  async function buscarPorEndereco() {
     if (!endereco.trim()) return;
 
     setBuscando(true);
@@ -107,22 +106,29 @@ export function LocalizacaoImovel({
         </>
       ) : (
         <>
-          <form className="flex gap-8" onSubmit={buscarPorEndereco}>
+          <div className="flex gap-8">
             <input
               type="text"
               placeholder="Endereço, bairro ou CEP"
               value={endereco}
               onChange={(e) => setEndereco(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  buscarPorEndereco();
+                }
+              }}
               style={{ flex: 1 }}
             />
             <button
-              type="submit"
+              type="button"
               className="btn btn-outline btn-sm"
+              onClick={buscarPorEndereco}
               disabled={buscando || !endereco.trim()}
             >
               {buscando ? "Buscando…" : "Buscar"}
             </button>
-          </form>
+          </div>
           <p className="hint" style={{ textAlign: "center", margin: "8px 0" }}>
             ou
           </p>
