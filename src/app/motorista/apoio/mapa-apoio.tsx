@@ -209,6 +209,11 @@ function CardPonto({
           {ponto.detalhe}
         </div>
       )}
+      {ponto.aproximada && (
+        <div className="hint" style={{ marginTop: 4 }}>
+          📍 Localização aproximada — confira o endereço
+        </div>
+      )}
       <div className="flex gap-8 mt-8" style={{ flexWrap: "wrap" }}>
         <a
           href={urlRota({ lat: ponto.lat, lng: ponto.lng })}

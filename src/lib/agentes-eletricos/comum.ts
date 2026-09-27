@@ -19,7 +19,8 @@ export type AcaoSugestao =
   | "atualizar_eletroposto"
   | "criar_oficina"
   | "responder_post"
-  | "avaliar_veiculo";
+  | "avaliar_veiculo"
+  | "criar_ponto_apoio";
 
 export type Sugestao = {
   acao: AcaoSugestao;

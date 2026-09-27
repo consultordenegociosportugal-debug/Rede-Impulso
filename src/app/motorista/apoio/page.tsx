@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { PontoMapa } from "@/lib/motorista/apoio";
+import { textoPreco, type PontoMapa } from "@/lib/motorista/apoio";
 import { MapaApoio } from "./mapa-apoio";
 
 // Mapa de apoio do motorista (migração 0035): pontos de apoio da
@@ -18,6 +18,10 @@ type ApoioRow = {
   aberto_24h: boolean;
   gratuito: boolean;
   horario: string | null;
+  preco: number | null;
+  preco_unidade: string | null;
+  preco_atualizado_em: string | null;
+  localizacao_aproximada: boolean;
   nota_media: number | null;
   total_avaliacoes: number;
 };
@@ -41,7 +45,7 @@ export default async function MapaApoioPage() {
   const [{ data: apoio }, { data: postos }] = await Promise.all([
     supabase
       .from("pontos_apoio_resumo")
-      .select("id, tipo, nome, endereco, cidade, estado, latitude, longitude, aberto_24h, gratuito, horario, nota_media, total_avaliacoes")
+      .select("id, tipo, nome, endereco, cidade, estado, latitude, longitude, aberto_24h, gratuito, horario, preco, preco_unidade, preco_atualizado_em, localizacao_aproximada, nota_media, total_avaliacoes")
       .eq("ativo", true)
       .limit(1000),
     supabase
@@ -66,7 +70,9 @@ export default async function MapaApoioPage() {
       lng: Number(p.longitude),
       aberto24h: p.aberto_24h,
       gratuito: p.gratuito,
-      detalhe: p.horario,
+      detalhe:
+        [textoPreco(p.preco, p.preco_unidade, p.preco_atualizado_em), p.horario].filter(Boolean).join(" · ") || null,
+      aproximada: p.localizacao_aproximada,
       notaMedia: p.nota_media === null ? null : Number(p.nota_media),
       totalAvaliacoes: p.total_avaliacoes,
     })),
@@ -86,6 +92,7 @@ export default async function MapaApoioPage() {
         [p.operadora, p.potencia_kw ? `${p.potencia_kw} kW` : null, p.preco_kwh ? `R$ ${p.preco_kwh}/kWh` : null]
           .filter(Boolean)
           .join(" · ") || null,
+      aproximada: false,
       notaMedia: null,
       totalAvaliacoes: 0,
     })),

@@ -7,6 +7,7 @@ import { executarCuradoria } from "@/lib/agentes-eletricos/curadoria";
 import { executarEletropostos } from "@/lib/agentes-eletricos/eletropostos";
 import { executarAtendimento } from "@/lib/agentes-eletricos/atendimento";
 import { executarOficinas } from "@/lib/agentes-eletricos/oficinas";
+import { executarGnv } from "@/lib/agentes-eletricos/gnv";
 
 // Executa um agente do braço de elétricos (migração 0033):
 // GET /api/agentes-eletricos/executar?agente=eletropostos
@@ -18,11 +19,26 @@ import { executarOficinas } from "@/lib/agentes-eletricos/oficinas";
 // Pesquisa na web + estruturação pode passar de 1 minuto.
 export const maxDuration = 300;
 
-const AGENTES: Record<string, (supabase: SupabaseClient) => Promise<Sugestao[]>> = {
-  curadoria: executarCuradoria,
-  eletropostos: executarEletropostos,
-  atendimento: executarAtendimento,
-  oficinas: executarOficinas,
+// Cada agente devolve as sugestões e, opcionalmente, uma nota extra para o
+// resumo da execução (ex.: o de GNV também atualiza preços direto).
+type Execucao = { sugestoes: Sugestao[]; nota?: string };
+
+const soSugestoes = (fn: (supabase: SupabaseClient) => Promise<Sugestao[]>) => async (supabase: SupabaseClient) => ({
+  sugestoes: await fn(supabase),
+});
+
+const AGENTES: Record<string, (supabase: SupabaseClient) => Promise<Execucao>> = {
+  curadoria: soSugestoes(executarCuradoria),
+  eletropostos: soSugestoes(executarEletropostos),
+  atendimento: soSugestoes(executarAtendimento),
+  oficinas: soSugestoes(executarOficinas),
+  gnv: async (supabase) => {
+    const r = await executarGnv(supabase);
+    return {
+      sugestoes: r.novos,
+      nota: `${r.precosAtualizados} preços atualizados${r.semLocalizacao ? `, ${r.semLocalizacao} sem localização` : ""}`,
+    };
+  },
 };
 
 async function autorizado(request: NextRequest) {
@@ -79,13 +95,14 @@ export async function GET(request: NextRequest) {
   let corpo: Record<string, unknown>;
 
   try {
-    const sugestoes = await executar(supabase);
+    const { sugestoes, nota } = await executar(supabase);
     const resultado = await registrarSugestoes(supabase, agenteId, agente.modo === "autonomo", sugestoes);
     resumo =
       `${resultado.sugestoes} sugestões` +
       (resultado.aplicadas ? `, ${resultado.aplicadas} aplicadas` : "") +
       (resultado.ignoradas ? `, ${resultado.ignoradas} repetidas` : "") +
-      (resultado.erros.length ? `, ${resultado.erros.length} erros` : "");
+      (resultado.erros.length ? `, ${resultado.erros.length} erros` : "") +
+      (nota ? ` · ${nota}` : "");
     corpo = { ok: true, agente: agenteId, modo: agente.modo, ...resultado };
   } catch (erro) {
     resumo = `Falhou: ${erro instanceof Error ? erro.message : String(erro)}`;

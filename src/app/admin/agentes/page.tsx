@@ -5,6 +5,11 @@ import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { AgenteControles } from "./agente-controles";
 import { SugestaoBotoes } from "./sugestao-botoes";
+import { AprovarTodas } from "./aprovar-todas";
+
+// A fila pode ter centenas de itens (postos de GNV da ANP): mostra os
+// primeiros e o total por agente, com "Aprovar todas".
+const LIMITE_PENDENTES = 50;
 
 // Painel dos agentes autônomos do braço de elétricos (migração 0033):
 // modo/ativo de cada agente, fila de sugestões pendentes para aprovar
@@ -112,6 +117,9 @@ function Detalhes({ s }: { s: SugestaoRow }) {
   return (
     <>
       {campo("Endereço", p.endereco)}
+      {typeof p.preco === "number" &&
+        campo("Preço", `R$ ${p.preco.toFixed(2).replace(".", ",")}/${p.preco_unidade ?? "un."} em ${String(p.preco_atualizado_em ?? "")}`)}
+      {p.localizacao_aproximada === true && campo("Localização", "aproximada (pelo CEP)")}
       {campo("Conectores", p.conectores)}
       {campo("Potência (kW)", p.potencia_kw)}
       {campo("Preço/kWh", p.preco_kwh)}
@@ -172,25 +180,32 @@ export default async function AdminAgentesPage() {
     redirect("/");
   }
 
-  const [{ data: agentesData }, { data: pendentesData }, { data: historicoData }] = await Promise.all([
+  const [{ data: agentesData }, { data: pendentesData }, { data: historicoData }, { data: pendentesPorAgente }] = await Promise.all([
     supabase.from("ev_agentes").select("*").order("nome"),
     supabase
       .from("ev_agente_sugestoes")
       .select("*")
       .eq("status", "pendente")
-      .order("created_at", { ascending: true }),
+      .order("created_at", { ascending: true })
+      .limit(LIMITE_PENDENTES),
     supabase
       .from("ev_agente_sugestoes")
       .select("*")
       .neq("status", "pendente")
       .order("created_at", { ascending: false })
       .limit(20),
+    supabase.from("ev_agente_sugestoes").select("agente_id").eq("status", "pendente"),
   ]);
 
   const agentes = (agentesData ?? []) as AgenteRow[];
   const pendentes = (pendentesData ?? []) as SugestaoRow[];
   const historico = (historicoData ?? []) as SugestaoRow[];
   const nomeAgente = new Map(agentes.map((a) => [a.id, a.nome]));
+  const totalPendentes = new Map<string, number>();
+  for (const s of pendentesPorAgente ?? []) {
+    totalPendentes.set(s.agente_id, (totalPendentes.get(s.agente_id) ?? 0) + 1);
+  }
+  const somaPendentes = [...totalPendentes.values()].reduce((a, b) => a + b, 0);
 
   return (
     <>
@@ -227,12 +242,18 @@ export default async function AdminAgentesPage() {
                   : "Ainda não executou."}
               </p>
               <AgenteControles agenteId={a.id} modo={a.modo} ativo={a.ativo} />
+              {(totalPendentes.get(a.id) ?? 0) > 0 && (
+                <AprovarTodas agenteId={a.id} total={totalPendentes.get(a.id)!} />
+              )}
             </div>
           ))}
         </div>
 
-        <h2 style={{ fontSize: 20, margin: "40px 0 4px" }}>Aguardando aprovação ({pendentes.length})</h2>
-        <p className="muted mb-16">Aprovar grava a mudança no app na hora. Rejeitar só descarta a sugestão.</p>
+        <h2 style={{ fontSize: 20, margin: "40px 0 4px" }}>Aguardando aprovação ({somaPendentes})</h2>
+        <p className="muted mb-16">
+          Aprovar grava a mudança no app na hora. Rejeitar só descarta a sugestão.
+          {somaPendentes > pendentes.length && ` Mostrando as ${pendentes.length} mais antigas.`}
+        </p>
 
         {pendentes.length === 0 ? (
           <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>

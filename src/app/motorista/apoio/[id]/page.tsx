@@ -3,7 +3,7 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { urlRota } from "@/lib/geo";
-import { TIPOS_APOIO, urlMapaEstatico, type TipoApoio } from "@/lib/motorista/apoio";
+import { textoPreco, TIPOS_APOIO, urlMapaEstatico, type TipoApoio } from "@/lib/motorista/apoio";
 import { AvaliarPonto } from "./avaliar";
 
 type Ponto = {
@@ -19,6 +19,10 @@ type Ponto = {
   gratuito: boolean;
   horario: string | null;
   observacoes: string | null;
+  preco: number | null;
+  preco_unidade: string | null;
+  preco_atualizado_em: string | null;
+  localizacao_aproximada: boolean;
   nota_media: number | null;
   total_avaliacoes: number;
   created_at: string;
@@ -103,6 +107,16 @@ export default async function PontoApoioPage({ params }: { params: Promise<{ id:
                 </span>
               )}
             </div>
+            {textoPreco(ponto.preco, ponto.preco_unidade, ponto.preco_atualizado_em) && (
+              <p className="mono" style={{ fontSize: 18, margin: "12px 0 0" }}>
+                {textoPreco(ponto.preco, ponto.preco_unidade, ponto.preco_atualizado_em)}
+              </p>
+            )}
+            {ponto.localizacao_aproximada && (
+              <p className="hint" style={{ margin: "8px 0 0" }}>
+                📍 Localização aproximada (pelo CEP) — confira o endereço antes de ir.
+              </p>
+            )}
             {ponto.horario && (
               <p className="hint" style={{ margin: "12px 0 0" }}>
                 Horário: {ponto.horario}

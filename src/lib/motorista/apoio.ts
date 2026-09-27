@@ -36,9 +36,19 @@ export type PontoMapa = {
   aberto24h: boolean;
   gratuito: boolean;
   detalhe: string | null;
+  aproximada: boolean;
   notaMedia: number | null;
   totalAvaliacoes: number;
 };
+
+// "GNV R$ 5,59/m³ · ANP 31/08" — preço vindo do agente de GNV (0035).
+export function textoPreco(preco: number | null, unidade: string | null, data: string | null) {
+  if (preco === null) return null;
+  const valor = `R$ ${Number(preco).toFixed(2).replace(".", ",")}/${unidade ?? "un."}`;
+  if (!data) return valor;
+  const [, mes, dia] = data.split("-");
+  return `${valor} · ANP ${dia}/${mes}`;
+}
 
 // Imagem de mapa (Google Static Maps) com a posição do motorista e até 9
 // pontos numerados — dá a noção de "onde fica" sem carregar um mapa
