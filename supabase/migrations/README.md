@@ -80,6 +80,16 @@ e `/motorista/raio-x`.
 
 Sem integração com as contas das plataformas — o motorista informa os ganhos.
 
+## Mapa de apoio (0035)
+
+`/motorista/apoio` junta, no mesmo mapa ordenado pela distância, os
+eletropostos (0032) e os **pontos_apoio**: GNV, banheiro, descanso,
+alimentação, lavagem, borracharia — cadastro aberto, avaliados por
+motoristas em **pontos_apoio_avaliacoes** (nota 1–5, uma por pessoa por
+ponto). A view **pontos_apoio_resumo** (`security_invoker`) traz a média e
+o total de avaliações. Latitude/longitude são obrigatórias aqui (diferente de
+ev_eletropostos): sem coordenada o ponto não serve para "perto de mim".
+
 ## O que ficou fora de propósito (v1)
 - **Metas históricas do corretor**: `corretor_perfis.meta_mensal` guarda só a meta atual. O relatório mostra "88% da meta" no painel, mas não define se metas mudam mês a mês nem se precisamos do histórico — modelar isso agora seria adivinhar um requisito. Dá pra evoluir para uma tabela `metas_mensais` quando isso for decidido.
 - **Regra de desempate cartório**: o relatório deixa em aberto o que acontece quando corretor e cliente indicam cartórios diferentes (seção 13, "próximos passos"). O schema só guarda o `cartorio_id` final — a regra de negócio de como ele é decidido é lógica de aplicação, não de dados, e ainda não foi definida.

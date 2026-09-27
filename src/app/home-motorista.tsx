@@ -24,10 +24,10 @@ const FERRAMENTAS = [
     texto: "Combustível, recarga, eventos que aumentam as corridas, clima e regras das plataformas.",
   },
   {
-    href: "/eletricos/eletropostos",
-    icone: "⚡",
-    titulo: "Eletropostos",
-    texto: "Onde carregar, com conector, potência e preço — mantido pela comunidade e por IA.",
+    href: "/motorista/apoio",
+    icone: "🗺️",
+    titulo: "Mapa de apoio",
+    texto: "Recarga, GNV, banheiro, descanso, comida e lavagem perto de você — avaliados por motoristas.",
   },
   {
     href: "/eletricos/oficinas",

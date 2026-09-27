@@ -21,6 +21,7 @@ const NAV_ITEMS_NUCLEO: NavItem[] = [
     children: [
       { href: "/motorista", label: "Radar do motorista" },
       { href: "/motorista/raio-x", label: "Raio-X do lucro real" },
+      { href: "/motorista/apoio", label: "Mapa de apoio" },
     ],
   },
   {

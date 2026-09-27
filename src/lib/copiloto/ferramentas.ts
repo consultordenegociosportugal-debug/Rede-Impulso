@@ -54,6 +54,22 @@ export const FERRAMENTAS: Anthropic.Beta.BetaTool[] = [
     },
   },
   {
+    name: "buscar_pontos_apoio",
+    description:
+      "Busca pontos de apoio para motoristas indicados e avaliados pela comunidade: GNV, banheiro, descanso, alimentação, lavagem, borracharia. Para recarga de elétrico use buscar_eletropostos.",
+    input_schema: {
+      type: "object",
+      properties: {
+        tipo: {
+          type: "string",
+          enum: ["gnv", "banheiro", "descanso", "alimentacao", "lavagem", "borracharia", "outro"],
+        },
+        cidade: { type: "string" },
+        uf: { type: "string", description: "Sigla da UF, ex: SP." },
+      },
+    },
+  },
+  {
     name: "buscar_eletricos_a_venda",
     description: "Busca carros elétricos e híbridos anunciados no marketplace da Rede Impulso.",
     input_schema: {
@@ -88,6 +104,8 @@ export async function executarFerramenta(
       return buscarEletropostos(supabase, entrada);
     case "buscar_oficinas":
       return buscarOficinas(supabase, entrada);
+    case "buscar_pontos_apoio":
+      return buscarPontosApoio(supabase, entrada);
     case "buscar_eletricos_a_venda":
       return buscarEletricos(supabase, entrada);
     default:
@@ -216,6 +234,33 @@ async function buscarOficinas(supabase: SupabaseClient, e: Entrada): Promise<Res
       titulo: o.nome,
       detalhe: `${o.cidade}/${o.estado}`,
     })),
+  };
+}
+
+async function buscarPontosApoio(supabase: SupabaseClient, e: Entrada): Promise<ResultadoFerramenta> {
+  let q = supabase
+    .from("pontos_apoio_resumo")
+    .select("id, tipo, nome, endereco, cidade, estado, aberto_24h, gratuito, horario, observacoes, nota_media, total_avaliacoes")
+    .eq("ativo", true)
+    .order("nota_media", { ascending: false, nullsFirst: false })
+    .limit(8);
+  if (texto(e.tipo)) q = q.eq("tipo", texto(e.tipo));
+  if (texto(e.cidade)) q = q.ilike("cidade", `%${texto(e.cidade)}%`);
+  if (texto(e.uf)) q = q.eq("estado", texto(e.uf)!.toUpperCase());
+
+  const { data, error } = await q;
+  // Erro de consulta não pode virar "nenhum resultado" para o modelo.
+  if (error) throw new Error(error.message);
+  const lista = data ?? [];
+  return {
+    dados: { total: lista.length, pontos: lista },
+    links: lista.length
+      ? lista.slice(0, 4).map((p) => ({
+          href: `/motorista/apoio/${p.id}`,
+          titulo: p.nome,
+          detalhe: `${p.cidade}/${p.estado}${p.nota_media ? ` · ★ ${p.nota_media}` : ""}`,
+        }))
+      : [{ href: "/motorista/apoio", titulo: "Abrir o mapa de apoio", detalhe: "Indique um ponto que você conhece" }],
   };
 }
 
