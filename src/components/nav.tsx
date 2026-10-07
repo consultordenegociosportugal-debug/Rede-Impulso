@@ -10,7 +10,8 @@ import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
 type NavLink = { href: string; label: string };
 type NavItem =
   | { type: "link"; href: string; label: string }
-  | { type: "group"; label: string; children: NavLink[] };
+  | { type: "group"; label: string; children: NavLink[] }
+  | { type: "divider" };
 
 // Núcleo atual da plataforma: motoristas de aplicativo e elétricos.
 const NAV_ITEMS_NUCLEO: NavItem[] = [
@@ -83,8 +84,16 @@ const NAV_ITEMS_IMOBILIARIO: NavItem[] = [
   { type: "link", href: "/sobre", label: "Como funciona" },
 ];
 
+// Com o módulo imobiliário ativo, o menu fica com dois mundos de
+// interesse lado a lado — mobilidade (motorista + elétricos) e imóveis —
+// separados por um divisor visual para não misturar os dois.
 const NAV_ITEMS: NavItem[] = IMOBILIARIO_ATIVO
-  ? [...NAV_ITEMS_NUCLEO, ...NAV_ITEMS_IMOBILIARIO, { type: "link", href: "/cadastro-cliente", label: "Cadastro cliente" }]
+  ? [
+      ...NAV_ITEMS_NUCLEO,
+      { type: "divider" },
+      ...NAV_ITEMS_IMOBILIARIO,
+      { type: "link", href: "/cadastro-cliente", label: "Cadastro cliente" },
+    ]
   : [...NAV_ITEMS_NUCLEO, { type: "link", href: "/cadastro-cliente", label: "Criar conta" }];
 
 function groupIsActive(item: Extract<NavItem, { type: "group" }>, active: string) {
@@ -173,7 +182,10 @@ export function Nav({ active }: { active: string }) {
         </button>
         <div className={open ? "nav-right open" : "nav-right"}>
           <div className="nav-links">
-            {NAV_ITEMS.map((item) => {
+            {NAV_ITEMS.map((item, indice) => {
+              if (item.type === "divider") {
+                return <div className="nav-divider" key={`divisor-${indice}`} aria-hidden="true" />;
+              }
               if (item.type === "link") {
                 return (
                   <Link
