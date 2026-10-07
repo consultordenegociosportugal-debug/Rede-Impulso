@@ -59,10 +59,6 @@ export async function HomeImobiliaria() {
       <TickerMercado />
 
       <main className={styles.centro}>
-        <div className={styles.wordmark}>
-          <span className="node" />
-          Rede Impulso
-        </div>
         <h1 className={styles.headline}>
           Todo negócio fechado começa com{" "}
           <span className={styles.accent}>um impulso</span>.

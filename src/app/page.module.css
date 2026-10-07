@@ -1,28 +1,18 @@
 .centro {
-  min-height: 58vh;
+  min-height: 54vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 40px 24px;
-}
-.wordmark {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono), monospace;
-  font-size: 12px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  margin-bottom: 22px;
+  padding: 56px 24px 40px;
 }
 .headline {
   font-size: clamp(26px, 4.2vw, 38px);
-  line-height: 1.2;
-  max-width: 20ch;
-  margin: 0 0 10px;
+  line-height: 1.22;
+  max-width: 18ch;
+  margin: 0 0 8px;
+  font-weight: 600;
 }
 .accent {
   color: var(--primary);
@@ -30,7 +20,7 @@
 .tagline {
   color: var(--ink-soft);
   font-size: 15px;
-  margin: 0 0 28px;
+  margin: 0 0 24px;
 }
 
 .buscaCard {
@@ -146,12 +136,12 @@
 }
 
 .provaSocial {
-  margin: 32px 0 0;
+  margin: 28px 0 0;
 }
 .linksSecundarios {
   display: flex;
   gap: 20px;
-  margin-top: 28px;
+  margin-top: 20px;
   font-size: 13px;
   color: var(--ink-soft);
   flex-wrap: wrap;
