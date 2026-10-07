@@ -171,77 +171,7 @@ export function Nav({ active }: { active: string }) {
             Rede Impulso
           </div>
         </div>
-        <button
-          type="button"
-          className="nav-toggle"
-          aria-label="Abrir menu"
-          aria-expanded={open}
-          onClick={() => setOpen((v) => !v)}
-        >
-          <span />
-        </button>
-        <div className={open ? "nav-right open" : "nav-right"}>
-          <div className="nav-links">
-            {NAV_ITEMS.map((item, indice) => {
-              if (item.type === "divider") {
-                return <div className="nav-divider" key={`divisor-${indice}`} aria-hidden="true" />;
-              }
-              if (item.type === "link") {
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={item.href === active ? "active" : undefined}
-                    onClick={() => setOpen(false)}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              }
-              return (
-                <div className="nav-group" key={item.label}>
-                  <span
-                    className={
-                      "nav-group-label" +
-                      (groupIsActive(item, active) ? " active" : "")
-                    }
-                  >
-                    {item.label}
-                    <svg
-                      width="9"
-                      height="9"
-                      viewBox="0 0 9 9"
-                      aria-hidden="true"
-                      className="nav-group-arrow"
-                    >
-                      <path d="M1 3l3.5 3L8 3" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                  <div className="nav-dropdown">
-                    {item.children.map((child) => (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className={child.href === active ? "active" : undefined}
-                        onClick={() => setOpen(false)}
-                      >
-                        {child.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className={active === "/admin" ? "active" : undefined}
-                onClick={() => setOpen(false)}
-              >
-                Admin
-              </Link>
-            )}
-          </div>
+        <div className="nav-utility">
           <div className="nav-auth">
             {user ? (
               <>
@@ -311,6 +241,78 @@ export function Nav({ active }: { active: string }) {
               </Link>
             )}
           </div>
+          <button
+            type="button"
+            className="nav-toggle"
+            aria-label="Abrir menu"
+            aria-expanded={open}
+            onClick={() => setOpen((v) => !v)}
+          >
+            <span />
+          </button>
+        </div>
+      </div>
+      <div className={open ? "nav-panel open" : "nav-panel"}>
+        <div className="nav-links">
+          {NAV_ITEMS.map((item, indice) => {
+            if (item.type === "divider") {
+              return <div className="nav-divider" key={`divisor-${indice}`} aria-hidden="true" />;
+            }
+            if (item.type === "link") {
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={item.href === active ? "active" : undefined}
+                  onClick={() => setOpen(false)}
+                >
+                  {item.label}
+                </Link>
+              );
+            }
+            return (
+              <div className="nav-group" key={item.label}>
+                <span
+                  className={
+                    "nav-group-label" +
+                    (groupIsActive(item, active) ? " active" : "")
+                  }
+                >
+                  {item.label}
+                  <svg
+                    width="9"
+                    height="9"
+                    viewBox="0 0 9 9"
+                    aria-hidden="true"
+                    className="nav-group-arrow"
+                  >
+                    <path d="M1 3l3.5 3L8 3" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <div className="nav-dropdown">
+                  {item.children.map((child) => (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      className={child.href === active ? "active" : undefined}
+                      onClick={() => setOpen(false)}
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className={active === "/admin" ? "active" : undefined}
+              onClick={() => setOpen(false)}
+            >
+              Admin
+            </Link>
+          )}
         </div>
       </div>
     </nav>
