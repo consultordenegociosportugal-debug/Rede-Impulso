@@ -231,59 +231,69 @@ export async function POST(request: NextRequest) {
 
   let imoveisEncontrados: Imovel[] = [];
 
-  for (let volta = 0; volta < 3; volta++) {
-    const resposta = await anthropic.messages.create({
-      model: "claude-sonnet-4-5",
-      max_tokens: 1024,
-      system: systemPrompt,
-      tools,
-      messages: conversa,
-    });
-
-    const usoDeFerramenta = resposta.content.find(
-      (bloco) => bloco.type === "tool_use",
-    ) as Anthropic.ToolUseBlock | undefined;
-
-    if (!usoDeFerramenta || resposta.stop_reason !== "tool_use") {
-      const bruto = resposta.content
-        .filter((bloco) => bloco.type === "text")
-        .map((bloco) => bloco.text)
-        .join("\n");
-      const { texto, confianca, faltou } = extrairAutoavaliacao(bruto);
-
-      await registrarInteracao(supabase, {
-        profileId: user?.id ?? null,
-        pergunta,
-        resposta: texto,
-        confianca,
-        faltou,
-        imoveisEncontrados: imoveisEncontrados.length,
+  try {
+    for (let volta = 0; volta < 3; volta++) {
+      const resposta = await anthropic.messages.create({
+        model: "claude-sonnet-4-5",
+        max_tokens: 1024,
+        system: systemPrompt,
+        tools,
+        messages: conversa,
       });
 
-      return NextResponse.json({ reply: texto, imoveis: imoveisEncontrados });
+      const usoDeFerramenta = resposta.content.find(
+        (bloco) => bloco.type === "tool_use",
+      ) as Anthropic.ToolUseBlock | undefined;
+
+      if (!usoDeFerramenta || resposta.stop_reason !== "tool_use") {
+        const bruto = resposta.content
+          .filter((bloco) => bloco.type === "text")
+          .map((bloco) => bloco.text)
+          .join("\n");
+        const { texto, confianca, faltou } = extrairAutoavaliacao(bruto);
+
+        await registrarInteracao(supabase, {
+          profileId: user?.id ?? null,
+          pergunta,
+          resposta: texto,
+          confianca,
+          faltou,
+          imoveisEncontrados: imoveisEncontrados.length,
+        });
+
+        return NextResponse.json({ reply: texto, imoveis: imoveisEncontrados });
+      }
+
+      conversa.push({ role: "assistant", content: resposta.content });
+
+      const resultado =
+        usoDeFerramenta.name === "consultar_mercado_imobiliario"
+          ? await consultarMercadoImobiliario(supabase)
+          : await buscarImoveis(supabase, usoDeFerramenta.input as Record<string, string | number>);
+
+      if ("imoveis" in resultado && resultado.imoveis.length > 0) {
+        imoveisEncontrados = resultado.imoveis;
+      }
+
+      conversa.push({
+        role: "user",
+        content: [
+          {
+            type: "tool_result",
+            tool_use_id: usoDeFerramenta.id,
+            content: JSON.stringify(resultado).slice(0, 4000),
+          },
+        ],
+      });
     }
-
-    conversa.push({ role: "assistant", content: resposta.content });
-
-    const resultado =
-      usoDeFerramenta.name === "consultar_mercado_imobiliario"
-        ? await consultarMercadoImobiliario(supabase)
-        : await buscarImoveis(supabase, usoDeFerramenta.input as Record<string, string | number>);
-
-    if ("imoveis" in resultado && resultado.imoveis.length > 0) {
-      imoveisEncontrados = resultado.imoveis;
-    }
-
-    conversa.push({
-      role: "user",
-      content: [
-        {
-          type: "tool_result",
-          tool_use_id: usoDeFerramenta.id,
-          content: JSON.stringify(resultado).slice(0, 4000),
-        },
-      ],
-    });
+  } catch {
+    // Chave invalida, rate limit, Anthropic fora do ar: nunca derruba o
+    // widget de chat com um 500 cru — degrada como qualquer outra
+    // camada opcional deste app.
+    return NextResponse.json(
+      { erro: "Não consegui responder agora. Tenta de novo em instantes?" },
+      { status: 502 },
+    );
   }
 
   const replyLimite = "Encontrei algumas opções, mas preciso que você refine um pouco a busca.";

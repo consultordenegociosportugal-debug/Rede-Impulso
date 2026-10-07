@@ -56,18 +56,22 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const resposta = await anthropic.messages.create({
-    model: "claude-sonnet-4-5",
-    max_tokens: 400,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: resumo }],
-  });
+  try {
+    const resposta = await anthropic.messages.create({
+      model: "claude-sonnet-4-5",
+      max_tokens: 400,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: resumo }],
+    });
 
-  const descricao = resposta.content
-    .filter((bloco) => bloco.type === "text")
-    .map((bloco) => bloco.text)
-    .join("\n")
-    .trim();
+    const descricao = resposta.content
+      .filter((bloco) => bloco.type === "text")
+      .map((bloco) => bloco.text)
+      .join("\n")
+      .trim();
 
-  return NextResponse.json({ descricao });
+    return NextResponse.json({ descricao });
+  } catch {
+    return NextResponse.json({ erro: "Não consegui gerar a descrição agora." }, { status: 502 });
+  }
 }

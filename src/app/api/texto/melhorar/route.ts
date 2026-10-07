@@ -28,18 +28,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Texto longo demais para revisar." }, { status: 400 });
   }
 
-  const resposta = await anthropic.messages.create({
-    model: "claude-sonnet-4-5",
-    max_tokens: 1024,
-    system: SYSTEM_PROMPT,
-    messages: [{ role: "user", content: original }],
-  });
+  try {
+    const resposta = await anthropic.messages.create({
+      model: "claude-sonnet-4-5",
+      max_tokens: 1024,
+      system: SYSTEM_PROMPT,
+      messages: [{ role: "user", content: original }],
+    });
 
-  const sugestao = resposta.content
-    .filter((bloco) => bloco.type === "text")
-    .map((bloco) => bloco.text)
-    .join("\n")
-    .trim();
+    const sugestao = resposta.content
+      .filter((bloco) => bloco.type === "text")
+      .map((bloco) => bloco.text)
+      .join("\n")
+      .trim();
 
-  return NextResponse.json({ sugestao });
+    return NextResponse.json({ sugestao });
+  } catch {
+    return NextResponse.json({ erro: "Não consegui revisar o texto agora." }, { status: 502 });
+  }
 }
