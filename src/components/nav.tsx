@@ -85,13 +85,15 @@ const NAV_ITEMS_IMOBILIARIO: NavItem[] = [
 ];
 
 // Com o módulo imobiliário ativo, o menu fica com dois mundos de
-// interesse lado a lado — mobilidade (motorista + elétricos) e imóveis —
-// separados por um divisor visual para não misturar os dois.
+// interesse lado a lado — imóveis primeiro, depois mobilidade (motorista
+// + elétricos) — separados por um divisor visual para não misturar os
+// dois. Início sempre abre a lista.
 const NAV_ITEMS: NavItem[] = IMOBILIARIO_ATIVO
   ? [
-      ...NAV_ITEMS_NUCLEO,
-      { type: "divider" },
+      NAV_ITEMS_NUCLEO[0],
       ...NAV_ITEMS_IMOBILIARIO,
+      { type: "divider" },
+      ...NAV_ITEMS_NUCLEO.slice(1),
       { type: "link", href: "/cadastro-cliente", label: "Cadastro cliente" },
     ]
   : [...NAV_ITEMS_NUCLEO, { type: "link", href: "/cadastro-cliente", label: "Criar conta" }];
