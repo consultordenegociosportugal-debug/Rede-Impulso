@@ -26,6 +26,10 @@ export function OferecerServicoForm() {
   const router = useRouter();
   const [tipo, setTipo] = useState(TIPOS_SERVICO[0]);
   const [nomeOutro, setNomeOutro] = useState("");
+  const [nomeNegocio, setNomeNegocio] = useState("");
+  const [descricao, setDescricao] = useState("");
+  const [precoAPartir, setPrecoAPartir] = useState("");
+  const [cidade, setCidade] = useState("");
   const [contato, setContato] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [erro, setErro] = useState<string | null>(null);
@@ -54,6 +58,10 @@ export function OferecerServicoForm() {
         profile_id: user.id,
         categoria: "comprador",
         nome,
+        nome_negocio: nomeNegocio.trim() || null,
+        descricao: descricao.trim() || null,
+        preco_a_partir: precoAPartir ? Number(precoAPartir) : null,
+        cidade: cidade.trim() || null,
         contato,
         ativo: true,
       })
@@ -159,6 +167,69 @@ export function OferecerServicoForm() {
                 />
               </div>
             )}
+            <div className="field">
+              <label htmlFor="nomeNegocio">
+                Nome do negócio{" "}
+                <span className="muted" style={{ fontWeight: 400 }}>
+                  (opcional)
+                </span>
+              </label>
+              <input
+                type="text"
+                id="nomeNegocio"
+                placeholder="Ex: Pinturas Silva"
+                value={nomeNegocio}
+                onChange={(e) => setNomeNegocio(e.target.value)}
+              />
+            </div>
+            <div className="field">
+              <label htmlFor="descricaoServico">
+                Sobre o serviço{" "}
+                <span className="muted" style={{ fontWeight: 400 }}>
+                  (opcional)
+                </span>
+              </label>
+              <textarea
+                id="descricaoServico"
+                placeholder="Experiência, especialidades, prazo médio…"
+                value={descricao}
+                onChange={(e) => setDescricao(e.target.value)}
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-2">
+              <div className="field">
+                <label htmlFor="precoAPartir">
+                  Preço{" "}
+                  <span className="muted" style={{ fontWeight: 400 }}>
+                    (a partir de, opcional)
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  id="precoAPartir"
+                  placeholder="150"
+                  value={precoAPartir}
+                  onChange={(e) => setPrecoAPartir(e.target.value)}
+                  min={0}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="cidadeServico">
+                  Cidade{" "}
+                  <span className="muted" style={{ fontWeight: 400 }}>
+                    (opcional)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  id="cidadeServico"
+                  placeholder="São Luís"
+                  value={cidade}
+                  onChange={(e) => setCidade(e.target.value)}
+                />
+              </div>
+            </div>
             <div className="field">
               <label htmlFor="contato">WhatsApp</label>
               <input

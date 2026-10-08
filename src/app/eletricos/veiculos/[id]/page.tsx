@@ -22,6 +22,11 @@ type VeiculoDetalhe = {
   preco: number | null;
   tipo: string;
   condicao: string;
+  cor: string | null;
+  cambio: string | null;
+  autonomia_km: number | null;
+  unico_dono: boolean;
+  aceita_troca: boolean;
   cidade: string;
   estado: string;
   descricao: string | null;
@@ -35,6 +40,13 @@ const TIPO_LABEL: Record<string, string> = {
   eletrico: "100% elétrico",
   hibrido: "Híbrido",
   hibrido_plugin: "Híbrido plug-in",
+};
+
+const CAMBIO_LABEL: Record<string, string> = {
+  automatico: "Automático",
+  direto: "Direto (1 marcha)",
+  cvt: "CVT",
+  manual: "Manual",
 };
 
 // Selo do agente de curadoria (migração 0033). "suspeito" não aparece
@@ -58,7 +70,7 @@ export default async function VeiculoDetalhePage({ params }: { params: Promise<{
   const { data } = await supabase
     .from("ev_veiculos")
     .select(
-      "id, vendedor_id, status, marca, modelo, ano, km, preco, tipo, condicao, cidade, estado, descricao, curadoria_selo, curadoria_nota, ev_veiculo_fotos(arquivo_url, ordem), vendedor:vendedor_id(nome, telefone, email)",
+      "id, vendedor_id, status, marca, modelo, ano, km, preco, tipo, condicao, cor, cambio, autonomia_km, unico_dono, aceita_troca, cidade, estado, descricao, curadoria_selo, curadoria_nota, ev_veiculo_fotos(arquivo_url, ordem), vendedor:vendedor_id(nome, telefone, email)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -134,13 +146,30 @@ export default async function VeiculoDetalhePage({ params }: { params: Promise<{
             <span className="hint" style={{ marginLeft: 6 }}>
               {CONDICAO_LABEL[veiculo.condicao] ?? veiculo.condicao}
             </span>
+            {veiculo.unico_dono && (
+              <span className="badge badge-outline" style={{ marginLeft: 6 }}>
+                Único dono
+              </span>
+            )}
+            {veiculo.aceita_troca && (
+              <span className="badge badge-outline" style={{ marginLeft: 6 }}>
+                Aceita troca
+              </span>
+            )}
             <h1 style={{ fontSize: 24, margin: "10px 0 4px" }}>
               {veiculo.marca} {veiculo.modelo} · {veiculo.ano}
             </h1>
             <p className="muted" style={{ margin: 0 }}>
               {veiculo.cidade}/{veiculo.estado}
               {veiculo.km != null ? ` · ${veiculo.km.toLocaleString("pt-BR")} km` : ""}
+              {veiculo.cor ? ` · ${veiculo.cor}` : ""}
+              {veiculo.cambio ? ` · ${CAMBIO_LABEL[veiculo.cambio] ?? veiculo.cambio}` : ""}
             </p>
+            {veiculo.autonomia_km != null && (
+              <p className="hint" style={{ margin: "4px 0 0" }}>
+                🔋 Até {veiculo.autonomia_km} km por carga
+              </p>
+            )}
 
             <div className="mono" style={{ fontSize: 20, margin: "12px 0" }}>
               {veiculo.preco ? formatoMoeda.format(veiculo.preco) : "Preço a combinar"}

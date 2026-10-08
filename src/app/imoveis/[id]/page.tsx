@@ -21,8 +21,11 @@ type ImovelDetalhe = {
   titulo: string;
   bairro: string;
   cidade: string;
+  cep: string | null;
   descricao: string | null;
   preco: number | null;
+  condominio: number | null;
+  iptu: number | null;
   finalidade: "venda" | "aluguel";
   tipo: string;
   quartos: number | null;
@@ -30,6 +33,7 @@ type ImovelDetalhe = {
   vagas: number | null;
   area_m2: number | null;
   comodidades: string[];
+  comodidades_condominio: string[];
   latitude: number | null;
   longitude: number | null;
   imovel_fotos: { arquivo_url: string; ordem: number }[];
@@ -40,11 +44,17 @@ type ImovelDetalhe = {
 const TIPO_LABEL: Record<string, string> = {
   apartamento: "Apartamento",
   casa: "Casa",
+  cobertura: "Cobertura",
   kitnet: "Kitnet",
   terreno: "Terreno",
   comercial: "Comercial",
   outro: "Outro",
 };
+
+const formatoMoedaCompleto = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+});
 
 const STATUS_ANUNCIO: Record<string, { label: string; className: string }> = {
   rascunho: { label: "Rascunho", className: "badge-outline" },
@@ -65,7 +75,7 @@ export default async function ImovelDetalhePage({
   const { data } = await supabase
     .from("imoveis")
     .select(
-      "id, vendedor_id, status, titulo, bairro, cidade, descricao, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, latitude, longitude, destaque_ate, imovel_fotos(arquivo_url, ordem), vendedor:vendedor_id(nome, role, verification_status)",
+      "id, vendedor_id, status, titulo, bairro, cidade, cep, descricao, preco, condominio, iptu, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, comodidades_condominio, latitude, longitude, destaque_ate, imovel_fotos(arquivo_url, ordem), vendedor:vendedor_id(nome, role, verification_status)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -221,17 +231,46 @@ export default async function ImovelDetalhePage({
               {imovel.preco ? formatoMoeda.format(imovel.preco) : "Preço a combinar"}
             </div>
 
+            {(imovel.condominio || imovel.iptu) && (
+              <div className="flex gap-16 mb-12" style={{ fontSize: 13, color: "var(--ink-soft)" }}>
+                {imovel.condominio ? (
+                  <span>Condomínio {formatoMoedaCompleto.format(imovel.condominio)}/mês</span>
+                ) : null}
+                {imovel.iptu ? (
+                  <span>IPTU {formatoMoedaCompleto.format(imovel.iptu)}/ano</span>
+                ) : null}
+              </div>
+            )}
+
             {imovel.descricao && (
               <p style={{ fontSize: 14, lineHeight: 1.6 }}>{imovel.descricao}</p>
             )}
 
             {imovel.comodidades.length > 0 && (
-              <div className="flex gap-8 mb-16" style={{ flexWrap: "wrap" }}>
-                {imovel.comodidades.map((item) => (
-                  <span key={item} className="badge badge-outline">
-                    {item}
-                  </span>
-                ))}
+              <div className="mb-16">
+                {imovel.comodidades_condominio.length > 0 && (
+                  <p className="hint" style={{ margin: "0 0 6px" }}>Características do imóvel</p>
+                )}
+                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                  {imovel.comodidades.map((item) => (
+                    <span key={item} className="badge badge-outline">
+                      {item}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {imovel.comodidades_condominio.length > 0 && (
+              <div className="mb-16">
+                <p className="hint" style={{ margin: "0 0 6px" }}>Características do condomínio</p>
+                <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                  {imovel.comodidades_condominio.map((item) => (
+                    <span key={item} className="badge badge-outline">
+                      {item}
+                    </span>
+                  ))}
+                </div>
               </div>
             )}
 

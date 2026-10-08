@@ -21,10 +21,20 @@ const CATEGORIA_LABEL: Record<string, string> = {
   vendedor: "Para quem vendeu",
 };
 
+const formatoMoeda = new Intl.NumberFormat("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  maximumFractionDigits: 0,
+});
+
 type ParceiroRow = {
   id: string;
   categoria: string;
   nome: string;
+  nome_negocio: string | null;
+  descricao: string | null;
+  preco_a_partir: number | null;
+  cidade: string | null;
   destaque_ate: string | null;
 };
 
@@ -32,7 +42,7 @@ export default async function ServicosPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("parceiros_servico")
-    .select("id, categoria, nome, destaque_ate")
+    .select("id, categoria, nome, nome_negocio, descricao, preco_a_partir, cidade, destaque_ate")
     .eq("ativo", true)
     .order("categoria");
 
@@ -79,7 +89,24 @@ export default async function ServicosPage() {
                     <div key={p.id} className={`card ${styles.card}`}>
                       <div className={styles.ic}>{ICONES[p.nome] ?? "🔧"}</div>
                       <div>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>{p.nome}</div>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>
+                          {p.nome_negocio || p.nome}
+                        </div>
+                        {p.nome_negocio && (
+                          <div className="hint" style={{ margin: 0 }}>{p.nome}</div>
+                        )}
+                        {p.descricao && (
+                          <p className="hint" style={{ margin: "4px 0 0" }}>{p.descricao}</p>
+                        )}
+                        {(p.preco_a_partir || p.cidade) && (
+                          <div className="hint" style={{ margin: "4px 0 0" }}>
+                            {p.preco_a_partir
+                              ? `A partir de ${formatoMoeda.format(p.preco_a_partir)}`
+                              : ""}
+                            {p.preco_a_partir && p.cidade ? " · " : ""}
+                            {p.cidade ?? ""}
+                          </div>
+                        )}
                         {emDestaque(p) && (
                           <span className="badge badge-amber" style={{ marginTop: 4 }}>
                             🚀 Destaque

@@ -24,7 +24,7 @@ export default async function EditarImovelPage({
   const { data } = await supabase
     .from("imoveis")
     .select(
-      "id, vendedor_id, titulo, bairro, cidade, descricao, preco, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, latitude, longitude, status",
+      "id, vendedor_id, titulo, bairro, cidade, cep, descricao, preco, condominio, iptu, finalidade, tipo, quartos, banheiros, vagas, area_m2, comodidades, comodidades_condominio, latitude, longitude, status",
     )
     .eq("id", id)
     .maybeSingle();

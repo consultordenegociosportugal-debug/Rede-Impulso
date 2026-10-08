@@ -10,27 +10,47 @@ import { MelhorarTexto } from "@/components/melhorar-texto";
 import { GerarDescricao } from "@/components/gerar-descricao";
 
 type Finalidade = "venda" | "aluguel";
-type Tipo = "apartamento" | "casa" | "kitnet" | "terreno" | "comercial" | "outro";
+type Tipo =
+  | "apartamento"
+  | "casa"
+  | "cobertura"
+  | "kitnet"
+  | "terreno"
+  | "comercial"
+  | "outro";
 type Status = "idle" | "enviando" | "sucesso" | "erro";
 
 const TIPOS: { value: Tipo; label: string }[] = [
   { value: "apartamento", label: "Apartamento" },
   { value: "casa", label: "Casa" },
+  { value: "cobertura", label: "Cobertura" },
   { value: "kitnet", label: "Kitnet" },
   { value: "terreno", label: "Terreno" },
   { value: "comercial", label: "Comercial" },
   { value: "outro", label: "Outro" },
 ];
 
-const COMODIDADES = [
+// Levantamento direto de um anúncio da OLX: lá as comodidades vêm
+// separadas em "características do imóvel" (o que está dentro da
+// unidade) e "características do condomínio" (o que é do prédio).
+const COMODIDADES_IMOVEL = [
   "Piscina",
   "Churrasqueira",
   "Ar condicionado",
   "Mobiliado",
+  "Área de serviço",
+  "Varanda",
+  "Armários planejados",
+  "Aceita animais",
+];
+
+const COMODIDADES_CONDOMINIO = [
   "Portaria 24h",
   "Elevador",
-  "Área de serviço",
-  "Aceita animais",
+  "Academia",
+  "Salão de festas",
+  "Playground",
+  "Portão eletrônico",
 ];
 
 const TOTAL_PASSOS = 3;
@@ -46,10 +66,14 @@ export function PublicarImovelForm() {
   const [vagas, setVagas] = useState("");
   const [areaM2, setAreaM2] = useState("");
   const [comodidades, setComodidades] = useState<string[]>([]);
+  const [comodidadesCondominio, setComodidadesCondominio] = useState<string[]>([]);
   const [bairro, setBairro] = useState("");
   const [cidade, setCidade] = useState("");
+  const [cep, setCep] = useState("");
   const [descricao, setDescricao] = useState("");
   const [preco, setPreco] = useState("");
+  const [condominio, setCondominio] = useState("");
+  const [iptu, setIptu] = useState("");
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [status, setStatus] = useState<Status>("idle");
   const [erro, setErro] = useState<string | null>(null);
@@ -58,6 +82,12 @@ export function PublicarImovelForm() {
 
   function alternarComodidade(item: string) {
     setComodidades((atual) =>
+      atual.includes(item) ? atual.filter((c) => c !== item) : [...atual, item],
+    );
+  }
+
+  function alternarComodidadeCondominio(item: string) {
+    setComodidadesCondominio((atual) =>
       atual.includes(item) ? atual.filter((c) => c !== item) : [...atual, item],
     );
   }
@@ -104,8 +134,11 @@ export function PublicarImovelForm() {
         titulo,
         bairro,
         cidade,
+        cep: cep || null,
         descricao: descricao || null,
         preco: preco ? Number(preco) : null,
+        condominio: condominio ? Number(condominio) : null,
+        iptu: iptu ? Number(iptu) : null,
         finalidade,
         tipo,
         quartos: quartos ? Number(quartos) : null,
@@ -113,6 +146,7 @@ export function PublicarImovelForm() {
         vagas: vagas ? Number(vagas) : null,
         area_m2: areaM2 ? Number(areaM2) : null,
         comodidades,
+        comodidades_condominio: comodidadesCondominio,
         status: "publicado",
         latitude: coords?.lat ?? null,
         longitude: coords?.lng ?? null,
@@ -280,6 +314,21 @@ export function PublicarImovelForm() {
                     />
                   </div>
                 </div>
+                <div className="field">
+                  <label htmlFor="cep">
+                    CEP{" "}
+                    <span className="muted" style={{ fontWeight: 400 }}>
+                      (opcional)
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    id="cep"
+                    placeholder="65000-000"
+                    value={cep}
+                    onChange={(e) => setCep(e.target.value)}
+                  />
+                </div>
               </>
             )}
 
@@ -298,6 +347,42 @@ export function PublicarImovelForm() {
                     min={0}
                   />
                 </div>
+                {tipo !== "terreno" && (
+                  <div className="grid grid-2">
+                    <div className="field">
+                      <label htmlFor="condominio">
+                        Condomínio{" "}
+                        <span className="muted" style={{ fontWeight: 400 }}>
+                          (R$/mês, opcional)
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        id="condominio"
+                        placeholder="450"
+                        value={condominio}
+                        onChange={(e) => setCondominio(e.target.value)}
+                        min={0}
+                      />
+                    </div>
+                    <div className="field">
+                      <label htmlFor="iptu">
+                        IPTU{" "}
+                        <span className="muted" style={{ fontWeight: 400 }}>
+                          (R$/ano, opcional)
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        id="iptu"
+                        placeholder="1200"
+                        value={iptu}
+                        onChange={(e) => setIptu(e.target.value)}
+                        min={0}
+                      />
+                    </div>
+                  </div>
+                )}
                 {tipo !== "terreno" && (
                   <div className="grid grid-3">
                     <div className="field">
@@ -353,13 +438,13 @@ export function PublicarImovelForm() {
                 </div>
                 <div className="field">
                   <label>
-                    Comodidades{" "}
+                    Características do imóvel{" "}
                     <span className="muted" style={{ fontWeight: 400 }}>
                       (opcional)
                     </span>
                   </label>
                   <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
-                    {COMODIDADES.map((item) => {
+                    {COMODIDADES_IMOVEL.map((item) => {
                       const ativo = comodidades.includes(item);
                       return (
                         <button
@@ -376,6 +461,33 @@ export function PublicarImovelForm() {
                     })}
                   </div>
                 </div>
+                {tipo !== "terreno" && (
+                  <div className="field">
+                    <label>
+                      Características do condomínio{" "}
+                      <span className="muted" style={{ fontWeight: 400 }}>
+                        (opcional)
+                      </span>
+                    </label>
+                    <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                      {COMODIDADES_CONDOMINIO.map((item) => {
+                        const ativo = comodidadesCondominio.includes(item);
+                        return (
+                          <button
+                            key={item}
+                            type="button"
+                            className={ativo ? "badge badge-primary" : "badge badge-outline"}
+                            style={{ cursor: "pointer", border: "none" }}
+                            onClick={() => alternarComodidadeCondominio(item)}
+                          >
+                            {ativo ? "✓ " : "+ "}
+                            {item}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="field">
                   <label htmlFor="descricao">
                     Descrição{" "}

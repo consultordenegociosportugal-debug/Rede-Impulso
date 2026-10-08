@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 
 type Tipo = "eletrico" | "hibrido" | "hibrido_plugin";
 type Condicao = "novo" | "seminovo" | "usado";
+type Cambio = "automatico" | "manual" | "cvt" | "direto";
 type Status = "idle" | "enviando" | "sucesso" | "erro";
 
 const TIPOS: { value: Tipo; label: string }[] = [
@@ -22,6 +23,13 @@ const CONDICOES: { value: Condicao; label: string }[] = [
   { value: "usado", label: "Usado" },
 ];
 
+const CAMBIOS: { value: Cambio; label: string }[] = [
+  { value: "automatico", label: "Automático" },
+  { value: "direto", label: "Direto (1 marcha)" },
+  { value: "cvt", label: "CVT" },
+  { value: "manual", label: "Manual" },
+];
+
 export function PublicarVeiculoForm() {
   const router = useRouter();
   const [marca, setMarca] = useState("");
@@ -31,6 +39,11 @@ export function PublicarVeiculoForm() {
   const [preco, setPreco] = useState("");
   const [tipo, setTipo] = useState<Tipo>("eletrico");
   const [condicao, setCondicao] = useState<Condicao>("usado");
+  const [cor, setCor] = useState("");
+  const [cambio, setCambio] = useState<Cambio>("automatico");
+  const [autonomiaKm, setAutonomiaKm] = useState("");
+  const [unicoDono, setUnicoDono] = useState(false);
+  const [aceitaTroca, setAceitaTroca] = useState(false);
   const [cidade, setCidade] = useState("");
   const [estado, setEstado] = useState("");
   const [descricao, setDescricao] = useState("");
@@ -64,6 +77,11 @@ export function PublicarVeiculoForm() {
         preco: preco ? Number(preco) : null,
         tipo,
         condicao,
+        cor: cor || null,
+        cambio,
+        autonomia_km: autonomiaKm ? Number(autonomiaKm) : null,
+        unico_dono: unicoDono,
+        aceita_troca: aceitaTroca,
         cidade,
         estado: estado.toUpperCase(),
         descricao: descricao || null,
@@ -175,15 +193,61 @@ export function PublicarVeiculoForm() {
               </div>
             </div>
 
-            <div className="field">
-              <label htmlFor="condicao">Condição</label>
-              <select id="condicao" value={condicao} onChange={(e) => setCondicao(e.target.value as Condicao)}>
-                {CONDICOES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
+            <div className="grid grid-2">
+              <div className="field">
+                <label htmlFor="condicao">Condição</label>
+                <select id="condicao" value={condicao} onChange={(e) => setCondicao(e.target.value as Condicao)}>
+                  {CONDICOES.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="cambio">Câmbio</label>
+                <select id="cambio" value={cambio} onChange={(e) => setCambio(e.target.value as Cambio)}>
+                  {CAMBIOS.map((c) => (
+                    <option key={c.value} value={c.value}>
+                      {c.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-2">
+              <div className="field">
+                <label htmlFor="cor">
+                  Cor{" "}
+                  <span className="muted" style={{ fontWeight: 400 }}>
+                    (opcional)
+                  </span>
+                </label>
+                <input
+                  type="text"
+                  id="cor"
+                  placeholder="Branco"
+                  value={cor}
+                  onChange={(e) => setCor(e.target.value)}
+                />
+              </div>
+              <div className="field">
+                <label htmlFor="autonomiaKm">
+                  Autonomia{" "}
+                  <span className="muted" style={{ fontWeight: 400 }}>
+                    (km por carga, opcional)
+                  </span>
+                </label>
+                <input
+                  type="number"
+                  id="autonomiaKm"
+                  placeholder="400"
+                  value={autonomiaKm}
+                  onChange={(e) => setAutonomiaKm(e.target.value)}
+                  min={0}
+                />
+              </div>
             </div>
 
             <div className="field">
@@ -201,6 +265,25 @@ export function PublicarVeiculoForm() {
                 onChange={(e) => setPreco(e.target.value)}
                 min={0}
               />
+            </div>
+
+            <div className="flex gap-16 mb-16">
+              <label className="flex items-center gap-8" style={{ fontSize: 14, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={unicoDono}
+                  onChange={(e) => setUnicoDono(e.target.checked)}
+                />
+                Único dono
+              </label>
+              <label className="flex items-center gap-8" style={{ fontSize: 14, cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={aceitaTroca}
+                  onChange={(e) => setAceitaTroca(e.target.checked)}
+                />
+                Aceita troca
+              </label>
             </div>
 
             <div className="grid grid-2">
