@@ -6,6 +6,7 @@ import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
 import { BotoesSocial } from "@/components/botoes-social";
 import { formatarTelefone, formatarCnpj, formatarCreci, formatarInstagram } from "@/lib/mascaras";
+import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 
@@ -17,6 +18,7 @@ type Campo =
   | "cnpj"
   | "nomeFantasia"
   | "telefone"
+  | "dataNascimento"
   | "email"
   | "senha";
 type ErrosCampo = Partial<Record<Campo, string>>;
@@ -75,6 +77,7 @@ export default function CadastroProfissionalPage() {
   const [cnpj, setCnpj] = useState("");
   const [nomeFantasia, setNomeFantasia] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [dataNascimento, setDataNascimento] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [verSenha, setVerSenha] = useState(false);
@@ -129,6 +132,9 @@ export default function CadastroProfissionalPage() {
       if (!telefone) problemas.telefone = "Informe seu WhatsApp com DDD.";
       else if (!TELEFONE_OK.test(telefone))
         problemas.telefone = "Número incompleto — ex: (98) 9 9999-9999.";
+      if (!dataNascimento) problemas.dataNascimento = "Informe sua data de nascimento.";
+      else if (!ehMaiorDeIdade(dataNascimento))
+        problemas.dataNascimento = "Você precisa ter 18 anos ou mais para criar uma conta.";
       if (!email.trim()) problemas.email = "Informe seu e-mail.";
       else if (!EMAIL_OK.test(email.trim()))
         problemas.email = "Esse e-mail parece incompleto — confira o endereço.";
@@ -190,6 +196,7 @@ export default function CadastroProfissionalPage() {
                 role: "corretor",
                 nome,
                 telefone,
+                data_nascimento: dataNascimento,
                 rede_social: redeSocial || null,
                 creci,
                 bairros_atuacao: bairros
@@ -201,6 +208,7 @@ export default function CadastroProfissionalPage() {
                 role: "imobiliaria",
                 nome,
                 telefone,
+                data_nascimento: dataNascimento,
                 rede_social: redeSocial || null,
                 cnpj,
                 nome_fantasia: nomeFantasia,
@@ -552,6 +560,28 @@ export default function CadastroProfissionalPage() {
                       <p className="hint">Enviamos o link de confirmação para cá.</p>
                     )}
                   </div>
+                </div>
+                <div className="field">
+                  <label htmlFor="dataNascimento">Data de nascimento</label>
+                  <input
+                    type="date"
+                    id="dataNascimento"
+                    value={dataNascimento}
+                    max={dataMaximaNascimento()}
+                    onChange={(e) => {
+                      setDataNascimento(e.target.value);
+                      limparErroDe("dataNascimento");
+                    }}
+                    className={errosCampo.dataNascimento ? styles.campoInvalido : undefined}
+                    aria-invalid={errosCampo.dataNascimento ? true : undefined}
+                    aria-describedby={errosCampo.dataNascimento ? "erro-data-nascimento" : undefined}
+                    required
+                  />
+                  {errosCampo.dataNascimento && (
+                    <p className={styles.erroCampo} id="erro-data-nascimento">
+                      {errosCampo.dataNascimento}
+                    </p>
+                  )}
                 </div>
                 <div className="grid grid-2">
                   <div className="field">

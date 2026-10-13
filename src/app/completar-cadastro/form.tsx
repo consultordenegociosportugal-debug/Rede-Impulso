@@ -11,10 +11,18 @@ import {
   formatarCnpj,
   formatarCreci,
 } from "@/lib/mascaras";
+import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 
 type Papel = "comprador" | "vendedor" | "corretor" | "imobiliaria";
-type Campo = "nome" | "telefone" | "creci" | "bairros" | "cnpj" | "nomeFantasia";
+type Campo =
+  | "nome"
+  | "telefone"
+  | "dataNascimento"
+  | "creci"
+  | "bairros"
+  | "cnpj"
+  | "nomeFantasia";
 type ErrosCampo = Partial<Record<Campo, string>>;
 
 const TELEFONE_OK = /^\(\d{2}\)\s?9\s?\d{4}-?\d{4}$/;
@@ -67,6 +75,7 @@ export function CompletarCadastroForm({
   const router = useRouter();
   const [nome, setNome] = useState(nomeAtual);
   const [telefone, setTelefone] = useState("");
+  const [dataNascimento, setDataNascimento] = useState("");
   const [papel, setPapel] = useState<Papel>(papelInicial(papelSugerido, roleAtual));
   const [creci, setCreci] = useState("");
   const [bairros, setBairros] = useState("");
@@ -94,6 +103,10 @@ export function CompletarCadastroForm({
     if (!telefone) problemas.telefone = "Informe seu WhatsApp com DDD.";
     else if (!TELEFONE_OK.test(telefone))
       problemas.telefone = "Número incompleto — ex: (98) 9 9999-9999.";
+
+    if (!dataNascimento) problemas.dataNascimento = "Informe sua data de nascimento.";
+    else if (!ehMaiorDeIdade(dataNascimento))
+      problemas.dataNascimento = "Você precisa ter 18 anos ou mais para usar a Rede Impulso.";
 
     if (papel === "corretor") {
       if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
@@ -136,6 +149,7 @@ export function CompletarCadastroForm({
       .update({
         nome: nome.trim(),
         telefone,
+        data_nascimento: dataNascimento,
         role: papel,
         termos_aceitos_em: new Date().toISOString(),
       })
@@ -251,6 +265,31 @@ export function CompletarCadastroForm({
               ? "É por aqui que a outra parte da negociação fala com você. Não aparece no anúncio."
               : "É por aqui que compradores do seu elétrico falam com você. Não aparece publicamente."}
           </p>
+        )}
+      </div>
+
+      <div className="field">
+        <label htmlFor="dataNascimento">Data de nascimento</label>
+        <input
+          type="date"
+          id="dataNascimento"
+          value={dataNascimento}
+          max={dataMaximaNascimento()}
+          onChange={(e) => {
+            setDataNascimento(e.target.value);
+            limparErroDe("dataNascimento");
+          }}
+          className={errosCampo.dataNascimento ? styles.campoInvalido : undefined}
+          aria-invalid={errosCampo.dataNascimento ? true : undefined}
+          aria-describedby={errosCampo.dataNascimento ? "erro-data-nascimento" : undefined}
+          required
+        />
+        {errosCampo.dataNascimento ? (
+          <p className={styles.erroCampo} id="erro-data-nascimento">
+            {errosCampo.dataNascimento}
+          </p>
+        ) : (
+          <p className="hint">É preciso ter 18 anos ou mais para usar a Rede Impulso.</p>
         )}
       </div>
 

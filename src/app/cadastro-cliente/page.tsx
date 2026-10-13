@@ -7,11 +7,12 @@ import { createClient } from "@/lib/supabase/client";
 import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
 import { BotoesSocial } from "@/components/botoes-social";
 import { formatarTelefone, formatarInstagram } from "@/lib/mascaras";
+import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 
 type Papel = "comprador" | "vendedor";
-type Campo = "nome" | "telefone" | "email" | "senha";
+type Campo = "nome" | "telefone" | "dataNascimento" | "email" | "senha";
 type ErrosCampo = Partial<Record<Campo, string>>;
 
 const TOTAL_PASSOS = 2;
@@ -57,6 +58,7 @@ export default function CadastroClientePage() {
   const [papel, setPapel] = useState<Papel>("comprador");
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [dataNascimento, setDataNascimento] = useState("");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [verSenha, setVerSenha] = useState(false);
@@ -113,6 +115,9 @@ export default function CadastroClientePage() {
       if (!telefone) problemas.telefone = "Informe seu WhatsApp com DDD.";
       else if (!TELEFONE_OK.test(telefone))
         problemas.telefone = "Número incompleto — ex: (98) 9 9999-9999.";
+      if (!dataNascimento) problemas.dataNascimento = "Informe sua data de nascimento.";
+      else if (!ehMaiorDeIdade(dataNascimento))
+        problemas.dataNascimento = "Você precisa ter 18 anos ou mais para criar uma conta.";
     }
     if (alvo === 2) {
       if (!email.trim()) problemas.email = "Informe seu e-mail.";
@@ -180,6 +185,7 @@ export default function CadastroClientePage() {
           role: papel,
           nome,
           telefone,
+          data_nascimento: dataNascimento,
           rede_social: redeSocial || null,
         },
       },
@@ -373,6 +379,32 @@ export default function CadastroClientePage() {
                     <p className="hint">
                       É por aqui que a outra parte da negociação fala com você. Não
                       aparece no anúncio.
+                    </p>
+                  )}
+                </div>
+                <div className="field">
+                  <label htmlFor="dataNascimento">Data de nascimento</label>
+                  <input
+                    type="date"
+                    id="dataNascimento"
+                    value={dataNascimento}
+                    max={dataMaximaNascimento()}
+                    onChange={(e) => {
+                      setDataNascimento(e.target.value);
+                      limparErroDe("dataNascimento");
+                    }}
+                    className={errosCampo.dataNascimento ? styles.campoInvalido : undefined}
+                    aria-invalid={errosCampo.dataNascimento ? true : undefined}
+                    aria-describedby={errosCampo.dataNascimento ? "erro-data-nascimento" : undefined}
+                    required
+                  />
+                  {errosCampo.dataNascimento ? (
+                    <p className={styles.erroCampo} id="erro-data-nascimento">
+                      {errosCampo.dataNascimento}
+                    </p>
+                  ) : (
+                    <p className="hint">
+                      É preciso ter 18 anos ou mais para negociar pela Rede Impulso.
                     </p>
                   )}
                 </div>

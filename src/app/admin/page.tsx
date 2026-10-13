@@ -127,6 +127,9 @@ export default async function AdminPage() {
             <Link href="/admin/assistente" className="btn btn-outline btn-sm">
               🧠 Metacognição do assistente
             </Link>
+            <Link href="/admin/direitos-autorais" className="btn btn-outline btn-sm">
+              © Direitos autorais
+            </Link>
           </div>
         </div>
         <p className="muted mb-24">

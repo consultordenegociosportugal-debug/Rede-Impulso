@@ -12,6 +12,9 @@ export function Footer() {
           <Link href="/privacidade" style={{ textDecoration: "underline" }}>
             Política de Privacidade
           </Link>
+          <Link href="/direitos-autorais" style={{ textDecoration: "underline" }}>
+            Direitos autorais
+          </Link>
         </span>
       </div>
     </footer>

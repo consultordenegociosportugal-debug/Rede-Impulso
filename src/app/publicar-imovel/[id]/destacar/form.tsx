@@ -105,6 +105,7 @@ export function DestacarForm({ imovelId }: { imovelId: string }) {
       </button>
       <p className="hint" style={{ textAlign: "center", marginTop: 8, marginBottom: 0 }}>
         Você será redirecionado para o checkout seguro do Mercado Pago.
+        Cobrança única pelo período escolhido — sem renovação automática.
       </p>
     </div>
   );

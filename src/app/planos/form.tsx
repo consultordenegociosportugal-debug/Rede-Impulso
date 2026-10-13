@@ -83,6 +83,10 @@ export function PlanosForm({ logado }: { logado: boolean }) {
             >
               {enviando === plano.id ? "Abrindo…" : "Assinar"}
             </button>
+            <p className="hint" style={{ margin: "8px 0 0", fontSize: 11.5, lineHeight: 1.4 }}>
+              Renova automaticamente a cada mês pelo mesmo valor, até você
+              cancelar. Cancele quando quiser, sem multa.
+            </p>
           </div>
         ))}
       </div>
