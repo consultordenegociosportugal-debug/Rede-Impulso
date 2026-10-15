@@ -154,3 +154,26 @@
   color: var(--ink);
   text-decoration: underline;
 }
+
+.sectionHead {
+  max-width: 60ch;
+  margin: 0 auto 28px;
+  text-align: center;
+}
+.sectionHead h2 {
+  font-size: 24px;
+  margin: 8px 0;
+}
+
+.faqItem {
+  border-bottom: 1px solid var(--line);
+  padding: 16px 0;
+}
+.faqItem summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14.5px;
+}
+.faqItem:last-child {
+  border-bottom: none;
+}
