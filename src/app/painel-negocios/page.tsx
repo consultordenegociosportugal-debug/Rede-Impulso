@@ -340,22 +340,27 @@ export default async function PainelNegociosPage({
 
         {!visaoImobiliaria && (
           <div className="mb-24">
-            <div className="flex between items-center mb-12" style={{ gap: 12 }}>
+            <div className="flex between items-center mb-12" style={{ gap: 12, flexWrap: "wrap" }}>
               <h2 style={{ fontSize: 18, margin: 0 }}>Visitas agendadas</h2>
-              {googleConfigurado ? (
-                <a
-                  href="/api/google-calendar/conectar"
-                  className="btn btn-ghost btn-sm"
-                >
-                  {conexaoGoogle
-                    ? "🔄 Reconectar Google Agenda"
-                    : "📅 Conectar Google Agenda"}
-                </a>
-              ) : (
-                <span className="badge badge-outline">
-                  Google Agenda não configurada
-                </span>
-              )}
+              <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+                <Link href="/painel-negocios/disponibilidade" className="btn btn-outline btn-sm">
+                  🗓️ Minha disponibilidade
+                </Link>
+                {googleConfigurado ? (
+                  <a
+                    href="/api/google-calendar/conectar"
+                    className="btn btn-ghost btn-sm"
+                  >
+                    {conexaoGoogle
+                      ? "🔄 Reconectar Google Agenda"
+                      : "📅 Conectar Google Agenda"}
+                  </a>
+                ) : (
+                  <span className="badge badge-outline">
+                    Google Agenda não configurada
+                  </span>
+                )}
+              </div>
             </div>
 
             {avisoGoogle && (
@@ -430,7 +435,12 @@ export default async function PainelNegociosPage({
                             </span>
                           )}
                         </div>
-                        <VisitaAcoes visitaId={visita.id} status={visita.status} />
+                        <VisitaAcoes
+                          visitaId={visita.id}
+                          status={visita.status}
+                          googleEventId={visita.google_event_id}
+                          googleConfigurado={googleConfigurado}
+                        />
                       </div>
                     </div>
                   );

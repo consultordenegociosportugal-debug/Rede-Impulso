@@ -10,14 +10,46 @@ import { createClient } from "@/lib/supabase/client";
 export function VisitaAcoes({
   visitaId,
   status,
+  googleEventId,
+  googleConfigurado,
 }: {
   visitaId: string;
   status: string;
+  googleEventId?: string | null;
+  googleConfigurado?: boolean;
 }) {
   const router = useRouter();
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+
+  async function sincronizarGoogle() {
+    setSalvando(true);
+    setErro(null);
+    setAviso(null);
+
+    try {
+      const resposta = await fetch("/api/google-calendar/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ visita_id: visitaId, acao: "confirmar" }),
+      });
+      const dados = (await resposta.json()) as { sincronizado?: boolean; motivo?: string };
+
+      if (dados.sincronizado) {
+        setAviso("Evento criado na sua Google Agenda.");
+      } else if (dados.motivo === "reconectar") {
+        setAviso("Reconecte sua Google Agenda para sincronizar.");
+      } else if (dados.motivo === "sem_conexao") {
+        setAviso("Conecte sua Google Agenda para sincronizar visitas.");
+      }
+    } catch {
+      // Sem internet, Google fora do ar: ignora, best-effort.
+    }
+
+    setSalvando(false);
+    router.refresh();
+  }
 
   async function mudar(novoStatus: "confirmada" | "cancelada") {
     setSalvando(true);
@@ -80,6 +112,16 @@ export function VisitaAcoes({
             disabled={salvando}
           >
             {salvando ? "Salvando…" : "Confirmar"}
+          </button>
+        )}
+        {status === "confirmada" && !googleEventId && googleConfigurado && (
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={sincronizarGoogle}
+            disabled={salvando}
+          >
+            {salvando ? "Sincronizando…" : "📅 Sincronizar com Google"}
           </button>
         )}
         <button
