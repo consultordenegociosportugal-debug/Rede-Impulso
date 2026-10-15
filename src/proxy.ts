@@ -6,12 +6,12 @@ import { rotaAdormecida } from "@/lib/modulos";
 // nome de arquivo e de export diferentes. Sem isso, o token de sessão do
 // Supabase não é renovado e o usuário é deslogado silenciosamente.
 export async function proxy(request: NextRequest) {
-  // Módulo imobiliário adormecido (ver src/lib/modulos.ts): páginas vão
+  // Módulo de mobilidade adormecido (ver src/lib/modulos.ts): páginas vão
   // para o aviso de pausa; APIs (inclusive crons) respondem sem fazer nada.
   const caminho = request.nextUrl.pathname;
   if (rotaAdormecida(caminho)) {
     if (caminho.startsWith("/api/")) {
-      return NextResponse.json({ pausado: true, motivo: "Módulo imobiliário adormecido." });
+      return NextResponse.json({ pausado: true, motivo: "Módulo de mobilidade adormecido." });
     }
     const destino = request.nextUrl.clone();
     destino.pathname = "/pausado";

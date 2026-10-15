@@ -205,7 +205,7 @@ export async function HomeImobiliaria() {
         </div>
       </section>
 
-      <section>
+      <section id="funcionalidades">
         <div className="wrap">
           <div className={styles.sectionHead}>
             <span className="eyebrow">Funcionalidades</span>

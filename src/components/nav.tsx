@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
+import { MOBILIDADE_ATIVA } from "@/lib/modulos";
 
 type NavLink = { href: string; label: string };
 type NavItem =
@@ -13,9 +13,9 @@ type NavItem =
   | { type: "group"; label: string; children: NavLink[] }
   | { type: "divider" };
 
-// Núcleo atual da plataforma: motoristas de aplicativo e elétricos.
-const NAV_ITEMS_NUCLEO: NavItem[] = [
-  { type: "link", href: "/", label: "Início" },
+// Mobilidade (motorista de aplicativo + elétricos) — adormecida desde
+// 2026-10 (ver src/lib/modulos.ts).
+const NAV_ITEMS_MOBILIDADE: NavItem[] = [
   {
     type: "group",
     label: "Motorista",
@@ -38,7 +38,8 @@ const NAV_ITEMS_NUCLEO: NavItem[] = [
   },
 ];
 
-// Módulo imobiliário — adormecido desde 2026-09 (ver src/lib/modulos.ts).
+// Núcleo permanente da plataforma desde 2026-10: agendamento entre
+// corretor/imobiliária/construtora e cliente.
 const NAV_ITEMS_IMOBILIARIO: NavItem[] = [
   { type: "link", href: "/comece-agora", label: "Comece agora" },
   {
@@ -86,19 +87,31 @@ const NAV_ITEMS_IMOBILIARIO: NavItem[] = [
   { type: "link", href: "/sobre", label: "Como funciona" },
 ];
 
-// Com o módulo imobiliário ativo, o menu fica com dois mundos de
-// interesse lado a lado — imóveis primeiro, depois mobilidade (motorista
-// + elétricos) — separados por um divisor visual para não misturar os
-// dois. Início sempre abre a lista.
-const NAV_ITEMS: NavItem[] = IMOBILIARIO_ATIVO
-  ? [
-      NAV_ITEMS_NUCLEO[0],
-      ...NAV_ITEMS_IMOBILIARIO,
-      { type: "divider" },
-      ...NAV_ITEMS_NUCLEO.slice(1),
-      { type: "link", href: "/cadastro-cliente", label: "Cadastro cliente" },
-    ]
-  : [...NAV_ITEMS_NUCLEO, { type: "link", href: "/cadastro-cliente", label: "Criar conta" }];
+// Imóveis é sempre o núcleo. Mobilidade (motorista + elétricos) só aparece
+// quando acordada, separada por um divisor visual para não misturar os
+// dois mundos. Início sempre abre a lista.
+const NAV_ITEMS: NavItem[] = [
+  { type: "link", href: "/", label: "Início" },
+  ...NAV_ITEMS_IMOBILIARIO,
+  ...(MOBILIDADE_ATIVA
+    ? ([{ type: "divider" }, ...NAV_ITEMS_MOBILIDADE] as NavItem[])
+    : []),
+  { type: "link", href: "/cadastro-cliente", label: "Cadastro cliente" },
+];
+
+// Menu de quem ainda não logou: mesmas 8 abas do site público de
+// referência (home / sobre / funções / preços / teste grátis / blog /
+// acessar / sou cliente). Quem já está logado usa o menu funcional acima.
+const NAV_ITEMS_VISITANTE: NavItem[] = [
+  { type: "link", href: "/", label: "Home" },
+  { type: "link", href: "/sobre", label: "Sobre" },
+  { type: "link", href: "/#funcionalidades", label: "Funções" },
+  { type: "link", href: "/planos", label: "Preços" },
+  { type: "link", href: "/comece-agora", label: "Teste grátis" },
+  { type: "link", href: "/blog", label: "Blog" },
+  { type: "link", href: "/entrar", label: "Acessar" },
+  { type: "link", href: "/cadastro-cliente", label: "Sou cliente" },
+];
 
 function groupIsActive(item: Extract<NavItem, { type: "group" }>, active: string) {
   return item.children.some((c) => c.href === active);
@@ -176,75 +189,66 @@ export function Nav({ active }: { active: string }) {
           </div>
         </div>
         <div className="nav-utility">
-          <div className="nav-auth">
-            {user ? (
-              <>
-                <div className="nav-group" key="conta">
-                  <span
-                    className={
-                      "nav-group-label mono" +
-                      (active === "/editar-perfil" || active === "/painel-negocios"
-                        ? " active"
-                        : "")
-                    }
-                    style={{ fontSize: 12 }}
+          {/* Deslogado usa a aba "Acessar" do menu principal — sem botão
+              duplicado aqui. */}
+          {user && (
+            <div className="nav-auth">
+              <div className="nav-group" key="conta">
+                <span
+                  className={
+                    "nav-group-label mono" +
+                    (active === "/editar-perfil" || active === "/painel-negocios"
+                      ? " active"
+                      : "")
+                  }
+                  style={{ fontSize: 12 }}
+                >
+                  {nome ?? user.email}
+                  <svg
+                    width="9"
+                    height="9"
+                    viewBox="0 0 9 9"
+                    aria-hidden="true"
+                    className="nav-group-arrow"
                   >
-                    {nome ?? user.email}
-                    <svg
-                      width="9"
-                      height="9"
-                      viewBox="0 0 9 9"
-                      aria-hidden="true"
-                      className="nav-group-arrow"
-                    >
-                      <path d="M1 3l3.5 3L8 3" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                  <div className="nav-dropdown" style={{ left: "auto", right: 0 }}>
-                    {IMOBILIARIO_ATIVO ? (
-                      <Link
-                        href="/painel-negocios"
-                        className={active === "/painel-negocios" ? "active" : undefined}
-                        onClick={() => setOpen(false)}
-                      >
-                        Minhas negociações
-                      </Link>
-                    ) : (
-                      <Link
-                        href="/motorista/raio-x"
-                        className={active === "/motorista/raio-x" ? "active" : undefined}
-                        onClick={() => setOpen(false)}
-                      >
-                        Meu Raio-X
-                      </Link>
-                    )}
+                    <path d="M1 3l3.5 3L8 3" stroke="currentColor" strokeWidth="1.4" fill="none" strokeLinecap="round" />
+                  </svg>
+                </span>
+                <div className="nav-dropdown" style={{ left: "auto", right: 0 }}>
+                  <Link
+                    href="/painel-negocios"
+                    className={active === "/painel-negocios" ? "active" : undefined}
+                    onClick={() => setOpen(false)}
+                  >
+                    Minhas negociações
+                  </Link>
+                  {MOBILIDADE_ATIVA && (
                     <Link
-                      href="/editar-perfil"
-                      className={active === "/editar-perfil" ? "active" : undefined}
+                      href="/motorista/raio-x"
+                      className={active === "/motorista/raio-x" ? "active" : undefined}
                       onClick={() => setOpen(false)}
                     >
-                      Editar perfil
+                      Meu Raio-X
                     </Link>
-                  </div>
+                  )}
+                  <Link
+                    href="/editar-perfil"
+                    className={active === "/editar-perfil" ? "active" : undefined}
+                    onClick={() => setOpen(false)}
+                  >
+                    Editar perfil
+                  </Link>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="btn btn-ghost btn-sm"
-                >
-                  Sair
-                </button>
-              </>
-            ) : (
-              <Link
-                href="/entrar"
-                className="btn btn-outline btn-sm"
-                onClick={() => setOpen(false)}
+              </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="btn btn-ghost btn-sm"
               >
-                Entrar
-              </Link>
-            )}
-          </div>
+                Sair
+              </button>
+            </div>
+          )}
           <button
             type="button"
             className="nav-toggle"
@@ -258,7 +262,7 @@ export function Nav({ active }: { active: string }) {
       </div>
       <div className={open ? "nav-panel open" : "nav-panel"}>
         <div className="nav-links">
-          {NAV_ITEMS.map((item, indice) => {
+          {(user ? NAV_ITEMS : NAV_ITEMS_VISITANTE).map((item, indice) => {
             if (item.type === "divider") {
               return <div className="nav-divider" key={`divisor-${indice}`} aria-hidden="true" />;
             }
