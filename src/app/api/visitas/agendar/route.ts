@@ -52,7 +52,10 @@ export async function POST(request: NextRequest) {
     .insert({
       imovel_id: imovelId,
       comprador_id: user.id,
-      data_hora: `${data}T${horario}:00`,
+      // Horário de Brasília explícito — sem isso, o Postgres grava o
+      // horário "nu" como se já fosse UTC (3h adiantado do que o
+      // corretor configurou). Ver nota de fuso em src/lib/disponibilidade.ts.
+      data_hora: `${data}T${horario}:00-03:00`,
       status: "confirmada",
       observacoes: observacoes?.trim() || null,
     })
