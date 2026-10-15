@@ -62,6 +62,7 @@ const NAV_ITEMS_IMOBILIARIO: NavItem[] = [
     type: "group",
     label: "Profissionais",
     children: [
+      { href: "/para-corretores", label: "Para corretores e imobiliárias" },
       { href: "/cadastro-profissional", label: "Cadastro profissional" },
       { href: "/sugestao-corretores", label: "Sugestão de corretores" },
       { href: "/perfil-corretor", label: "Perfil do corretor" },

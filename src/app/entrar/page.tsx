@@ -166,7 +166,7 @@ function EntrarForm() {
                   <Link href="/cadastro-cliente" className="btn btn-ghost btn-sm">
                     Comprar ou vender
                   </Link>
-                  <Link href="/cadastro-profissional" className="btn btn-ghost btn-sm">
+                  <Link href="/para-corretores" className="btn btn-ghost btn-sm">
                     Sou corretor ou imobiliária
                   </Link>
                 </>

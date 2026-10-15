@@ -69,7 +69,7 @@ export default function SobrePage() {
               <Link href="/cadastro-cliente" className="btn btn-primary">
                 Sou cliente
               </Link>
-              <Link href="/cadastro-profissional" className="btn btn-outline">
+              <Link href="/para-corretores" className="btn btn-outline">
                 Sou profissional
               </Link>
             </div>

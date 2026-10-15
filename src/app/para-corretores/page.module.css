@@ -1,0 +1,71 @@
+.hero {
+  padding: 72px 0 48px;
+}
+.hero h1 {
+  font-size: clamp(32px, 4.8vw, 48px);
+  line-height: 1.08;
+  margin: 14px 0 18px;
+  max-width: 18ch;
+}
+.lead {
+  font-size: 17px;
+  color: var(--ink-soft);
+  max-width: 50ch;
+}
+.ctaRow {
+  display: flex;
+  gap: 12px;
+  margin-top: 28px;
+  flex-wrap: wrap;
+}
+
+.sectionHead {
+  max-width: 60ch;
+  margin-bottom: 32px;
+}
+.sectionHead h2 {
+  font-size: 26px;
+  margin: 8px 0;
+}
+
+.beneficio {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.beneficioIcone {
+  font-size: 22px;
+}
+
+.depoimento {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.depoimentoQuote {
+  font-size: 13.5px;
+  color: var(--ink);
+  font-style: italic;
+  margin: 0;
+  flex: 1;
+}
+.depoimentoWho {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ctaFinal {
+  text-align: center;
+  padding: 48px 24px;
+}
+.ctaFinal h2 {
+  font-size: 26px;
+  margin: 8px 0 20px;
+}
+
+@media (max-width: 560px) {
+  .hero {
+    padding: 40px 0 32px;
+  }
+}
