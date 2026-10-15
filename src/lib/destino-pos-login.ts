@@ -6,7 +6,7 @@ import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
  * Comprador fica de fora de propósito — ver TIPOS_POR_ROLE em
  * `src/lib/verificacao.ts`, que lista [] para ele.
  */
-const PRECISA_DOCUMENTOS = ["vendedor", "corretor", "imobiliaria", "cartorio"];
+const PRECISA_DOCUMENTOS = ["vendedor", "corretor", "imobiliaria", "construtora", "cartorio"];
 
 type Opcoes = {
   /** Valor cru do parâmetro `depois`, quando houver. */

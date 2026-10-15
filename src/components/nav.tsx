@@ -40,6 +40,7 @@ const NAV_ITEMS_NUCLEO: NavItem[] = [
 
 // Módulo imobiliário — adormecido desde 2026-09 (ver src/lib/modulos.ts).
 const NAV_ITEMS_IMOBILIARIO: NavItem[] = [
+  { type: "link", href: "/comece-agora", label: "Comece agora" },
   {
     type: "group",
     label: "Imóveis",

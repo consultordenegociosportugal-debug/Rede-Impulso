@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
 import { BotoesSocial } from "@/components/botoes-social";
@@ -10,7 +11,7 @@ import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 
-type Papel = "corretor" | "imobiliaria";
+type Papel = "corretor" | "imobiliaria" | "construtora";
 type Campo =
   | "nome"
   | "creci"
@@ -46,6 +47,11 @@ const PAPEIS: { valor: Papel; titulo: string; descricao: string }[] = [
     titulo: "Imobiliária",
     descricao: "Represento uma empresa com CNPJ e equipe.",
   },
+  {
+    valor: "construtora",
+    titulo: "Construtora/Incorporadora",
+    descricao: "Lanço empreendimentos novos, na planta ou prontos.",
+  },
 ];
 
 const TITULO_PASSO = ["Quem é você", "Contato e acesso", "Documentos e confirmação"];
@@ -68,9 +74,19 @@ function traduzErroAuth(mensagem: string) {
   return mensagem;
 }
 
-export default function CadastroProfissionalPage() {
+function papelValido(valor: string | null): Papel | null {
+  if (valor === "imobiliaria" || valor === "construtora" || valor === "corretor") return valor;
+  return null;
+}
+
+function CadastroProfissionalConteudo() {
+  // Pré-seleciona o cartão certo quando vem de /comece-agora
+  // (?papel=imobiliaria|construtora). useSearchParams precisa do
+  // Suspense boundary abaixo — sem ele, o valor lido no servidor e no
+  // cliente diverge e quebra a hidratação.
+  const papelDaUrl = papelValido(useSearchParams().get("papel"));
   const [passo, setPasso] = useState(1);
-  const [papel, setPapel] = useState<Papel>("corretor");
+  const [papel, setPapel] = useState<Papel>(papelDaUrl ?? "corretor");
   const [nome, setNome] = useState("");
   const [creci, setCreci] = useState("");
   const [bairros, setBairros] = useState("");
@@ -205,7 +221,7 @@ export default function CadastroProfissionalPage() {
                   .filter(Boolean),
               }
             : {
-                role: "imobiliaria",
+                role: papel,
                 nome,
                 telefone,
                 data_nascimento: dataNascimento,
@@ -264,7 +280,7 @@ export default function CadastroProfissionalPage() {
           <span className="eyebrow">Cadastro profissional</span>
           <div className={styles.passoTopo}>
             <h1 style={{ fontSize: 30, margin: "8px 0 4px" }}>
-              Corretor autônomo ou imobiliária
+              Corretor, imobiliária ou construtora
             </h1>
             <span className={styles.passoContador}>
               Passo {passo} de {TOTAL_PASSOS}
@@ -318,10 +334,16 @@ export default function CadastroProfissionalPage() {
                       você informar aparecem no seu perfil público — são eles que
                       fazem a Rede sugerir você para imóveis da região.
                     </span>
-                  ) : (
+                  ) : papel === "imobiliaria" ? (
                     <span>
                       <strong>Imobiliária</strong>: a conta fica no CNPJ da empresa,
                       e o nome fantasia é o que identifica vocês no perfil público.
+                    </span>
+                  ) : (
+                    <span>
+                      <strong>Construtora/Incorporadora</strong>: a conta fica no
+                      CNPJ da empresa — publique seus empreendimentos com as mesmas
+                      ferramentas de anúncio da Rede Impulso.
                     </span>
                   )}
                 </div>
@@ -760,7 +782,7 @@ export default function CadastroProfissionalPage() {
                   <div className="muted" style={{ fontSize: 13 }}>
                     {papel === "corretor"
                       ? `Corretor(a)${creci ? " · " + creci : ""}`
-                      : nomeFantasia || "Imobiliária"}
+                      : nomeFantasia || (papel === "imobiliaria" ? "Imobiliária" : "Construtora")}
                   </div>
                   <div className="stars mt-8" aria-label="sem avaliações ainda">
                     ★★★★★{" "}
@@ -793,5 +815,13 @@ export default function CadastroProfissionalPage() {
 
       <Footer />
     </>
+  );
+}
+
+export default function CadastroProfissionalPage() {
+  return (
+    <Suspense fallback={null}>
+      <CadastroProfissionalConteudo />
+    </Suspense>
   );
 }

@@ -24,6 +24,7 @@ export default async function EditarPerfilPage() {
 
   let dadosCorretor: { creci: string; bairros_atuacao: string[] } | null = null;
   let dadosImobiliaria: { cnpj: string; nome_fantasia: string } | null = null;
+  let dadosConstrutora: { cnpj: string; nome_fantasia: string } | null = null;
   let dadosCartorio: { registro_serventia: string } | null = null;
 
   if (role === "corretor") {
@@ -40,6 +41,13 @@ export default async function EditarPerfilPage() {
       .eq("profile_id", user.id)
       .single();
     dadosImobiliaria = data;
+  } else if (role === "construtora") {
+    const { data } = await supabase
+      .from("construtora_perfis")
+      .select("cnpj, nome_fantasia")
+      .eq("profile_id", user.id)
+      .single();
+    dadosConstrutora = data;
   } else if (role === "cartorio") {
     const { data } = await supabase
       .from("cartorio_perfis")
@@ -72,6 +80,7 @@ export default async function EditarPerfilPage() {
             role={role}
             dadosCorretor={dadosCorretor}
             dadosImobiliaria={dadosImobiliaria}
+            dadosConstrutora={dadosConstrutora}
             dadosCartorio={dadosCartorio}
           />
         </div>

@@ -10,5 +10,6 @@ export const TIPOS_POR_ROLE: Record<string, DocumentoTipo[]> = {
   vendedor: ["identidade"],
   corretor: ["identidade", "creci"],
   imobiliaria: ["cnpj"],
+  construtora: ["cnpj"],
   cartorio: ["registro_serventia"],
 };

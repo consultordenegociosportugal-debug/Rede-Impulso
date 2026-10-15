@@ -22,6 +22,7 @@ const ROLE_LABEL: Record<string, string> = {
   vendedor: "Vendedor",
   corretor: "Corretor",
   imobiliaria: "Imobiliária",
+  construtora: "Construtora/Incorporadora",
   cartorio: "Cartório",
 };
 
@@ -46,6 +47,7 @@ export function EditarPerfilForm({
   role,
   dadosCorretor,
   dadosImobiliaria,
+  dadosConstrutora,
   dadosCartorio,
 }: {
   userId: string;
@@ -57,6 +59,7 @@ export function EditarPerfilForm({
   role: string;
   dadosCorretor: { creci: string; bairros_atuacao: string[] } | null;
   dadosImobiliaria: { cnpj: string; nome_fantasia: string } | null;
+  dadosConstrutora: { cnpj: string; nome_fantasia: string } | null;
   dadosCartorio: { registro_serventia: string } | null;
 }) {
   const router = useRouter();
@@ -71,8 +74,10 @@ export function EditarPerfilForm({
 
   const [creci, setCreci] = useState(dadosCorretor?.creci ?? "");
   const [bairros, setBairros] = useState((dadosCorretor?.bairros_atuacao ?? []).join(", "));
-  const [cnpj, setCnpj] = useState(dadosImobiliaria?.cnpj ?? "");
-  const [nomeFantasia, setNomeFantasia] = useState(dadosImobiliaria?.nome_fantasia ?? "");
+  const [cnpj, setCnpj] = useState(dadosImobiliaria?.cnpj ?? dadosConstrutora?.cnpj ?? "");
+  const [nomeFantasia, setNomeFantasia] = useState(
+    dadosImobiliaria?.nome_fantasia ?? dadosConstrutora?.nome_fantasia ?? "",
+  );
   const [registro, setRegistro] = useState(dadosCartorio?.registro_serventia ?? "");
 
   const [status, setStatus] = useState<"idle" | "loading" | "sucesso" | "error">("idle");
@@ -108,8 +113,8 @@ export function EditarPerfilForm({
       else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
       if (!bairros.trim()) problemas.bairros = "Informe ao menos um bairro onde você atua.";
     }
-    if (role === "imobiliaria") {
-      if (!cnpj.trim()) problemas.cnpj = "Informe o CNPJ da imobiliária.";
+    if (role === "imobiliaria" || role === "construtora") {
+      if (!cnpj.trim()) problemas.cnpj = "Informe o CNPJ da empresa.";
       else if (!CNPJ_OK.test(cnpj)) problemas.cnpj = "CNPJ incompleto — são 14 dígitos.";
       if (!nomeFantasia.trim()) problemas.nomeFantasia = "Informe o nome fantasia.";
     }
@@ -185,13 +190,14 @@ export function EditarPerfilForm({
         setStatus("error");
         return;
       }
-    } else if (role === "imobiliaria") {
-      const { error: erroImobiliaria } = await supabase
-        .from("imobiliaria_perfis")
+    } else if (role === "imobiliaria" || role === "construtora") {
+      const tabela = role === "imobiliaria" ? "imobiliaria_perfis" : "construtora_perfis";
+      const { error: erroEmpresa } = await supabase
+        .from(tabela)
         .update({ cnpj, nome_fantasia: nomeFantasia })
         .eq("profile_id", userId);
-      if (erroImobiliaria) {
-        setErro(erroImobiliaria.message);
+      if (erroEmpresa) {
+        setErro(erroEmpresa.message);
         setStatus("error");
         return;
       }
@@ -370,7 +376,7 @@ export function EditarPerfilForm({
         </div>
       )}
 
-      {role === "imobiliaria" && (
+      {(role === "imobiliaria" || role === "construtora") && (
         <div className="grid grid-2">
           <div className="field">
             <label htmlFor="cnpj">CNPJ</label>

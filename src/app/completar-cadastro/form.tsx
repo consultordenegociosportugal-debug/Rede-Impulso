@@ -14,7 +14,7 @@ import {
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 
-type Papel = "comprador" | "vendedor" | "corretor" | "imobiliaria";
+type Papel = "comprador" | "vendedor" | "corretor" | "imobiliaria" | "construtora";
 type Campo =
   | "nome"
   | "telefone"
@@ -48,6 +48,11 @@ const PAPEIS: { valor: Papel; titulo: string; descricao: string }[] = [
     valor: "imobiliaria",
     titulo: "Imobiliária",
     descricao: "Represento uma empresa com CNPJ e equipe.",
+  },
+  {
+    valor: "construtora",
+    titulo: "Construtora/Incorporadora",
+    descricao: "Lanço empreendimentos novos, na planta ou prontos.",
   },
 ];
 
@@ -113,8 +118,8 @@ export function CompletarCadastroForm({
       else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
       if (!bairros.trim()) problemas.bairros = "Informe ao menos um bairro onde você atua.";
     }
-    if (papel === "imobiliaria") {
-      if (!cnpj.trim()) problemas.cnpj = "Informe o CNPJ da imobiliária.";
+    if (papel === "imobiliaria" || papel === "construtora") {
+      if (!cnpj.trim()) problemas.cnpj = "Informe o CNPJ da empresa.";
       else if (!CNPJ_OK.test(cnpj)) problemas.cnpj = "CNPJ incompleto — são 14 dígitos.";
       if (!nomeFantasia.trim()) problemas.nomeFantasia = "Informe o nome fantasia.";
     }
@@ -180,15 +185,16 @@ export function CompletarCadastroForm({
         setStatus("error");
         return;
       }
-    } else if (papel === "imobiliaria") {
-      const { error: erroImobiliaria } = await supabase
-        .from("imobiliaria_perfis")
+    } else if (papel === "imobiliaria" || papel === "construtora") {
+      const tabela = papel === "imobiliaria" ? "imobiliaria_perfis" : "construtora_perfis";
+      const { error: erroEmpresa } = await supabase
+        .from(tabela)
         .upsert(
           { profile_id: user.id, cnpj, nome_fantasia: nomeFantasia },
           { onConflict: "profile_id" },
         );
-      if (erroImobiliaria) {
-        setErro(erroImobiliaria.message);
+      if (erroEmpresa) {
+        setErro(erroEmpresa.message);
         setStatus("error");
         return;
       }
@@ -378,7 +384,7 @@ export function CompletarCadastroForm({
         </div>
       )}
 
-      {papel === "imobiliaria" && (
+      {(papel === "imobiliaria" || papel === "construtora") && (
         <div className="grid grid-2">
           <div className="field">
             <label htmlFor="cnpj">CNPJ</label>

@@ -22,6 +22,7 @@ export const ROTAS_IMOBILIARIO = [
   "/favoritos",
   "/cadastro-profissional",
   "/para-corretores",
+  "/comece-agora",
   "/sugestao-corretores",
   "/perfil-corretor",
   "/painel-corretores",

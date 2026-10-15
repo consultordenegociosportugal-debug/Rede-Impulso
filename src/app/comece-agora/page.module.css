@@ -1,0 +1,65 @@
+.hero {
+  padding: 64px 0 40px;
+  text-align: center;
+}
+.hero h1 {
+  font-size: clamp(30px, 4.5vw, 44px);
+  line-height: 1.1;
+  margin: 14px auto 14px;
+  max-width: 20ch;
+}
+.lead {
+  font-size: 16px;
+  color: var(--ink-soft);
+  max-width: 54ch;
+  margin: 0 auto;
+}
+
+.sectionHead {
+  max-width: 60ch;
+  margin: 0 auto 28px;
+  text-align: center;
+}
+.sectionHead h2 {
+  font-size: 24px;
+  margin: 8px 0;
+}
+
+.papelCard {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  text-decoration: none;
+  transition:
+    border-color 0.15s,
+    transform 0.15s;
+}
+.papelCard:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+.papelIcone {
+  font-size: 24px;
+}
+.papelTitulo {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.papelDesc {
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin: 0;
+}
+.papelSeta {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--primary);
+}
+
+@media (max-width: 560px) {
+  .hero {
+    padding: 40px 0 28px;
+  }
+}
