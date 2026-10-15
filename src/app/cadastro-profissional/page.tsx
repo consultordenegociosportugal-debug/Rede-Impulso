@@ -18,6 +18,7 @@ type Campo =
   | "bairros"
   | "cnpj"
   | "nomeFantasia"
+  | "cidade"
   | "telefone"
   | "dataNascimento"
   | "email"
@@ -92,6 +93,7 @@ function CadastroProfissionalConteudo() {
   const [bairros, setBairros] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [nomeFantasia, setNomeFantasia] = useState("");
+  const [cidade, setCidade] = useState("");
   const [telefone, setTelefone] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
   const [email, setEmail] = useState("");
@@ -219,6 +221,7 @@ function CadastroProfissionalConteudo() {
                   .split(",")
                   .map((b) => b.trim())
                   .filter(Boolean),
+                cidade: cidade || null,
               }
             : {
                 role: papel,
@@ -228,6 +231,7 @@ function CadastroProfissionalConteudo() {
                 rede_social: redeSocial || null,
                 cnpj,
                 nome_fantasia: nomeFantasia,
+                cidade: cidade || null,
               },
       },
     });
@@ -479,6 +483,25 @@ function CadastroProfissionalConteudo() {
                     </div>
                   </div>
                 )}
+
+                <div className="field">
+                  <label htmlFor="cidade">
+                    Cidade de atuação{" "}
+                    <span className="muted" style={{ fontWeight: 400 }}>
+                      (opcional)
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    id="cidade"
+                    placeholder="São Luís"
+                    value={cidade}
+                    onChange={(e) => setCidade(e.target.value)}
+                  />
+                  <p className="hint">
+                    Ajuda quem está procurando um profissional perto de onde mora.
+                  </p>
+                </div>
 
                 {/* Atalho para quem prefere não criar mais uma senha. O CRECI
                     ou o CNPJ não viajam com o login social, então esses dados

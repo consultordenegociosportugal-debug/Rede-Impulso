@@ -86,6 +86,7 @@ export function CompletarCadastroForm({
   const [bairros, setBairros] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [nomeFantasia, setNomeFantasia] = useState("");
+  const [cidade, setCidade] = useState("");
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [erro, setErro] = useState<string | null>(null);
@@ -177,6 +178,7 @@ export function CompletarCadastroForm({
             .split(",")
             .map((b) => b.trim())
             .filter(Boolean),
+          cidade: cidade || null,
         },
         { onConflict: "profile_id" },
       );
@@ -190,7 +192,7 @@ export function CompletarCadastroForm({
       const { error: erroEmpresa } = await supabase
         .from(tabela)
         .upsert(
-          { profile_id: user.id, cnpj, nome_fantasia: nomeFantasia },
+          { profile_id: user.id, cnpj, nome_fantasia: nomeFantasia, cidade: cidade || null },
           { onConflict: "profile_id" },
         );
       if (erroEmpresa) {
@@ -436,6 +438,24 @@ export function CompletarCadastroForm({
               <p className="hint">É esse nome que aparece no perfil público.</p>
             )}
           </div>
+        </div>
+      )}
+
+      {(papel === "corretor" || papel === "imobiliaria" || papel === "construtora") && (
+        <div className="field">
+          <label htmlFor="cidadeAtuacao">
+            Cidade de atuação{" "}
+            <span className="muted" style={{ fontWeight: 400 }}>
+              (opcional)
+            </span>
+          </label>
+          <input
+            type="text"
+            id="cidadeAtuacao"
+            placeholder="São Luís"
+            value={cidade}
+            onChange={(e) => setCidade(e.target.value)}
+          />
         </div>
       )}
 

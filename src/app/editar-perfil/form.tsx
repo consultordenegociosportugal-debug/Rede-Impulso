@@ -57,9 +57,9 @@ export function EditarPerfilForm({
   redeSocialAtual: string;
   fotoUrlAtual: string | null;
   role: string;
-  dadosCorretor: { creci: string; bairros_atuacao: string[] } | null;
-  dadosImobiliaria: { cnpj: string; nome_fantasia: string } | null;
-  dadosConstrutora: { cnpj: string; nome_fantasia: string } | null;
+  dadosCorretor: { creci: string; bairros_atuacao: string[]; cidade: string | null } | null;
+  dadosImobiliaria: { cnpj: string; nome_fantasia: string; cidade: string | null } | null;
+  dadosConstrutora: { cnpj: string; nome_fantasia: string; cidade: string | null } | null;
   dadosCartorio: { registro_serventia: string } | null;
 }) {
   const router = useRouter();
@@ -77,6 +77,9 @@ export function EditarPerfilForm({
   const [cnpj, setCnpj] = useState(dadosImobiliaria?.cnpj ?? dadosConstrutora?.cnpj ?? "");
   const [nomeFantasia, setNomeFantasia] = useState(
     dadosImobiliaria?.nome_fantasia ?? dadosConstrutora?.nome_fantasia ?? "",
+  );
+  const [cidade, setCidade] = useState(
+    dadosCorretor?.cidade ?? dadosImobiliaria?.cidade ?? dadosConstrutora?.cidade ?? "",
   );
   const [registro, setRegistro] = useState(dadosCartorio?.registro_serventia ?? "");
 
@@ -183,6 +186,7 @@ export function EditarPerfilForm({
             .split(",")
             .map((b) => b.trim())
             .filter(Boolean),
+          cidade: cidade || null,
         })
         .eq("profile_id", userId);
       if (erroCorretor) {
@@ -194,7 +198,7 @@ export function EditarPerfilForm({
       const tabela = role === "imobiliaria" ? "imobiliaria_perfis" : "construtora_perfis";
       const { error: erroEmpresa } = await supabase
         .from(tabela)
-        .update({ cnpj, nome_fantasia: nomeFantasia })
+        .update({ cnpj, nome_fantasia: nomeFantasia, cidade: cidade || null })
         .eq("profile_id", userId);
       if (erroEmpresa) {
         setErro(erroEmpresa.message);
@@ -426,6 +430,25 @@ export function EditarPerfilForm({
               <p className="hint">É esse nome que aparece no perfil público.</p>
             )}
           </div>
+        </div>
+      )}
+
+      {(role === "corretor" || role === "imobiliaria" || role === "construtora") && (
+        <div className="field">
+          <label htmlFor="cidadeAtuacao">
+            Cidade de atuação{" "}
+            <span className="muted" style={{ fontWeight: 400 }}>
+              (opcional)
+            </span>
+          </label>
+          <input
+            type="text"
+            id="cidadeAtuacao"
+            placeholder="São Luís"
+            value={cidade}
+            onChange={(e) => setCidade(e.target.value)}
+          />
+          <p className="hint">Ajuda quem está procurando um profissional perto de onde mora.</p>
         </div>
       )}
 

@@ -22,29 +22,29 @@ export default async function EditarPerfilPage() {
 
   const role = profile?.role ?? "comprador";
 
-  let dadosCorretor: { creci: string; bairros_atuacao: string[] } | null = null;
-  let dadosImobiliaria: { cnpj: string; nome_fantasia: string } | null = null;
-  let dadosConstrutora: { cnpj: string; nome_fantasia: string } | null = null;
+  let dadosCorretor: { creci: string; bairros_atuacao: string[]; cidade: string | null } | null = null;
+  let dadosImobiliaria: { cnpj: string; nome_fantasia: string; cidade: string | null } | null = null;
+  let dadosConstrutora: { cnpj: string; nome_fantasia: string; cidade: string | null } | null = null;
   let dadosCartorio: { registro_serventia: string } | null = null;
 
   if (role === "corretor") {
     const { data } = await supabase
       .from("corretor_perfis")
-      .select("creci, bairros_atuacao")
+      .select("creci, bairros_atuacao, cidade")
       .eq("profile_id", user.id)
       .single();
     dadosCorretor = data;
   } else if (role === "imobiliaria") {
     const { data } = await supabase
       .from("imobiliaria_perfis")
-      .select("cnpj, nome_fantasia")
+      .select("cnpj, nome_fantasia, cidade")
       .eq("profile_id", user.id)
       .single();
     dadosImobiliaria = data;
   } else if (role === "construtora") {
     const { data } = await supabase
       .from("construtora_perfis")
-      .select("cnpj, nome_fantasia")
+      .select("cnpj, nome_fantasia, cidade")
       .eq("profile_id", user.id)
       .single();
     dadosConstrutora = data;
