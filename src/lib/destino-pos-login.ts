@@ -64,7 +64,7 @@ export async function destinoPosLogin(
     if (!count) return "/verificacao";
   }
 
-  if (profile?.role === "comprador") return "/imoveis";
+  if (profile?.role === "comprador") return "/area-cliente";
 
   return "/";
 }

@@ -58,8 +58,8 @@ export async function ComoVaiUsar() {
       icone: "🔑",
       titulo: "Sou cliente",
       descricao: "Quero comprar, alugar ou vender um imóvel.",
-      href: user ? "/imoveis" : "/cadastro-cliente",
-      cta: user ? "Ver imóveis disponíveis →" : "Criar minha conta grátis →",
+      href: user ? "/area-cliente" : "/cadastro-cliente",
+      cta: user ? "Ir para minha área →" : "Criar minha conta grátis →",
     },
   ];
 

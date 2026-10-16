@@ -113,6 +113,16 @@ const NAV_ITEMS_VISITANTE: NavItem[] = [
   { type: "link", href: "/cadastro-cliente", label: "Sou cliente" },
 ];
 
+// Menu de quem logou como cliente (comprador) — Início/Buscar/Meus
+// agendamentos, igual ao portal do cliente de referência. Quem logou com
+// papel profissional continua vendo o menu funcional (NAV_ITEMS).
+const NAV_ITEMS_CLIENTE: NavItem[] = [
+  { type: "link", href: "/area-cliente", label: "Início" },
+  { type: "link", href: "/buscar-profissionais", label: "Buscar" },
+  { type: "link", href: "/meus-agendamentos", label: "Meus agendamentos" },
+  { type: "link", href: "/imoveis", label: "Ver imóveis" },
+];
+
 function groupIsActive(item: Extract<NavItem, { type: "group" }>, active: string) {
   return item.children.some((c) => c.href === active);
 }
@@ -121,6 +131,7 @@ export function Nav({ active }: { active: string }) {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [nome, setNome] = useState<string | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -131,15 +142,17 @@ export function Nav({ active }: { active: string }) {
       setUser(currentUser);
       if (!currentUser) {
         setNome(null);
+        setRole(null);
         setIsAdmin(false);
         return;
       }
       const { data } = await supabase
         .from("profiles")
-        .select("nome, is_admin")
+        .select("nome, role, is_admin")
         .eq("id", currentUser.id)
         .single();
       setNome(data?.nome ?? null);
+      setRole(data?.role ?? null);
       setIsAdmin(Boolean(data?.is_admin));
     }
 
@@ -197,7 +210,9 @@ export function Nav({ active }: { active: string }) {
                 <span
                   className={
                     "nav-group-label mono" +
-                    (active === "/editar-perfil" || active === "/painel-negocios"
+                    (active === "/editar-perfil" ||
+                    active === "/painel-negocios" ||
+                    active === "/area-cliente"
                       ? " active"
                       : "")
                   }
@@ -215,13 +230,23 @@ export function Nav({ active }: { active: string }) {
                   </svg>
                 </span>
                 <div className="nav-dropdown" style={{ left: "auto", right: 0 }}>
-                  <Link
-                    href="/painel-negocios"
-                    className={active === "/painel-negocios" ? "active" : undefined}
-                    onClick={() => setOpen(false)}
-                  >
-                    Minhas negociações
-                  </Link>
+                  {role === "comprador" ? (
+                    <Link
+                      href="/area-cliente"
+                      className={active === "/area-cliente" ? "active" : undefined}
+                      onClick={() => setOpen(false)}
+                    >
+                      Minha área
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/painel-negocios"
+                      className={active === "/painel-negocios" ? "active" : undefined}
+                      onClick={() => setOpen(false)}
+                    >
+                      Minhas negociações
+                    </Link>
+                  )}
                   {MOBILIDADE_ATIVA && (
                     <Link
                       href="/motorista/raio-x"
@@ -262,7 +287,7 @@ export function Nav({ active }: { active: string }) {
       </div>
       <div className={open ? "nav-panel open" : "nav-panel"}>
         <div className="nav-links">
-          {(user ? NAV_ITEMS : NAV_ITEMS_VISITANTE).map((item, indice) => {
+          {(!user ? NAV_ITEMS_VISITANTE : role === "comprador" ? NAV_ITEMS_CLIENTE : NAV_ITEMS).map((item, indice) => {
             if (item.type === "divider") {
               return <div className="nav-divider" key={`divisor-${indice}`} aria-hidden="true" />;
             }

@@ -228,11 +228,8 @@ export default function CadastroClientePage() {
                 </p>
               )}
               {status === "logado" && papel === "comprador" && (
-                <Link
-                  href={IMOBILIARIO_ATIVO ? "/imoveis" : "/motorista/raio-x"}
-                  className="btn btn-primary btn-sm mt-16"
-                >
-                  {IMOBILIARIO_ATIVO ? "Ver imóveis disponíveis →" : "Fazer meu Raio-X do lucro →"}
+                <Link href="/area-cliente" className="btn btn-primary btn-sm mt-16">
+                  Ir para minha área →
                 </Link>
               )}
             </div>
