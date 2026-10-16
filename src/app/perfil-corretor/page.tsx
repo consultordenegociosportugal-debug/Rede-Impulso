@@ -1,6 +1,7 @@
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/server";
 import { VincularButton } from "./vincular-button";
+import { AgendarComCorretorButton } from "./agendar-com-corretor-button";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 
@@ -64,6 +65,9 @@ export default async function PerfilCorretorPage({
   }
 
   const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const [{ data: perfilData }, { data: depoimentosData }] = await Promise.all([
     supabase
@@ -162,6 +166,14 @@ export default async function PerfilCorretorPage({
                   <div className="label">{stat.label}</div>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-24">
+              <AgendarComCorretorButton
+                corretorId={perfil.id}
+                corretorNome={perfil.nome}
+                logado={Boolean(user)}
+              />
             </div>
 
             <div

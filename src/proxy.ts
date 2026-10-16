@@ -11,7 +11,7 @@ export async function proxy(request: NextRequest) {
   const caminho = request.nextUrl.pathname;
   if (rotaAdormecida(caminho)) {
     if (caminho.startsWith("/api/")) {
-      return NextResponse.json({ pausado: true, motivo: "Módulo de mobilidade adormecido." });
+      return NextResponse.json({ pausado: true, motivo: "Módulo adormecido." });
     }
     const destino = request.nextUrl.clone();
     destino.pathname = "/pausado";

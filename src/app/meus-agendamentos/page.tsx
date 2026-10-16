@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
+import { MARKETPLACE_ATIVO } from "@/lib/modulos";
 
 const STATUS_VISITA: Record<string, { label: string; className: string }> = {
   solicitada: { label: "Aguardando confirmação", className: "badge-amber" },
@@ -22,6 +23,7 @@ type VisitaRow = {
   data_hora: string;
   status: string;
   imoveis: { id: string; titulo: string; bairro: string; cidade: string } | null;
+  corretor: { nome: string } | null;
 };
 
 function ListaVisitas({ visitas, vazio }: { visitas: VisitaRow[]; vazio: string }) {
@@ -47,7 +49,7 @@ function ListaVisitas({ visitas, vazio }: { visitas: VisitaRow[]; vazio: string 
                   {v.imoveis ? (
                     <Link href={`/imoveis/${v.imoveis.id}`}>{v.imoveis.titulo}</Link>
                   ) : (
-                    "Imóvel"
+                    `Com ${v.corretor?.nome ?? "o corretor"}`
                   )}
                   {v.imoveis?.bairro ? ` · ${v.imoveis.bairro}, ${v.imoveis.cidade}` : ""}
                 </div>
@@ -75,7 +77,7 @@ export default async function MeusAgendamentosPage() {
 
   const { data: dadosFuturas } = await supabase
     .from("visitas")
-    .select("id, data_hora, status, imoveis(id, titulo, bairro, cidade)")
+    .select("id, data_hora, status, imoveis(id, titulo, bairro, cidade), corretor:corretor_id(nome)")
     .eq("comprador_id", user.id)
     .gte("data_hora", agora)
     .order("data_hora", { ascending: true });
@@ -83,7 +85,7 @@ export default async function MeusAgendamentosPage() {
 
   const { data: dadosPassadas } = await supabase
     .from("visitas")
-    .select("id, data_hora, status, imoveis(id, titulo, bairro, cidade)")
+    .select("id, data_hora, status, imoveis(id, titulo, bairro, cidade), corretor:corretor_id(nome)")
     .eq("comprador_id", user.id)
     .lt("data_hora", agora)
     .order("data_hora", { ascending: false })
@@ -97,7 +99,7 @@ export default async function MeusAgendamentosPage() {
       <div className="wrap" style={{ padding: "48px 0 80px" }}>
         <span className="eyebrow">Sua conta</span>
         <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>Meus agendamentos</h1>
-        <p className="muted">Visitas que você pediu para ver um imóvel.</p>
+        <p className="muted">Suas visitas agendadas com um corretor.</p>
 
         <section className="mt-24">
           <h2 style={{ fontSize: 18, margin: "0 0 12px" }}>Próximas</h2>
@@ -107,9 +109,11 @@ export default async function MeusAgendamentosPage() {
               <Link href="/buscar-profissionais" className="btn btn-primary btn-sm">
                 Buscar um profissional →
               </Link>
-              <Link href="/imoveis" className="btn btn-outline btn-sm">
-                Ver imóveis →
-              </Link>
+              {MARKETPLACE_ATIVO && (
+                <Link href="/imoveis" className="btn btn-outline btn-sm">
+                  Ver imóveis →
+                </Link>
+              )}
             </div>
           )}
         </section>

@@ -10,6 +10,7 @@ import { formatarTelefone, formatarCnpj, formatarCreci, formatarInstagram } from
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
+import { MARKETPLACE_ATIVO } from "@/lib/modulos";
 
 type Papel = "corretor" | "imobiliaria" | "construtora";
 type Campo =
@@ -37,22 +38,30 @@ const TELEFONE_OK = /^\(\d{2}\)\s?9\s?\d{4}-?\d{4}$/;
 const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const CNPJ_OK = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
 
+// Imobiliária/construtora pausadas junto com a vitrine de imóveis — o
+// pivô para agendamento direto foca só no corretor (ver MARKETPLACE_ATIVO
+// em src/lib/modulos.ts). O papel/tabela continuam existindo no banco,
+// só não aparecem mais como opção de cadastro novo.
 const PAPEIS: { valor: Papel; titulo: string; descricao: string }[] = [
   {
     valor: "corretor",
     titulo: "Corretor autônomo",
     descricao: "Trabalho por conta própria, com CRECI no meu nome.",
   },
-  {
-    valor: "imobiliaria",
-    titulo: "Imobiliária",
-    descricao: "Represento uma empresa com CNPJ e equipe.",
-  },
-  {
-    valor: "construtora",
-    titulo: "Construtora/Incorporadora",
-    descricao: "Lanço empreendimentos novos, na planta ou prontos.",
-  },
+  ...(MARKETPLACE_ATIVO
+    ? [
+        {
+          valor: "imobiliaria" as const,
+          titulo: "Imobiliária",
+          descricao: "Represento uma empresa com CNPJ e equipe.",
+        },
+        {
+          valor: "construtora" as const,
+          titulo: "Construtora/Incorporadora",
+          descricao: "Lanço empreendimentos novos, na planta ou prontos.",
+        },
+      ]
+    : []),
 ];
 
 const TITULO_PASSO = ["Quem é você", "Contato e acesso", "Documentos e confirmação"];

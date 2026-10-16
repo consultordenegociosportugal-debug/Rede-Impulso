@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { MOBILIDADE_ATIVA } from "@/lib/modulos";
+import { MOBILIDADE_ATIVA, MARKETPLACE_ATIVO } from "@/lib/modulos";
 
 type NavLink = { href: string; label: string };
 type NavItem =
@@ -38,10 +38,37 @@ const NAV_ITEMS_MOBILIDADE: NavItem[] = [
   },
 ];
 
-// Núcleo permanente da plataforma desde 2026-10: agendamento entre
-// corretor/imobiliária/construtora e cliente.
-const NAV_ITEMS_IMOBILIARIO: NavItem[] = [
+// Núcleo permanente da plataforma desde o pivô para agendamento direto
+// (modelo AppBarber): corretor gerencia sua agenda e seus clientes.
+const NAV_ITEMS_CORE: NavItem[] = [
   { type: "link", href: "/comece-agora", label: "Comece agora" },
+  { type: "link", href: "/cadastro-profissional", label: "Cadastro profissional" },
+  { type: "link", href: "/para-corretores", label: "Para corretores" },
+  {
+    type: "group",
+    label: "Agendamento",
+    children: [
+      { href: "/dashboard", label: "Dashboard" },
+      { href: "/painel-negocios", label: "Minhas visitas" },
+      { href: "/painel-negocios/clientes", label: "Meus clientes" },
+      { href: "/painel-negocios/disponibilidade", label: "Minha disponibilidade" },
+      { href: "/relatorio-visitas", label: "Relatório de visitas" },
+    ],
+  },
+  {
+    type: "group",
+    label: "Cursos",
+    children: [
+      { href: "/cursos", label: "Cursos e capacitação" },
+      { href: "/meus-cursos", label: "Meus cursos" },
+    ],
+  },
+  { type: "link", href: "/sobre", label: "Como funciona" },
+];
+
+// Vitrine de imóveis e planos de equipe — pausados desde o pivô para
+// agendamento direto (ver MARKETPLACE_ATIVO em src/lib/modulos.ts).
+const NAV_ITEMS_MARKETPLACE: NavItem[] = [
   {
     type: "group",
     label: "Imóveis",
@@ -64,37 +91,31 @@ const NAV_ITEMS_IMOBILIARIO: NavItem[] = [
     type: "group",
     label: "Profissionais",
     children: [
-      { href: "/para-corretores", label: "Para corretores e imobiliárias" },
-      { href: "/cadastro-profissional", label: "Cadastro profissional" },
       { href: "/sugestao-corretores", label: "Sugestão de corretores" },
-      { href: "/perfil-corretor", label: "Perfil do corretor" },
       { href: "/painel-corretores", label: "Painel de corretores" },
       { href: "/planos", label: "Planos de equipe" },
-      { href: "/cursos", label: "Cursos e capacitação" },
-      { href: "/meus-cursos", label: "Meus cursos" },
     ],
   },
   {
     type: "group",
     label: "Negócios",
     children: [
-      { href: "/dashboard", label: "Dashboard" },
-      { href: "/relatorio-visitas", label: "Relatório de visitas" },
-      { href: "/painel-negocios", label: "Painel de negócios" },
       { href: "/modelos-contratos", label: "Contratos e documentos" },
       { href: "/mural-conquistas", label: "Mural de conquistas" },
       { href: "/oferta-pos-negocio", label: "Oferta pós-negócio" },
     ],
   },
-  { type: "link", href: "/sobre", label: "Como funciona" },
 ];
 
-// Imóveis é sempre o núcleo. Mobilidade (motorista + elétricos) só aparece
-// quando acordada, separada por um divisor visual para não misturar os
-// dois mundos. Início sempre abre a lista.
+// Núcleo (agendamento) é sempre visível. Marketplace de imóveis/planos e
+// mobilidade (motorista + elétricos) só aparecem quando acordados, cada
+// um separado por um divisor visual. Início sempre abre a lista.
 const NAV_ITEMS: NavItem[] = [
   { type: "link", href: "/", label: "Início" },
-  ...NAV_ITEMS_IMOBILIARIO,
+  ...NAV_ITEMS_CORE,
+  ...(MARKETPLACE_ATIVO
+    ? ([{ type: "divider" }, ...NAV_ITEMS_MARKETPLACE] as NavItem[])
+    : []),
   ...(MOBILIDADE_ATIVA
     ? ([{ type: "divider" }, ...NAV_ITEMS_MOBILIDADE] as NavItem[])
     : []),
@@ -108,7 +129,7 @@ const NAV_ITEMS_VISITANTE: NavItem[] = [
   { type: "link", href: "/", label: "Home" },
   { type: "link", href: "/sobre", label: "Sobre" },
   { type: "link", href: "/#funcionalidades", label: "Funções" },
-  { type: "link", href: "/planos", label: "Preços" },
+  ...(MARKETPLACE_ATIVO ? ([{ type: "link", href: "/planos", label: "Preços" }] as NavItem[]) : []),
   { type: "link", href: "/comece-agora", label: "Teste grátis" },
   { type: "link", href: "/blog", label: "Blog" },
   { type: "link", href: "/entrar", label: "Acessar" },
@@ -122,7 +143,7 @@ const NAV_ITEMS_CLIENTE: NavItem[] = [
   { type: "link", href: "/area-cliente", label: "Início" },
   { type: "link", href: "/buscar-profissionais", label: "Buscar" },
   { type: "link", href: "/meus-agendamentos", label: "Meus agendamentos" },
-  { type: "link", href: "/imoveis", label: "Ver imóveis" },
+  ...(MARKETPLACE_ATIVO ? ([{ type: "link", href: "/imoveis", label: "Ver imóveis" }] as NavItem[]) : []),
 ];
 
 function groupIsActive(item: Extract<NavItem, { type: "group" }>, active: string) {
