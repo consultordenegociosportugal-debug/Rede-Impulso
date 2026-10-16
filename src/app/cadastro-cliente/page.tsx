@@ -181,6 +181,11 @@ export default function CadastroClientePage() {
       email,
       password: senha,
       options: {
+        // Sem isso, o link do e-mail de confirmação cai no Site URL
+        // configurado no painel do Supabase — que pode estar errado
+        // (ex.: ainda apontando pra localhost de um ambiente de teste).
+        // Setar aqui explicitamente garante o domínio certo sempre.
+        emailRedirectTo: new URL("/auth/callback", window.location.origin).toString(),
         data: {
           role: papel,
           nome,
