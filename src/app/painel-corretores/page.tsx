@@ -100,7 +100,7 @@ export default async function PainelCorretoresPage() {
               📄 Modelos de contrato e checklist
             </Link>
             <Link href="/planos" className="btn btn-outline btn-sm">
-              🏅 Plano Profissional
+              🏅 Planos de equipe
             </Link>
             {perfil?.role === "imobiliaria" && <ConvidarCorretorForm />}
           </div>

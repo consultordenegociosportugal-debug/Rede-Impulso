@@ -40,7 +40,7 @@ const BENEFICIOS = [
     icone: "📈",
     titulo: "Publique de graça, cresça quando quiser",
     texto:
-      "2 imóveis ativos sempre grátis, pra sempre. Pra publicar mais ao mesmo tempo, o Plano Profissional sai a partir de R$ 139,90/mês — sem cobrança por lead.",
+      "2 imóveis ativos e 2 corretores na equipe sempre grátis, pra sempre. Pra ampliar a equipe, os planos saem a partir de R$ 69,90/mês — sem cobrança por lead.",
   },
   {
     icone: "🗂️",

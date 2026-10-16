@@ -217,7 +217,7 @@ export default async function PainelNegociosPage({
               📄 Modelos de contrato e checklist
             </Link>
             <Link href="/planos" className="btn btn-outline btn-sm">
-              🏅 Plano Profissional
+              🏅 Planos de equipe
             </Link>
             <div className="segmented">
               <Link

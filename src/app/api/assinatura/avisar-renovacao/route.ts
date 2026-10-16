@@ -22,10 +22,29 @@ import { rodapeTransacionalHtml } from "@/lib/email-rodape";
 const DIAS_DE_ANTECEDENCIA = 3;
 
 const PLANO_LABEL: Record<string, string> = {
-  "5": "Profissional 5",
-  "15": "Profissional 15",
-  "20": "Profissional 20",
+  "equipe-pequena-mensal": "Equipe (mensal)",
+  "equipe-pequena-semestral": "Equipe (semestral)",
+  "equipe-pequena-anual": "Equipe (anual)",
+  "equipe-media-mensal": "Equipe Plus (mensal)",
+  "equipe-media-semestral": "Equipe Plus (semestral)",
+  "equipe-media-anual": "Equipe Plus (anual)",
+  "equipe-grande-mensal": "Rede (mensal)",
+  "equipe-grande-semestral": "Rede (semestral)",
+  "equipe-grande-anual": "Rede (anual)",
 };
+
+const MESES_POR_CICLO: Record<string, number> = {
+  mensal: 1,
+  semestral: 6,
+  anual: 12,
+};
+
+// "equipe-pequena-semestral" -> 6. Sem sufixo reconhecido (plano antigo,
+// de antes do ciclo existir), assume mensal — era o único ciclo então.
+function mesesDoCiclo(plano: string): number {
+  const sufixo = plano.split("-").pop() ?? "";
+  return MESES_POR_CICLO[sufixo] ?? 1;
+}
 
 function autorizado(request: NextRequest) {
   const segredo = process.env.CRON_SECRET;
@@ -52,13 +71,13 @@ export async function GET(request: NextRequest) {
   // 1) Rola pra frente quem já passou da data estimada.
   const { data: vencidas } = await supabase
     .from("assinaturas_plano")
-    .select("id, proxima_cobranca")
+    .select("id, plano, proxima_cobranca")
     .eq("status", "ativa")
     .lt("proxima_cobranca", hoje);
 
   for (const assinatura of vencidas ?? []) {
     const novaData = new Date(assinatura.proxima_cobranca + "T00:00:00");
-    novaData.setMonth(novaData.getMonth() + 1);
+    novaData.setMonth(novaData.getMonth() + mesesDoCiclo(assinatura.plano));
     await supabase
       .from("assinaturas_plano")
       .update({ proxima_cobranca: novaData.toISOString().slice(0, 10), lembrete_enviado_em: null })
@@ -98,6 +117,12 @@ export async function GET(request: NextRequest) {
     if (!perfil?.email) continue;
 
     const planoLabel = PLANO_LABEL[assinatura.plano] ?? `Plano ${assinatura.plano}`;
+    const meses = mesesDoCiclo(assinatura.plano);
+    const valorCobrado = assinatura.valor * meses;
+    const descricaoValor =
+      meses === 1
+        ? `${formatoMoeda.format(valorCobrado)}/mês`
+        : `${formatoMoeda.format(valorCobrado)} (equivalente a ${formatoMoeda.format(assinatura.valor)}/mês)`;
 
     try {
       const { error } = await resend.emails.send({
@@ -106,7 +131,7 @@ export async function GET(request: NextRequest) {
         subject: `Sua assinatura ${planoLabel} renova em ${formatarData(assinatura.proxima_cobranca)}`,
         html: `
           <p>Olá, ${perfil.nome}.</p>
-          <p>Sua assinatura do <strong>${planoLabel}</strong> (${formatoMoeda.format(assinatura.valor)}/mês)
+          <p>Sua assinatura do <strong>${planoLabel}</strong> (${descricaoValor})
           vai renovar automaticamente em <strong>${formatarData(assinatura.proxima_cobranca)}</strong>,
           cobrada no mesmo cartão via Mercado Pago.</p>
           <p>Não precisa fazer nada se quiser continuar. Se quiser cancelar antes da cobrança,

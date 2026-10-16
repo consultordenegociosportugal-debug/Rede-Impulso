@@ -41,7 +41,7 @@ const PERGUNTAS = [
   {
     pergunta: "O cadastro grátis tem alguma limitação?",
     resposta:
-      "2 imóveis ativos sempre grátis, pra sempre, com todas as funcionalidades liberadas — inclusive agendamento automático. Pra publicar mais ao mesmo tempo, tem o Plano Profissional.",
+      "2 imóveis ativos e 2 corretores na equipe sempre grátis, pra sempre, com todas as funcionalidades liberadas — inclusive agendamento automático. Pra ampliar a equipe, tem os planos a partir de R$ 69,90/mês.",
   },
   {
     pergunta: "O cliente paga pra agendar uma visita?",
@@ -163,12 +163,12 @@ export function HomeImobiliaria() {
         <div className="wrap-narrow" style={{ textAlign: "center" }}>
           <div className={styles.sectionHead}>
             <span className="eyebrow">Preços</span>
-            <h2>2 imóveis ativos sempre grátis</h2>
+            <h2>Até 2 corretores na equipe sempre grátis</h2>
           </div>
           <p className="muted">
-            Quer publicar mais imóveis ao mesmo tempo?{" "}
+            Quer convidar mais gente pra equipe?{" "}
             <Link href="/planos" style={{ textDecoration: "underline" }}>
-              Veja o Plano Profissional
+              Veja os planos a partir de R$ 69,90/mês
             </Link>
             .
           </p>

@@ -46,6 +46,33 @@ export async function POST(request: NextRequest) {
 
   const nomeImobiliaria = imobiliariaPerfil?.nome_fantasia || profile?.nome || "Uma imobiliária";
 
+  // Limite de equipe do plano (ver migração 0050) — conta quem já está
+  // na equipe mais quem tem convite pendente, pra não deixar a
+  // imobiliária estourar o limite só mandando vários convites de uma vez.
+  const [{ data: limiteEquipe }, { count: equipeAtiva }, { count: convitesPendentes }] =
+    await Promise.all([
+      supabase.rpc("limite_equipe_profissional", { p_profile_id: user.id }),
+      supabase
+        .from("corretor_perfis")
+        .select("profile_id", { count: "exact", head: true })
+        .eq("imobiliaria_id", user.id),
+      supabase
+        .from("convites_equipe")
+        .select("id", { count: "exact", head: true })
+        .eq("imobiliaria_id", user.id)
+        .eq("status", "pendente"),
+    ]);
+
+  const ocupado = (equipeAtiva ?? 0) + (convitesPendentes ?? 0);
+  if (limiteEquipe !== null && ocupado >= limiteEquipe) {
+    return NextResponse.json(
+      {
+        erro: `Sua equipe já está no limite do plano atual (${limiteEquipe} corretores, contando convites pendentes). Amplie o plano em /planos para convidar mais.`,
+      },
+      { status: 402 },
+    );
+  }
+
   const { data: convite, error } = await supabase
     .from("convites_equipe")
     .insert({ imobiliaria_id: user.id, email: emailNormalizado })

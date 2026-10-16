@@ -109,26 +109,72 @@ export function statusInterno(statusMp: string): "aprovado" | "rejeitado" | "pen
   return "pendente";
 }
 
-// ---------- Plano Profissional (assinatura recorrente) ----------
+// ---------- Plano Profissional (assinatura recorrente, por equipe) ----------
+//
+// Levantamento no appbarber.com.br: vendem por tamanho de equipe (1 / 2
+// a 5 / 6 a 15 / +15 profissionais), com desconto por ciclo mais longo
+// (mensal cheio, semestral -15%, anual -30%). Adaptado pro nosso caso:
+// "equipe" é quantos corretores a imobiliária pode ter ativos (ver
+// migração 0050) — o limite de imóveis (migração 0025) sobe junto, não
+// é vendido separado.
+
+export type CicloCobranca = "mensal" | "semestral" | "anual";
+
+export const CICLOS: { id: CicloCobranca; label: string; meses: number; desconto: number }[] = [
+  { id: "mensal", label: "Mensal", meses: 1, desconto: 0 },
+  { id: "semestral", label: "Semestral", meses: 6, desconto: 0.15 },
+  { id: "anual", label: "Anual", meses: 12, desconto: 0.3 },
+];
 
 export type PlanoProfissional = {
-  id: "5" | "15" | "20";
-  limite: number;
-  valor: number;
+  id: "equipe-pequena" | "equipe-media" | "equipe-grande";
+  equipeLabel: string;
+  limiteEquipe: number;
+  limiteImoveis: number;
+  valorMensalCheio: number;
   label: string;
   destaque?: string;
 };
 
 export const PLANOS_PROFISSIONAL: PlanoProfissional[] = [
-  { id: "5", limite: 5, valor: 139.9, label: "Profissional 5" },
-  { id: "15", limite: 15, valor: 259.9, label: "Profissional 15", destaque: "Mais escolhido" },
-  { id: "20", limite: 20, valor: 279.9, label: "Profissional 20" },
+  {
+    id: "equipe-pequena",
+    equipeLabel: "3 a 10 corretores",
+    limiteEquipe: 10,
+    limiteImoveis: 15,
+    valorMensalCheio: 99.9,
+    label: "Equipe",
+  },
+  {
+    id: "equipe-media",
+    equipeLabel: "11 a 30 corretores",
+    limiteEquipe: 30,
+    limiteImoveis: 40,
+    valorMensalCheio: 189.9,
+    label: "Equipe Plus",
+    destaque: "Mais escolhido",
+  },
+  {
+    id: "equipe-grande",
+    equipeLabel: "+30 corretores",
+    limiteEquipe: 999,
+    limiteImoveis: 100,
+    valorMensalCheio: 349.9,
+    label: "Rede",
+  },
 ];
 
-/** Cria a assinatura recorrente (preapproval). Null se não configurado ou a chamada falhar. */
+/** Preço mensal já com o desconto do ciclo escolhido (arredondado a 2 casas). */
+export function valorMensalComDesconto(plano: PlanoProfissional, ciclo: CicloCobranca): number {
+  const config = CICLOS.find((c) => c.id === ciclo) ?? CICLOS[0];
+  return Math.round(plano.valorMensalCheio * (1 - config.desconto) * 100) / 100;
+}
+
+/** Cria a assinatura recorrente (preapproval). Cobrança a cada N meses conforme o ciclo — não é parcelamento de cartão, é a própria recorrência. Null se não configurado ou a chamada falhar. */
 export async function criarAssinatura(params: {
   reason: string;
   valor: number;
+  ciclo: CicloCobranca;
   payerEmail: string;
   externalReference: string;
   backUrl: string;
@@ -136,6 +182,8 @@ export async function criarAssinatura(params: {
 }): Promise<PreferenciaResposta | null> {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
   if (!token) return null;
+
+  const config = CICLOS.find((c) => c.id === params.ciclo) ?? CICLOS[0];
 
   try {
     const resposta = await fetch(`${MP_API}/preapproval`, {
@@ -151,9 +199,9 @@ export async function criarAssinatura(params: {
         back_url: params.backUrl,
         notification_url: params.notificationUrl,
         auto_recurring: {
-          frequency: 1,
+          frequency: config.meses,
           frequency_type: "months",
-          transaction_amount: params.valor,
+          transaction_amount: params.valor * config.meses,
           currency_id: "BRL",
         },
         status: "pending",

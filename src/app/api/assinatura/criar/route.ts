@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { PLANOS_PROFISSIONAL, criarAssinatura, mercadoPagoConfigurado } from "@/lib/mercadopago";
+import {
+  PLANOS_PROFISSIONAL,
+  CICLOS,
+  criarAssinatura,
+  mercadoPagoConfigurado,
+  valorMensalComDesconto,
+  type CicloCobranca,
+} from "@/lib/mercadopago";
 
 export async function POST(request: NextRequest) {
   if (!mercadoPagoConfigurado()) {
@@ -10,12 +17,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { plano } = (await request.json()) as { plano?: string };
+  const { plano, ciclo } = (await request.json()) as { plano?: string; ciclo?: string };
   const escolhido = PLANOS_PROFISSIONAL.find((p) => p.id === plano);
+  const cicloEscolhido = CICLOS.find((c) => c.id === ciclo)?.id as CicloCobranca | undefined;
 
-  if (!escolhido) {
+  if (!escolhido || !cicloEscolhido) {
     return NextResponse.json({ erro: "Plano inválido." }, { status: 400 });
   }
+
+  const valorMensal = valorMensalComDesconto(escolhido, cicloEscolhido);
 
   const supabase = await createClient();
   const {
@@ -30,9 +40,10 @@ export async function POST(request: NextRequest) {
     .from("assinaturas_plano")
     .insert({
       profile_id: user.id,
-      plano: escolhido.id,
-      limite: escolhido.limite,
-      valor: escolhido.valor,
+      plano: `${escolhido.id}-${cicloEscolhido}`,
+      limite: escolhido.limiteImoveis,
+      limite_equipe: escolhido.limiteEquipe,
+      valor: valorMensal,
     })
     .select("id")
     .single();
@@ -46,8 +57,9 @@ export async function POST(request: NextRequest) {
 
   const origin = request.nextUrl.origin;
   const preapproval = await criarAssinatura({
-    reason: `Rede Impulso — ${escolhido.label}`,
-    valor: escolhido.valor,
+    reason: `Rede Impulso — ${escolhido.label} (${cicloEscolhido})`,
+    valor: valorMensal,
+    ciclo: cicloEscolhido,
     payerEmail: user.email,
     externalReference: assinatura.id,
     backUrl: `${origin}/planos?resultado=sucesso`,
