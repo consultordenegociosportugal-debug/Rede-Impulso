@@ -4,6 +4,9 @@ import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/server";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
+import { ConvidarCorretorForm } from "./convidar-form";
+import { ToggleAtivo } from "./toggle-ativo";
+import { ConvitesPendentes, type ConvitePendente } from "./convites-pendentes";
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", {
   style: "currency",
@@ -42,7 +45,7 @@ export default async function PainelCorretoresPage() {
     redirect("/entrar");
   }
 
-  const [{ data: perfil }, { data: corretoresData }, { data: negociosData }] =
+  const [{ data: perfil }, { data: corretoresData }, { data: negociosData }, { data: convitesData }] =
     await Promise.all([
       supabase.from("profiles").select("nome, role").eq("id", user.id).single(),
       supabase
@@ -56,10 +59,17 @@ export default async function PainelCorretoresPage() {
         .from("negocios")
         .select("corretor_id, comissao_prevista")
         .eq("imobiliaria_id", user.id),
+      supabase
+        .from("convites_equipe")
+        .select("id, email, created_at")
+        .eq("imobiliaria_id", user.id)
+        .eq("status", "pendente")
+        .order("created_at", { ascending: false }),
     ]);
 
   const corretores = (corretoresData ?? []) as unknown as CorretorRow[];
   const negocios = negociosData ?? [];
+  const convitesPendentes = (convitesData ?? []) as unknown as ConvitePendente[];
 
   const comissaoPorCorretor = new Map<string, number>();
   for (const n of negocios) {
@@ -92,9 +102,7 @@ export default async function PainelCorretoresPage() {
             <Link href="/planos" className="btn btn-outline btn-sm">
               🏅 Plano Profissional
             </Link>
-            <button className="btn btn-outline btn-sm" disabled title="Em breve">
-              + Convidar corretor
-            </button>
+            {perfil?.role === "imobiliaria" && <ConvidarCorretorForm />}
           </div>
         </div>
 
@@ -108,106 +116,105 @@ export default async function PainelCorretoresPage() {
               Sua conta atual não está cadastrada como imobiliária.
             </p>
           </div>
-        ) : corretores.length === 0 ? (
-          <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
-            <p className="muted" style={{ margin: 0 }}>
-              Nenhum corretor vinculado ainda.
-            </p>
-            <p className="hint" style={{ marginTop: 8 }}>
-              Corretores aparecem aqui assim que se associam à sua
-              imobiliária.
-            </p>
-          </div>
         ) : (
-          <div className="card" style={{ padding: "8px 20px" }}>
-            <div className="list-row">
-              <div className={styles.brokerRow} style={{ width: "100%" }}>
-                <div className={styles.col} style={{ width: 24 }}>
-                  <span className="mono muted">#</span>
-                </div>
-                <div className={styles.who}>
-                  <span className="mono muted">CORRETOR</span>
-                </div>
-                <div className={`${styles.col} ${styles.meta}`}>
-                  <span className="mono muted">META DO MÊS</span>
-                </div>
-                <div className={`${styles.col} ${styles.meta}`}>
-                  <span className="mono muted">COMISSÃO</span>
-                </div>
-                <div className={`${styles.col} ${styles.actions}`}>
-                  <span className="mono muted">ACESSO</span>
-                </div>
+          <>
+            <ConvitesPendentes convites={convitesPendentes} />
+            {corretores.length === 0 ? (
+              <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
+                <p className="muted" style={{ margin: 0 }}>
+                  Nenhum corretor vinculado ainda.
+                </p>
+                <p className="hint" style={{ marginTop: 8 }}>
+                  Convide um corretor pelo e-mail acima — ele entra na equipe assim que aceitar.
+                </p>
               </div>
-            </div>
-
-            {corretores.map((corretor, i) => {
-              const nome = corretor.profiles?.nome ?? "Corretor";
-              const comissao = comissaoPorCorretor.get(corretor.profile_id) ?? 0;
-              const progresso = corretor.meta_mensal
-                ? Math.min(100, Math.round((comissao / corretor.meta_mensal) * 100))
-                : null;
-
-              return (
-                <div key={corretor.profile_id} className="list-row">
+            ) : (
+              <div className="card" style={{ padding: "8px 20px" }}>
+                <div className="list-row">
                   <div className={styles.brokerRow} style={{ width: "100%" }}>
-                    <div
-                      className={styles.col}
-                      style={{
-                        width: 24,
-                        fontFamily: "var(--font-display)",
-                        fontWeight: 600,
-                        color: i === 0 ? "var(--amber)" : "var(--ink-soft)",
-                      }}
-                    >
-                      {i + 1}
+                    <div className={styles.col} style={{ width: 24 }}>
+                      <span className="mono muted">#</span>
                     </div>
                     <div className={styles.who}>
-                      <div className="flex items-center gap-8">
-                        <div className="avatar sm">{iniciais(nome)}</div>
-                        <div>
-                          <div className={styles.name}>{nome}</div>
-                          <div className={styles.sub}>
-                            ★ {corretor.estrelas.toFixed(1)} ·{" "}
-                            {corretor.total_negocios} negócios
-                          </div>
-                        </div>
-                      </div>
+                      <span className="mono muted">CORRETOR</span>
                     </div>
                     <div className={`${styles.col} ${styles.meta}`}>
-                      {progresso === null ? (
-                        <span className="hint" style={{ margin: 0 }}>
-                          sem meta definida
-                        </span>
-                      ) : (
-                        <>
-                          <div className={styles.progress}>
-                            <div style={{ width: `${progresso}%` }} />
-                          </div>
-                          <div className="hint" style={{ margin: "4px 0 0" }}>
-                            {progresso}% da meta
-                          </div>
-                        </>
-                      )}
+                      <span className="mono muted">META DO MÊS</span>
                     </div>
-                    <div
-                      className={`${styles.col} ${styles.meta} mono`}
-                      style={{ fontSize: 13 }}
-                    >
-                      {formatoMoeda.format(comissao)}
+                    <div className={`${styles.col} ${styles.meta}`}>
+                      <span className="mono muted">COMISSÃO</span>
                     </div>
                     <div className={`${styles.col} ${styles.actions}`}>
-                      <span
-                        className={`${styles.switch} ${corretor.ativo ? "" : styles.switchOff}`}
-                      >
-                        <span className={styles.track} />
-                        {corretor.ativo ? "Ativo" : "Inativo"}
-                      </span>
+                      <span className="mono muted">ACESSO</span>
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+
+                {corretores.map((corretor, i) => {
+                  const nome = corretor.profiles?.nome ?? "Corretor";
+                  const comissao = comissaoPorCorretor.get(corretor.profile_id) ?? 0;
+                  const progresso = corretor.meta_mensal
+                    ? Math.min(100, Math.round((comissao / corretor.meta_mensal) * 100))
+                    : null;
+
+                  return (
+                    <div key={corretor.profile_id} className="list-row">
+                      <div className={styles.brokerRow} style={{ width: "100%" }}>
+                        <div
+                          className={styles.col}
+                          style={{
+                            width: 24,
+                            fontFamily: "var(--font-display)",
+                            fontWeight: 600,
+                            color: i === 0 ? "var(--amber)" : "var(--ink-soft)",
+                          }}
+                        >
+                          {i + 1}
+                        </div>
+                        <div className={styles.who}>
+                          <div className="flex items-center gap-8">
+                            <div className="avatar sm">{iniciais(nome)}</div>
+                            <div>
+                              <div className={styles.name}>{nome}</div>
+                              <div className={styles.sub}>
+                                ★ {corretor.estrelas.toFixed(1)} ·{" "}
+                                {corretor.total_negocios} negócios
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div className={`${styles.col} ${styles.meta}`}>
+                          {progresso === null ? (
+                            <span className="hint" style={{ margin: 0 }}>
+                              sem meta definida
+                            </span>
+                          ) : (
+                            <>
+                              <div className={styles.progress}>
+                                <div style={{ width: `${progresso}%` }} />
+                              </div>
+                              <div className="hint" style={{ margin: "4px 0 0" }}>
+                                {progresso}% da meta
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        <div
+                          className={`${styles.col} ${styles.meta} mono`}
+                          style={{ fontSize: 13 }}
+                        >
+                          {formatoMoeda.format(comissao)}
+                        </div>
+                        <div className={`${styles.col} ${styles.actions}`}>
+                          <ToggleAtivo profileId={corretor.profile_id} ativo={corretor.ativo} />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
 
         <p className="hint mt-16">
