@@ -298,7 +298,7 @@ function CadastroProfissionalConteudo() {
           <span className="eyebrow">Cadastro profissional</span>
           <div className={styles.passoTopo}>
             <h1 style={{ fontSize: 30, margin: "8px 0 4px" }}>
-              Corretor, imobiliária ou construtora
+              {MARKETPLACE_ATIVO ? "Corretor, imobiliária ou construtora" : "Cadastro de corretor"}
             </h1>
             <span className={styles.passoContador}>
               Passo {passo} de {TOTAL_PASSOS}

@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useState } from "react";
-import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
+import { IMOBILIARIO_ATIVO, MARKETPLACE_ATIVO } from "@/lib/modulos";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Nav } from "@/components/nav";
@@ -164,10 +164,10 @@ function EntrarForm() {
               {IMOBILIARIO_ATIVO ? (
                 <>
                   <Link href="/cadastro-cliente" className="btn btn-ghost btn-sm">
-                    Comprar ou vender
+                    {MARKETPLACE_ATIVO ? "Comprar ou vender" : "Sou cliente"}
                   </Link>
                   <Link href="/para-corretores" className="btn btn-ghost btn-sm">
-                    Sou corretor ou imobiliária
+                    {MARKETPLACE_ATIVO ? "Sou corretor ou imobiliária" : "Sou corretor"}
                   </Link>
                 </>
               ) : (
