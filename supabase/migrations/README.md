@@ -80,12 +80,6 @@ e `/motorista/raio-x`.
 
 Sem integração com as contas das plataformas — o motorista informa os ganhos.
 
-**Taxa das plataformas (0036)** — `motorista_perfis.taxa_plataforma` (0–100). O
-Raio-X trata a taxa como um custo: quem informa o valor bruto das corridas vê
-quanto as plataformas ficam. Nulo/0 = o faturamento já é o líquido (o
-comportamento anterior). A migration precisa ser aplicada antes do deploy do
-código, porque o salvamento do Raio-X grava a coluna.
-
 ## Mapa de apoio (0035)
 
 `/motorista/apoio` junta, no mesmo mapa ordenado pela distância, os

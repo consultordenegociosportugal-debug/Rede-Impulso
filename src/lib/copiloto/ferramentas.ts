@@ -129,7 +129,6 @@ async function meuRaioX(supabase: SupabaseClient, userId: string): Promise<Resul
     horasPorDia: Number(p.horas_por_dia ?? 0),
     diasPorMes: Number(p.dias_por_mes ?? 0),
     faturamentoMensal: Number(p.faturamento_mensal),
-    taxaPlataforma: Number(p.taxa_plataforma ?? 0),
     combustivel: p.combustivel ?? "flex",
     consumo: Number(p.consumo ?? 0),
     precoEnergia: Number(p.preco_energia ?? 0),
@@ -160,13 +159,6 @@ async function meuRaioX(supabase: SupabaseClient, userId: string): Promise<Resul
       lucro_por_hora: moeda(r.lucroPorHora),
       lucro_por_km: moeda(r.lucroPorKm),
       custo_por_km: moeda(r.custoPorKm),
-      taxa_plataformas: r.custoPlataforma > 0 ? `${entrada.taxaPlataforma}% = ${moeda(r.custoPlataforma)}/mês` : "não informada",
-      ganho_minimo_por_km_bruto: moeda(r.ganhoMinimoPorKm),
-      custo_fixo_por_dia: moeda(r.custoFixoPorDia),
-      custo_a_mais_por_km_rodado: moeda(r.custoVariavelPorKm),
-      dia_a_dia: `entra ${moeda(r.faturamentoPorDia)}, custa ${moeda(r.custoPorDia)}, sobra ${moeda(r.lucroPorDia)}`,
-      dias_trabalhados_que_so_pagam_as_contas:
-        r.diasParaCobrirCustos === null ? null : Math.round(r.diasParaCobrirCustos * 10) / 10,
       premissas: r.premissas,
       simulacao_eletrico: sim && {
         diferenca_mensal: moeda(sim.diferencaMensal),

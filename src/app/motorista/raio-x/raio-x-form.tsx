@@ -13,7 +13,6 @@ import {
   type EntradaRaioX,
   type PremissasEletrico,
 } from "@/lib/motorista/raio-x";
-import { ListaDeCustos, PercepcaoDoDia, ResumoDeCusto } from "./percepcao-de-custo";
 
 export type PerfilSalvo = {
   cidade: string | null;
@@ -22,7 +21,6 @@ export type PerfilSalvo = {
   horas_por_dia: number | null;
   dias_por_mes: number | null;
   faturamento_mensal: number | null;
-  taxa_plataforma: number | null;
   veiculo: string | null;
   combustivel: string | null;
   consumo: number | null;
@@ -99,7 +97,6 @@ export function RaioXForm({
     horasPorDia: paraTexto(perfil?.horas_por_dia ?? 10),
     diasPorMes: paraTexto(perfil?.dias_por_mes ?? 24),
     faturamentoMensal: paraTexto(perfil?.faturamento_mensal),
-    taxaPlataforma: paraTexto(perfil?.taxa_plataforma),
     veiculo: paraTexto(perfil?.veiculo),
     combustivel: combustivelInicial,
     consumo: paraTexto(perfil?.consumo ?? 11),
@@ -129,7 +126,6 @@ export function RaioXForm({
       horasPorDia: num(c.horasPorDia),
       diasPorMes: num(c.diasPorMes),
       faturamentoMensal: num(c.faturamentoMensal),
-      taxaPlataforma: num(c.taxaPlataforma),
       combustivel: c.combustivel,
       consumo: num(c.consumo),
       precoEnergia: num(c.precoEnergia),
@@ -194,7 +190,6 @@ export function RaioXForm({
       horas_por_dia: numOuNulo(c.horasPorDia),
       dias_por_mes: numOuNulo(c.diasPorMes),
       faturamento_mensal: numOuNulo(c.faturamentoMensal),
-      taxa_plataforma: numOuNulo(c.taxaPlataforma) === null ? null : Math.min(100, Math.max(0, num(c.taxaPlataforma))),
       veiculo: c.veiculo || null,
       combustivel: c.combustivel,
       consumo: numOuNulo(c.consumo),
@@ -280,11 +275,7 @@ export function RaioXForm({
                 {campo("horasPorDia", "Horas online por dia")}
                 {campo("diasPorMes", "Dias trabalhados no mês", { passo: "1" })}
                 {campo("faturamentoMensal", "Faturamento no mês (R$)", {
-                  dica: "Somando todas as plataformas. Se for o valor bruto das corridas, preencha a taxa ao lado.",
-                })}
-                {campo("taxaPlataforma", "Taxa das plataformas (%)", {
-                  opcional: true,
-                  dica: "Deixe em branco se o valor ao lado é o que elas depositaram. Veja a taxa no extrato do app.",
+                  dica: "Somando todas as plataformas, já sem a taxa delas.",
                 })}
               </div>
             </div>
@@ -394,8 +385,6 @@ export function RaioXForm({
                 </p>
               ) : (
                 <>
-                  <ResumoDeCusto resultado={resultado} faturamento={entrada.faturamentoMensal} />
-
                   <div className="grid grid-2 mt-16">
                     <div className="stat">
                       <div className="num" style={{ color: resultado.lucro < 0 ? "var(--coral)" : undefined }}>
@@ -417,9 +406,25 @@ export function RaioXForm({
                     </div>
                   </div>
 
-                  <PercepcaoDoDia resultado={resultado} diasPorMes={entrada.diasPorMes} />
+                  <p className="hint" style={{ margin: "16px 0 4px" }}>
+                    Cada km custa {moeda(resultado.custoPorKm)}. Corrida que paga menos que isso por km dá prejuízo.
+                  </p>
 
-                  <ListaDeCustos resultado={resultado} faturamento={entrada.faturamentoMensal} />
+                  <div className="mt-16">
+                    {resultado.custos.map((custo) => (
+                      <div key={custo.rotulo} className="list-row">
+                        <span>
+                          {custo.rotulo}
+                          {custo.estimado && <span className="hint"> · estimado</span>}
+                        </span>
+                        <span className="mono">{moeda(custo.valor)}</span>
+                      </div>
+                    ))}
+                    <div className="list-row">
+                      <strong>Total de custos</strong>
+                      <strong className="mono">{moeda(resultado.custoTotal)}</strong>
+                    </div>
+                  </div>
                 </>
               )}
             </div>
@@ -444,7 +449,7 @@ export function RaioXForm({
                 </div>
                 <p className="hint" style={{ margin: "12px 0 0" }}>
                   Energia: {moeda(simulacao.custoEnergia)}/mês no elétrico vs.{" "}
-                  {moeda(resultado.custos.find((x) => x.chave === "energia")?.valor ?? 0)} hoje.
+                  {moeda(resultado.custos.find((x) => x.rotulo === "Combustível / energia")?.valor ?? 0)} hoje.
                 </p>
 
                 <details className="mt-16">
