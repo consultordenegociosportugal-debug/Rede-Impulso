@@ -1,34 +1,9 @@
 import Link from "next/link";
 import { Nav } from "@/components/nav";
-import { createClient } from "@/lib/supabase/server";
-import { BuscaHome } from "./busca-home";
-import { ImovelCard } from "@/components/imovel-card";
-import { TickerMercado } from "@/components/ticker-mercado";
-import { EstatisticasRede } from "@/components/estatisticas-rede";
 import { ComoVaiUsar } from "@/components/como-vai-usar";
+import { SOBRE_PARAGRAFOS, SOBRE_MODULOS, OBJETIVOS } from "@/lib/conteudo-institucional";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
-
-const OBJETIVOS = [
-  {
-    icone: "⏱️",
-    titulo: "Organize sua agenda",
-    texto:
-      "Configure os horários em que você atende uma vez só — cada visita agendada já nasce confirmada, sem trocar mensagem pra combinar dia e hora.",
-  },
-  {
-    icone: "🔔",
-    titulo: "Nunca perca um agendamento",
-    texto:
-      "Lembrete automático por e-mail antes de cada visita, pro cliente e pra você — ninguém esquece, ninguém fica esperando à toa.",
-  },
-  {
-    icone: "📈",
-    titulo: "Feche mais negócios",
-    texto:
-      "Cliente agenda na hora, no horário que você já deixou livre. Menos ida e volta, menos desistência por demora na resposta.",
-  },
-];
 
 const FUNCIONALIDADES = [
   { icone: "🗓️", titulo: "Agendamento automático de visitas" },
@@ -83,107 +58,48 @@ const PERGUNTAS = [
   },
 ];
 
-type ImovelDestaque = {
-  id: string;
-  titulo: string;
-  bairro: string;
-  cidade: string;
-  preco: number | null;
-  finalidade: "venda" | "aluguel";
-  quartos: number | null;
-  destaque_ate: string | null;
-  imovel_fotos: { arquivo_url: string; ordem: number }[];
-};
-
-const LIMITE_HOME = 6;
-const COLUNAS_HOME =
-  "id, titulo, bairro, cidade, preco, finalidade, quartos, destaque_ate, imovel_fotos(arquivo_url, ordem)";
-
-// Home do módulo imobiliário — só aparece com ele ativo (ver src/lib/modulos.ts).
-export async function HomeImobiliaria() {
-  const supabase = await createClient();
-  const { data: dadosDestaque } = await supabase
-    .from("imoveis")
-    .select(COLUNAS_HOME)
-    .eq("status", "publicado")
-    .gt("destaque_ate", new Date().toISOString())
-    .order("destaque_ate", { ascending: true })
-    .limit(LIMITE_HOME);
-
-  const destacados = (dadosDestaque ?? []) as unknown as ImovelDestaque[];
-  const idsDestacados = destacados.map((i) => i.id);
-
-  let queryResto = supabase
-    .from("imoveis")
-    .select(COLUNAS_HOME)
-    .eq("status", "publicado")
-    .order("created_at", { ascending: false })
-    .limit(LIMITE_HOME);
-  if (idsDestacados.length > 0) {
-    queryResto = queryResto.not("id", "in", `(${idsDestacados.join(",")})`);
-  }
-  const { data: dadosResto } = await queryResto;
-  const resto = (dadosResto ?? []) as unknown as ImovelDestaque[];
-
-  const imoveisRecentes = [...destacados, ...resto].slice(0, LIMITE_HOME);
-
+// Home — núcleo permanente da plataforma (ver src/lib/modulos.ts). Sem
+// vitrine de imóveis: a landing é só apresentação e escolha de papel,
+// igual à referência (appbarber.com.br) — quem quer ver imóvel vai em
+// /imoveis depois de escolher "sou cliente".
+export function HomeImobiliaria() {
   return (
     <>
       <Nav active="/" />
-
-      <TickerMercado />
 
       <main className={styles.centro}>
         <h1 className={styles.headline}>
           Todo negócio fechado começa com{" "}
           <span className={styles.accent}>um impulso</span>.
         </h1>
-        <p className={styles.tagline}>O que podemos fazer por você hoje?</p>
-
-        <BuscaHome />
-
-        <div className={styles.provaSocial}>
-          <EstatisticasRede />
-        </div>
-
-        <div className={styles.linksSecundarios}>
-          <Link href="/sobre">Como funciona</Link>
-        </div>
+        <p className={styles.tagline}>
+          Agendamento e gestão para corretores, imobiliárias, construtoras e seus clientes.
+        </p>
+        <Link href="/comece-agora" className="btn btn-primary">
+          Comece agora →
+        </Link>
       </main>
 
-      {imoveisRecentes.length > 0 && (
-        <div className="wrap" style={{ paddingBottom: 64 }}>
-          <div className="flex between items-center mb-16" style={{ flexWrap: "wrap", gap: 12 }}>
-            <h2 style={{ fontSize: 20, margin: 0 }}>Imóveis publicados agora</h2>
-            <Link href="/imoveis" className="btn btn-ghost btn-sm">
-              Ver todos os imóveis →
-            </Link>
+      <section id="sobre">
+        <div className="wrap-narrow">
+          <div className={styles.sectionHead}>
+            <span className="eyebrow">Sobre a Rede Impulso</span>
           </div>
-          <div className="grid grid-3">
-            {imoveisRecentes.map((imovel) => {
-              const foto = [...imovel.imovel_fotos].sort((a, b) => a.ordem - b.ordem)[0];
-              return (
-                <ImovelCard
-                  key={imovel.id}
-                  imovel={{
-                    id: imovel.id,
-                    titulo: imovel.titulo,
-                    bairro: imovel.bairro,
-                    cidade: imovel.cidade,
-                    preco: imovel.preco,
-                    finalidade: imovel.finalidade,
-                    specs: imovel.quartos ? `${imovel.quartos}q` : undefined,
-                    fotoUrl: foto?.arquivo_url ?? null,
-                    destaque: Boolean(
-                      imovel.destaque_ate && new Date(imovel.destaque_ate) > new Date(),
-                    ),
-                  }}
-                />
-              );
-            })}
-          </div>
+          {SOBRE_PARAGRAFOS.map((p) => (
+            <p key={p} className="muted" style={{ fontSize: 15 }}>
+              {p}
+            </p>
+          ))}
+          <p className="muted" style={{ fontSize: 15 }}>O sistema é dividido em dois módulos:</p>
+          <ul style={{ margin: 0 }}>
+            {SOBRE_MODULOS.map((m) => (
+              <li key={m.titulo} className="muted" style={{ fontSize: 15, marginBottom: 8 }}>
+                <strong style={{ color: "var(--ink)" }}>{m.titulo}</strong> — {m.texto}
+              </li>
+            ))}
+          </ul>
         </div>
-      )}
+      </section>
 
       <section style={{ background: "var(--surface-2)" }}>
         <div className="wrap">
@@ -223,16 +139,6 @@ export async function HomeImobiliaria() {
       </section>
 
       <section style={{ background: "var(--surface-2)" }}>
-        <div className="wrap">
-          <div className={styles.sectionHead}>
-            <span className="eyebrow">Como você vai usar a Rede Impulso?</span>
-            <h2>Escolha a opção que melhor te descreve</h2>
-          </div>
-          <ComoVaiUsar />
-        </div>
-      </section>
-
-      <section>
         <div className="wrap-narrow" style={{ textAlign: "center" }}>
           <div className={styles.sectionHead}>
             <span className="eyebrow">Como começar</span>
@@ -253,8 +159,12 @@ export async function HomeImobiliaria() {
         </div>
       </section>
 
-      <section style={{ background: "var(--surface-2)" }}>
+      <section id="precos">
         <div className="wrap-narrow" style={{ textAlign: "center" }}>
+          <div className={styles.sectionHead}>
+            <span className="eyebrow">Preços</span>
+            <h2>2 imóveis ativos sempre grátis</h2>
+          </div>
           <p className="muted">
             Quer publicar mais imóveis ao mesmo tempo?{" "}
             <Link href="/planos" style={{ textDecoration: "underline" }}>
@@ -262,6 +172,16 @@ export async function HomeImobiliaria() {
             </Link>
             .
           </p>
+        </div>
+      </section>
+
+      <section style={{ background: "var(--surface-2)" }}>
+        <div className="wrap">
+          <div className={styles.sectionHead}>
+            <span className="eyebrow">Como você vai usar a Rede Impulso?</span>
+            <h2>Escolha a opção que melhor te descreve</h2>
+          </div>
+          <ComoVaiUsar />
         </div>
       </section>
 

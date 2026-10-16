@@ -79,6 +79,7 @@ const NAV_ITEMS_IMOBILIARIO: NavItem[] = [
     label: "Negócios",
     children: [
       { href: "/dashboard", label: "Dashboard" },
+      { href: "/relatorio-visitas", label: "Relatório de visitas" },
       { href: "/painel-negocios", label: "Painel de negócios" },
       { href: "/modelos-contratos", label: "Contratos e documentos" },
       { href: "/mural-conquistas", label: "Mural de conquistas" },

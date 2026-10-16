@@ -34,8 +34,17 @@ function diaSemanaNoFuso(instante: Date) {
 
 const PAPEIS_COM_DASHBOARD = ["corretor", "imobiliaria", "construtora", "vendedor"];
 
-type VisitaRow = { id: string; data_hora: string; comprador_id: string };
-type NegocioRow = { id: string; status: string; comissao_prevista: number | null; created_at: string };
+const DIAS_SEM_RETORNO = 14;
+const DIAS_NEGOCIO_PARADO = 7;
+
+type VisitaRow = { id: string; data_hora: string; comprador_id: string; status: string };
+type NegocioRow = {
+  id: string;
+  status: string;
+  comissao_prevista: number | null;
+  created_at: string;
+  updated_at: string;
+};
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -92,11 +101,11 @@ export default async function DashboardPage() {
     .in("vendedor_id", scopeIds);
   const meusImovelIds = (meusImoveisData ?? []).map((i) => i.id);
 
-  const [{ data: dadosVisitas }, { count: imoveisAtivos }, { data: dadosNegocios }] =
+  const [{ data: dadosVisitas }, { count: imoveisAtivos }, { data: dadosNegocios }, { data: dadosTodasVisitas }] =
     await Promise.all([
       supabase
         .from("visitas")
-        .select("id, data_hora, comprador_id")
+        .select("id, data_hora, comprador_id, status")
         .in("corretor_id", scopeIds)
         .gte("data_hora", inicioPeriodo.toISOString())
         .lte("data_hora", new Date().toISOString()),
@@ -108,20 +117,29 @@ export default async function DashboardPage() {
       ehImobiliaria
         ? supabase
             .from("negocios")
-            .select("id, status, comissao_prevista, created_at")
+            .select("id, status, comissao_prevista, created_at, updated_at")
             .eq("imobiliaria_id", user.id)
         : supabase
             .from("negocios")
-            .select("id, status, comissao_prevista, created_at")
+            .select("id, status, comissao_prevista, created_at, updated_at")
             .or(
               meusImovelIds.length > 0
                 ? `corretor_id.eq.${user.id},imovel_id.in.(${meusImovelIds.join(",")})`
                 : `corretor_id.eq.${user.id}`,
             ),
+      // Sem corte de 30 dias — "sem retorno" compara contra o último
+      // contato de cada cliente, que pode ser mais antigo que o período
+      // do resto do dashboard.
+      supabase
+        .from("visitas")
+        .select("id, data_hora, comprador_id, status")
+        .in("corretor_id", scopeIds)
+        .lte("data_hora", new Date().toISOString()),
     ]);
 
   const visitas = (dadosVisitas ?? []) as unknown as VisitaRow[];
   const negocios = (dadosNegocios ?? []) as unknown as NegocioRow[];
+  const todasVisitas = (dadosTodasVisitas ?? []) as unknown as VisitaRow[];
 
   const negociosFechadosNoPeriodo = negocios.filter(
     (n) =>
@@ -137,6 +155,46 @@ export default async function DashboardPage() {
     contagemPorDia.set(dia, (contagemPorDia.get(dia) ?? 0) + 1);
   }
   const maiorContagem = Math.max(1, ...DIAS_SEMANA_ORDEM.map((d) => contagemPorDia.get(d) ?? 0));
+
+  // Pendências — mesmo espírito do "Resumo" do AppBarber (clientes sem
+  // retorno, comandas pendentes etc.), adaptado pro que existe aqui.
+  const agora = new Date().getTime();
+
+  const visitasAguardandoConfirmacao = visitas.filter((v) => v.status === "solicitada").length;
+
+  const negociosParados = negocios.filter(
+    (n) =>
+      n.status === "negociacao" &&
+      agora - new Date(n.updated_at).getTime() > DIAS_NEGOCIO_PARADO * 24 * 60 * 60 * 1000,
+  ).length;
+
+  const ultimoContatoPorCliente = new Map<string, number>();
+  for (const v of todasVisitas) {
+    const instante = new Date(v.data_hora).getTime();
+    const atual = ultimoContatoPorCliente.get(v.comprador_id);
+    if (!atual || instante > atual) ultimoContatoPorCliente.set(v.comprador_id, instante);
+  }
+  const clientesSemRetorno = Array.from(ultimoContatoPorCliente.values()).filter(
+    (ultimo) => agora - ultimo > DIAS_SEM_RETORNO * 24 * 60 * 60 * 1000,
+  ).length;
+
+  const PENDENCIAS = [
+    {
+      label: "Visitas aguardando confirmação",
+      valor: visitasAguardandoConfirmacao,
+      hint: "Pedidos de visita que ainda não foram confirmados.",
+    },
+    {
+      label: `Negócios parados há mais de ${DIAS_NEGOCIO_PARADO} dias`,
+      valor: negociosParados,
+      hint: "Em negociação, sem atualização recente.",
+    },
+    {
+      label: `Clientes sem retorno há mais de ${DIAS_SEM_RETORNO} dias`,
+      valor: clientesSemRetorno,
+      hint: "Última visita faz tempo, sem novo agendamento desde então.",
+    },
+  ];
 
   const KPIS = [
     { label: "Visitas agendadas", valor: String(visitas.length) },
@@ -182,6 +240,28 @@ export default async function DashboardPage() {
                 </div>
               );
             })}
+          </div>
+        </div>
+
+        <div className="mt-24">
+          <h2 style={{ fontSize: 16, margin: "0 0 12px" }}>Pendências</h2>
+          <div className="grid grid-3">
+            {PENDENCIAS.map((p) => (
+              <div key={p.label} className="card">
+                <div
+                  style={{
+                    fontSize: 28,
+                    fontFamily: "var(--font-display)",
+                    fontWeight: 600,
+                    color: p.valor > 0 ? "var(--coral)" : "var(--ink)",
+                  }}
+                >
+                  {p.valor}
+                </div>
+                <strong style={{ fontSize: 13.5 }}>{p.label}</strong>
+                <p className="hint" style={{ marginBottom: 0 }}>{p.hint}</p>
+              </div>
+            ))}
           </div>
         </div>
       </div>
