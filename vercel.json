@@ -35,10 +35,6 @@
     {
       "path": "/api/assinatura/avisar-renovacao",
       "schedule": "0 7 * * *"
-    },
-    {
-      "path": "/api/visitas/avisar-lembrete",
-      "schedule": "0 * * * *"
     }
   ]
 }
