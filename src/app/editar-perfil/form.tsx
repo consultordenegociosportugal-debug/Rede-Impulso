@@ -11,6 +11,16 @@ type ErrosCampo = Partial<Record<Campo, string>>;
 
 const TELEFONE_OK = /^\(\d{2}\)\s?9\s?\d{4}-?\d{4}$/;
 
+// Mesmo motivo do completar-cadastro: nome e CRECI não têm regra nativa
+// (pattern/required) pras checagens de "sobrenome" e "3 dígitos", então
+// sem isso "Salvar alterações" parecia não fazer nada.
+const CAMPO_ID: Record<Campo, string> = {
+  nome: "nome",
+  telefone: "tel",
+  creci: "creci",
+  bairros: "bairro",
+};
+
 const ROLE_LABEL: Record<string, string> = {
   comprador: "Cliente",
   corretor: "Corretor",
@@ -103,6 +113,14 @@ export function EditarPerfilForm({
     const problemas = validar();
     if (Object.keys(problemas).length > 0) {
       setErrosCampo(problemas);
+      setErro("Confira os campos destacados abaixo antes de salvar.");
+      const campoComErro = Object.keys(problemas)[0] as Campo;
+      const elementoId = CAMPO_ID[campoComErro];
+      requestAnimationFrame(() => {
+        const el = document.getElementById(elementoId);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        el?.focus();
+      });
       return;
     }
 

@@ -15,6 +15,18 @@ type ErrosCampo = Partial<Record<Campo, string>>;
 
 const TELEFONE_OK = /^\(\d{2}\)\s?9\s?\d{4}-?\d{4}$/;
 
+// Pra onde rolar/focar quando a validação barra o envio — nome e CRECI não
+// têm regra nativa (pattern/required) que cubra "precisa ter sobrenome" ou
+// "3 dígitos seguidos", então sem isso o botão "Concluir cadastro" parecia
+// não fazer nada.
+const CAMPO_ID: Record<Campo, string> = {
+  nome: "nome",
+  telefone: "tel",
+  dataNascimento: "dataNascimento",
+  creci: "creci",
+  bairros: "bairro",
+};
+
 const PAPEIS: { valor: Papel; titulo: string; descricao: string }[] = [
   {
     valor: "comprador",
@@ -98,6 +110,14 @@ export function CompletarCadastroForm({
     const problemas = validar();
     if (Object.keys(problemas).length > 0) {
       setErrosCampo(problemas);
+      setErro("Confira os campos destacados abaixo antes de continuar.");
+      const campoComErro = Object.keys(problemas)[0] as Campo;
+      const elementoId = CAMPO_ID[campoComErro];
+      requestAnimationFrame(() => {
+        const el = document.getElementById(elementoId);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        el?.focus();
+      });
       return;
     }
 
@@ -267,6 +287,7 @@ export function CompletarCadastroForm({
                 onChange={() => {
                   setPapel(opcao.valor);
                   setErrosCampo({});
+                  setErro(null);
                 }}
                 className={styles.escolhaInput}
               />
