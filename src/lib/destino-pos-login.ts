@@ -2,10 +2,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 /**
  * Papéis cujo acesso só abre depois de enviar documento de verificação.
- * Comprador fica de fora de propósito — ver TIPOS_POR_ROLE em
- * `src/lib/verificacao.ts`, que lista [] para ele.
+ * Comprador e corretor ficam de fora de propósito: no modelo de
+ * agendamento direto o corretor já entra liberado pro painel — a
+ * verificação de documentos era coisa do marketplace de imóveis
+ * pausado. Ver TIPOS_POR_ROLE em `src/lib/verificacao.ts`.
  */
-const PRECISA_DOCUMENTOS = ["vendedor", "corretor", "imobiliaria", "construtora", "cartorio"];
+const PRECISA_DOCUMENTOS = ["vendedor", "imobiliaria", "construtora", "cartorio"];
 
 type Opcoes = {
   /** Valor cru do parâmetro `depois`, quando houver. */
@@ -70,6 +72,8 @@ export async function destinoPosLogin(
   }
 
   if (profile?.role === "comprador") return "/area-cliente";
+
+  if (profile?.role === "corretor") return "/painel-negocios";
 
   return "/";
 }

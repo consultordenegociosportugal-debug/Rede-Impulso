@@ -280,20 +280,29 @@ function CadastroProfissionalConteudo() {
           <div style={{ maxWidth: 480, margin: "64px auto" }}>
             <div className="card" style={{ textAlign: "center" }}>
               <span className="badge badge-primary">
-                Verificação pendente
+                {status === "logado" && papel === "corretor" ? "Cadastro criado" : "Verificação pendente"}
               </span>
               <h1 style={{ fontSize: 22, margin: "12px 0 4px" }}>
                 {status === "aguardando_confirmacao"
                   ? "Falta só confirmar seu e-mail"
-                  : "Cadastro enviado para análise"}
+                  : papel === "corretor"
+                    ? "Tudo pronto!"
+                    : "Cadastro enviado para análise"}
               </h1>
               <p className="muted">
                 {status === "aguardando_confirmacao"
                   ? `Enviamos um código de confirmação para ${email}.`
-                  : "Analisamos seus dados antes de liberar o perfil público."}
+                  : papel === "corretor"
+                    ? "Sua conta já está ativa — você já pode cadastrar clientes e agendar visitas."
+                    : "Analisamos seus dados antes de liberar o perfil público."}
               </p>
               {status === "aguardando_confirmacao" && (
                 <ConfirmarCodigoEmail email={email} onVerificado={() => setStatus("logado")} />
+              )}
+              {status === "logado" && papel === "corretor" && (
+                <Link href="/painel-negocios" className="btn btn-primary btn-sm mt-16">
+                  Ir para o meu painel →
+                </Link>
               )}
             </div>
           </div>
