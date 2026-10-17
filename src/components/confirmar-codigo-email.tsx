@@ -41,7 +41,7 @@ export function ConfirmarCodigoEmail({
   async function confirmar(e: React.FormEvent) {
     e.preventDefault();
     if (codigo.trim().length < 6) {
-      setErro("Digite o código de 6 dígitos que enviamos por e-mail.");
+      setErro("Digite o código completo que enviamos por e-mail.");
       setStatus("erro");
       return;
     }
@@ -86,14 +86,14 @@ export function ConfirmarCodigoEmail({
           type="text"
           inputMode="numeric"
           autoComplete="one-time-code"
-          placeholder="000000"
-          maxLength={6}
+          placeholder="Código"
+          maxLength={12}
           value={codigo}
           onChange={(e) => {
             setCodigo(e.target.value.replace(/\D/g, ""));
             setErro(null);
           }}
-          style={{ textAlign: "center", fontSize: 24, letterSpacing: 8 }}
+          style={{ textAlign: "center", fontSize: 24, letterSpacing: 4 }}
           required
         />
         {erro && (
