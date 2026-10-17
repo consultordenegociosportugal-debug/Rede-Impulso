@@ -36,6 +36,7 @@ type VisitaRow = {
   status: string;
   imoveis: { id: string; titulo: string; bairro: string; cidade: string } | null;
   comprador: { nome: string; telefone: string | null } | null;
+  cliente_avulso: { nome: string; telefone: string | null } | null;
   corretor: { nome: string } | null;
 };
 
@@ -70,8 +71,7 @@ export default async function RelatorioVisitasPage({
         <div className="wrap">
           <div className="card" style={{ margin: "48px 0", textAlign: "center", padding: "40px 20px" }}>
             <p className="muted" style={{ margin: 0 }}>
-              Este relatório é para quem publica imóvel ou atende visita — corretores,
-              imobiliárias, construtoras e vendedores.
+              Este relatório é para quem atende visitas — corretores.
             </p>
           </div>
         </div>
@@ -108,7 +108,7 @@ export default async function RelatorioVisitasPage({
   let query = supabase
     .from("visitas")
     .select(
-      "id, data_hora, status, imoveis(id, titulo, bairro, cidade), comprador:comprador_id(nome, telefone), corretor:corretor_id(nome)",
+      "id, data_hora, status, imoveis(id, titulo, bairro, cidade), comprador:comprador_id(nome, telefone), cliente_avulso:cliente_avulso_id(nome, telefone), corretor:corretor_id(nome)",
     )
     .in("corretor_id", idsFiltrados)
     .gte("data_hora", `${inicio}T00:00:00`)
@@ -181,16 +181,19 @@ export default async function RelatorioVisitasPage({
                 <div className="flex between items-center" style={{ width: "100%", gap: 12, flexWrap: "wrap" }}>
                   <div style={{ minWidth: 220, flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>
-                      {formatoDataHora.format(new Date(v.data_hora))} ·{" "}
-                      {v.imoveis ? (
-                        <Link href={`/imoveis/${v.imoveis.id}`}>{v.imoveis.titulo}</Link>
-                      ) : (
-                        "Imóvel"
+                      {formatoDataHora.format(new Date(v.data_hora))}
+                      {v.imoveis && (
+                        <>
+                          {" · "}
+                          <Link href={`/imoveis/${v.imoveis.id}`}>{v.imoveis.titulo}</Link>
+                        </>
                       )}
                     </div>
                     <div className="hint" style={{ margin: 0 }}>
-                      Cliente: {v.comprador?.nome ?? "—"}
-                      {v.comprador?.telefone ? ` · ${v.comprador.telefone}` : ""}
+                      Cliente: {v.comprador?.nome ?? v.cliente_avulso?.nome ?? "—"}
+                      {(v.comprador?.telefone ?? v.cliente_avulso?.telefone)
+                        ? ` · ${v.comprador?.telefone ?? v.cliente_avulso?.telefone}`
+                        : ""}
                       {ehImobiliaria && v.corretor?.nome ? ` · Profissional: ${v.corretor.nome}` : ""}
                     </div>
                   </div>

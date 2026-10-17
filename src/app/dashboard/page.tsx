@@ -6,12 +6,6 @@ import styles from "./page.module.css";
 
 const PERIODO_DIAS = 30;
 
-const formatoMoeda = new Intl.NumberFormat("pt-BR", {
-  style: "currency",
-  currency: "BRL",
-  maximumFractionDigits: 0,
-});
-
 const DIAS_SEMANA_ORDEM = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const DIAS_SEMANA_LABEL: Record<string, string> = {
   Sun: "Dom",
@@ -35,15 +29,13 @@ function diaSemanaNoFuso(instante: Date) {
 const PAPEIS_COM_DASHBOARD = ["corretor", "imobiliaria", "construtora", "vendedor"];
 
 const DIAS_SEM_RETORNO = 14;
-const DIAS_NEGOCIO_PARADO = 7;
 
-type VisitaRow = { id: string; data_hora: string; comprador_id: string; status: string };
-type NegocioRow = {
+type VisitaRow = {
   id: string;
+  data_hora: string;
+  comprador_id: string | null;
+  cliente_avulso_id: string | null;
   status: string;
-  comissao_prevista: number | null;
-  created_at: string;
-  updated_at: string;
 };
 
 export default async function DashboardPage() {
@@ -71,8 +63,7 @@ export default async function DashboardPage() {
         <div className="wrap">
           <div className="card" style={{ margin: "48px 0", textAlign: "center", padding: "40px 20px" }}>
             <p className="muted" style={{ margin: 0 }}>
-              O dashboard é para quem publica imóvel ou atende visita — corretores,
-              imobiliárias, construtoras e vendedores.
+              O dashboard é para quem atende visitas — corretores.
             </p>
           </div>
         </div>
@@ -95,59 +86,34 @@ export default async function DashboardPage() {
   const inicioPeriodo = new Date();
   inicioPeriodo.setDate(inicioPeriodo.getDate() - PERIODO_DIAS);
 
-  const { data: meusImoveisData } = await supabase
-    .from("imoveis")
-    .select("id")
-    .in("vendedor_id", scopeIds);
-  const meusImovelIds = (meusImoveisData ?? []).map((i) => i.id);
-
-  const [{ data: dadosVisitas }, { count: imoveisAtivos }, { data: dadosNegocios }, { data: dadosTodasVisitas }] =
-    await Promise.all([
-      supabase
-        .from("visitas")
-        .select("id, data_hora, comprador_id, status")
-        .in("corretor_id", scopeIds)
-        .gte("data_hora", inicioPeriodo.toISOString())
-        .lte("data_hora", new Date().toISOString()),
-      supabase
-        .from("imoveis")
-        .select("id", { count: "exact", head: true })
-        .in("vendedor_id", scopeIds)
-        .in("status", ["publicado", "em_negociacao"]),
-      ehImobiliaria
-        ? supabase
-            .from("negocios")
-            .select("id, status, comissao_prevista, created_at, updated_at")
-            .eq("imobiliaria_id", user.id)
-        : supabase
-            .from("negocios")
-            .select("id, status, comissao_prevista, created_at, updated_at")
-            .or(
-              meusImovelIds.length > 0
-                ? `corretor_id.eq.${user.id},imovel_id.in.(${meusImovelIds.join(",")})`
-                : `corretor_id.eq.${user.id}`,
-            ),
-      // Sem corte de 30 dias — "sem retorno" compara contra o último
-      // contato de cada cliente, que pode ser mais antigo que o período
-      // do resto do dashboard.
-      supabase
-        .from("visitas")
-        .select("id, data_hora, comprador_id, status")
-        .in("corretor_id", scopeIds)
-        .lte("data_hora", new Date().toISOString()),
-    ]);
+  const [{ data: dadosVisitas }, { data: dadosTodasVisitas }] = await Promise.all([
+    supabase
+      .from("visitas")
+      .select("id, data_hora, comprador_id, cliente_avulso_id, status")
+      .in("corretor_id", scopeIds)
+      .gte("data_hora", inicioPeriodo.toISOString())
+      .lte("data_hora", new Date().toISOString()),
+    // Sem corte de 30 dias — "sem retorno" compara contra o último
+    // contato de cada cliente, que pode ser mais antigo que o período
+    // do resto do dashboard.
+    supabase
+      .from("visitas")
+      .select("id, data_hora, comprador_id, cliente_avulso_id, status")
+      .in("corretor_id", scopeIds)
+      .lte("data_hora", new Date().toISOString()),
+  ]);
 
   const visitas = (dadosVisitas ?? []) as unknown as VisitaRow[];
-  const negocios = (dadosNegocios ?? []) as unknown as NegocioRow[];
   const todasVisitas = (dadosTodasVisitas ?? []) as unknown as VisitaRow[];
 
-  const negociosFechadosNoPeriodo = negocios.filter(
-    (n) =>
-      (n.status === "concluido" || n.status === "fechado") &&
-      new Date(n.created_at) >= inicioPeriodo,
-  ).length;
-  const comissaoPrevista = negocios.reduce((soma, n) => soma + (n.comissao_prevista ?? 0), 0);
-  const clientesAtendidos = new Set(visitas.map((v) => v.comprador_id)).size;
+  // Cliente avulso e comprador autenticado são identidades distintas —
+  // combina as duas pra não contar duas vezes o mesmo comprador, nem
+  // juntar clientes avulsos diferentes num só.
+  function chaveCliente(v: VisitaRow) {
+    return v.comprador_id ?? `avulso:${v.cliente_avulso_id}`;
+  }
+
+  const clientesAtendidos = new Set(visitas.map(chaveCliente)).size;
 
   const contagemPorDia = new Map<string, number>();
   for (const visita of visitas) {
@@ -162,17 +128,12 @@ export default async function DashboardPage() {
 
   const visitasAguardandoConfirmacao = visitas.filter((v) => v.status === "solicitada").length;
 
-  const negociosParados = negocios.filter(
-    (n) =>
-      n.status === "negociacao" &&
-      agora - new Date(n.updated_at).getTime() > DIAS_NEGOCIO_PARADO * 24 * 60 * 60 * 1000,
-  ).length;
-
   const ultimoContatoPorCliente = new Map<string, number>();
   for (const v of todasVisitas) {
     const instante = new Date(v.data_hora).getTime();
-    const atual = ultimoContatoPorCliente.get(v.comprador_id);
-    if (!atual || instante > atual) ultimoContatoPorCliente.set(v.comprador_id, instante);
+    const chave = chaveCliente(v);
+    const atual = ultimoContatoPorCliente.get(chave);
+    if (!atual || instante > atual) ultimoContatoPorCliente.set(chave, instante);
   }
   const clientesSemRetorno = Array.from(ultimoContatoPorCliente.values()).filter(
     (ultimo) => agora - ultimo > DIAS_SEM_RETORNO * 24 * 60 * 60 * 1000,
@@ -185,11 +146,6 @@ export default async function DashboardPage() {
       hint: "Pedidos de visita que ainda não foram confirmados.",
     },
     {
-      label: `Negócios parados há mais de ${DIAS_NEGOCIO_PARADO} dias`,
-      valor: negociosParados,
-      hint: "Em negociação, sem atualização recente.",
-    },
-    {
       label: `Clientes sem retorno há mais de ${DIAS_SEM_RETORNO} dias`,
       valor: clientesSemRetorno,
       hint: "Última visita faz tempo, sem novo agendamento desde então.",
@@ -198,9 +154,6 @@ export default async function DashboardPage() {
 
   const KPIS = [
     { label: "Visitas agendadas", valor: String(visitas.length) },
-    { label: "Imóveis publicados", valor: String(imoveisAtivos ?? 0) },
-    { label: "Negócios fechados", valor: String(negociosFechadosNoPeriodo) },
-    { label: "Comissão prevista", valor: formatoMoeda.format(comissaoPrevista) },
     { label: "Clientes atendidos", valor: String(clientesAtendidos) },
   ];
 
