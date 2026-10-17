@@ -22,7 +22,6 @@ type VisitaSync = {
   data_hora: string;
   observacoes: string | null;
   google_event_id: string | null;
-  imoveis: { titulo: string; bairro: string; cidade: string } | null;
   comprador: { nome: string; telefone: string | null; email: string | null } | null;
 };
 
@@ -62,7 +61,7 @@ export async function POST(request: NextRequest) {
   const { data } = await supabase
     .from("visitas")
     .select(
-      "id, corretor_id, data_hora, observacoes, google_event_id, imoveis(titulo, bairro, cidade), comprador:comprador_id(nome, telefone, email)",
+      "id, corretor_id, data_hora, observacoes, google_event_id, comprador:comprador_id(nome, telefone, email)",
     )
     .eq("id", visitaId)
     .maybeSingle();
@@ -135,15 +134,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ sincronizado: true, motivo: "ja_sincronizada" });
   }
 
-  const imovel = visita.imoveis;
-  const local = imovel ? `${imovel.bairro}, ${imovel.cidade}` : "";
   const contato = [visita.comprador?.telefone, visita.comprador?.email]
     .filter(Boolean)
     .join(" · ");
 
   const descricao = [
     `Visita agendada pela Rede Impulso em ${formatoDataHora.format(new Date(visita.data_hora))}.`,
-    imovel ? `Imóvel: ${imovel.titulo} — ${local}` : null,
     visita.comprador?.nome ? `Interessado: ${visita.comprador.nome}` : null,
     contato ? `Contato: ${contato}` : null,
     visita.observacoes ? `Observações: ${visita.observacoes}` : null,
@@ -152,7 +148,7 @@ export async function POST(request: NextRequest) {
     .join("\n");
 
   const eventId = await criarEvento(accessToken, calendarId, {
-    titulo: `Visita — ${imovel?.titulo ?? "Imóvel"}${local ? ` (${local})` : ""}`,
+    titulo: `Visita${visita.comprador?.nome ? ` — ${visita.comprador.nome}` : ""}`,
     descricao,
     inicio: new Date(visita.data_hora),
   });

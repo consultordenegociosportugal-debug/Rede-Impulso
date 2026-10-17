@@ -1,14 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-/**
- * Papéis cujo acesso só abre depois de enviar documento de verificação.
- * Comprador e corretor ficam de fora de propósito: no modelo de
- * agendamento direto o corretor já entra liberado pro painel — a
- * verificação de documentos era coisa do marketplace de imóveis
- * pausado. Ver TIPOS_POR_ROLE em `src/lib/verificacao.ts`.
- */
-const PRECISA_DOCUMENTOS = ["vendedor", "imobiliaria", "construtora", "cartorio"];
-
 type Opcoes = {
   /** Valor cru do parâmetro `depois`, quando houver. */
   depois?: string | null;
@@ -61,15 +52,6 @@ export async function destinoPosLogin(
   // qualquer papel. Sem isso, cai no fallback de role e vê a home como
   // se fosse pedir cadastro de novo.
   if (profile?.is_admin) return "/admin";
-
-  if (profile && PRECISA_DOCUMENTOS.includes(profile.role)) {
-    const { count } = await supabase
-      .from("documentos_verificacao")
-      .select("id", { count: "exact", head: true })
-      .eq("profile_id", userId);
-
-    if (!count) return "/verificacao";
-  }
 
   if (profile?.role === "comprador") return "/area-cliente";
 

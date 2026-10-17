@@ -1,15 +1,7 @@
-export type DocumentoTipo =
-  | "identidade"
-  | "creci"
-  | "cnpj"
-  | "comprovante_residencia"
-  | "registro_serventia";
+export type DocumentoTipo = "identidade" | "creci";
 
 export const TIPOS_POR_ROLE: Record<string, DocumentoTipo[]> = {
   comprador: [],
-  vendedor: ["identidade"],
   corretor: ["identidade", "creci"],
-  imobiliaria: ["cnpj"],
-  construtora: ["cnpj"],
-  cartorio: ["registro_serventia"],
+  gestor: [],
 };

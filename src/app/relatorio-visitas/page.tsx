@@ -1,16 +1,16 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 
-const PAPEIS_COM_RELATORIO = ["corretor", "imobiliaria", "construtora", "vendedor"];
+const PAPEIS_COM_RELATORIO = ["corretor"];
 
 const STATUS_LABEL: Record<string, string> = {
   solicitada: "Aguardando confirmação",
   confirmada: "Confirmada",
   cancelada: "Cancelada",
   realizada: "Realizada",
+  nao_compareceu: "Cliente não apareceu",
 };
 
 const STATUS_BADGE: Record<string, string> = {
@@ -18,6 +18,7 @@ const STATUS_BADGE: Record<string, string> = {
   confirmada: "badge-primary",
   cancelada: "badge-outline",
   realizada: "badge-outline",
+  nao_compareceu: "badge-outline",
 };
 
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
@@ -34,10 +35,8 @@ type VisitaRow = {
   id: string;
   data_hora: string;
   status: string;
-  imoveis: { id: string; titulo: string; bairro: string; cidade: string } | null;
   comprador: { nome: string; telefone: string | null } | null;
   cliente_avulso: { nome: string; telefone: string | null } | null;
-  corretor: { nome: string } | null;
 };
 
 export default async function RelatorioVisitasPage({
@@ -80,18 +79,7 @@ export default async function RelatorioVisitasPage({
     );
   }
 
-  const ehImobiliaria = role === "imobiliaria";
-
-  let equipe: { profile_id: string; profiles: { nome: string } | null }[] = [];
-  let scopeIds = [user.id];
-  if (ehImobiliaria) {
-    const { data } = await supabase
-      .from("corretor_perfis")
-      .select("profile_id, profiles!profile_id(nome)")
-      .eq("imobiliaria_id", user.id);
-    equipe = (data ?? []) as unknown as typeof equipe;
-    scopeIds = [user.id, ...equipe.map((c) => c.profile_id)];
-  }
+  const scopeIds = [user.id];
 
   const hoje = new Date();
   const trintaDiasAtras = new Date();
@@ -108,7 +96,7 @@ export default async function RelatorioVisitasPage({
   let query = supabase
     .from("visitas")
     .select(
-      "id, data_hora, status, imoveis(id, titulo, bairro, cidade), comprador:comprador_id(nome, telefone), cliente_avulso:cliente_avulso_id(nome, telefone), corretor:corretor_id(nome)",
+      "id, data_hora, status, comprador:comprador_id(nome, telefone), cliente_avulso:cliente_avulso_id(nome, telefone)",
     )
     .in("corretor_id", idsFiltrados)
     .gte("data_hora", `${inicio}T00:00:00`)
@@ -148,19 +136,6 @@ export default async function RelatorioVisitasPage({
               ))}
             </select>
           </div>
-          {ehImobiliaria && equipe.length > 0 && (
-            <div className="field" style={{ margin: 0 }}>
-              <label htmlFor="profissional">Profissional</label>
-              <select id="profissional" name="profissional" defaultValue={profissionalFiltro}>
-                <option value="">Toda a equipe</option>
-                {equipe.map((c) => (
-                  <option key={c.profile_id} value={c.profile_id}>
-                    {c.profiles?.nome ?? "Corretor"}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
           <button type="submit" className="btn btn-primary btn-sm">
             Filtrar
           </button>
@@ -182,19 +157,12 @@ export default async function RelatorioVisitasPage({
                   <div style={{ minWidth: 220, flex: 1 }}>
                     <div style={{ fontWeight: 600, fontSize: 14 }}>
                       {formatoDataHora.format(new Date(v.data_hora))}
-                      {v.imoveis && (
-                        <>
-                          {" · "}
-                          <Link href={`/imoveis/${v.imoveis.id}`}>{v.imoveis.titulo}</Link>
-                        </>
-                      )}
                     </div>
                     <div className="hint" style={{ margin: 0 }}>
                       Cliente: {v.comprador?.nome ?? v.cliente_avulso?.nome ?? "—"}
                       {(v.comprador?.telefone ?? v.cliente_avulso?.telefone)
                         ? ` · ${v.comprador?.telefone ?? v.cliente_avulso?.telefone}`
                         : ""}
-                      {ehImobiliaria && v.corretor?.nome ? ` · Profissional: ${v.corretor.nome}` : ""}
                     </div>
                   </div>
                   <span className={`badge ${STATUS_BADGE[v.status] ?? "badge-outline"}`}>

@@ -10,17 +10,6 @@ type DocumentoStatus = "pendente" | "em_analise" | "aprovado" | "rejeitado";
 const LABELS: Record<DocumentoTipo, { titulo: string; hint: string; icone: string }> = {
   identidade: { titulo: "Documento de identidade", hint: "RG ou CNH", icone: "🪪" },
   creci: { titulo: "Comprovante do CRECI", hint: "Carteira ou certidão do CRECI", icone: "📋" },
-  cnpj: { titulo: "Comprovante de CNPJ", hint: "Cartão CNPJ ou contrato social", icone: "📄" },
-  comprovante_residencia: {
-    titulo: "Comprovante de residência",
-    hint: "Conta de luz, água ou telefone",
-    icone: "🏠",
-  },
-  registro_serventia: {
-    titulo: "Registro da serventia",
-    hint: "Documento do cartório",
-    icone: "🏛️",
-  },
 };
 
 const STATUS_BADGE: Record<DocumentoStatus, { label: string; className: string }> = {

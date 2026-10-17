@@ -1,8 +1,0 @@
-.sugestaoCadastro {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  background: var(--primary-tint);
-  border-color: transparent;
-  font-size: 13.5px;
-}

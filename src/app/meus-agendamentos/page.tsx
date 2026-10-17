@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
-import { MARKETPLACE_ATIVO } from "@/lib/modulos";
 
 const STATUS_VISITA: Record<string, { label: string; className: string }> = {
   solicitada: { label: "Aguardando confirmação", className: "badge-amber" },
@@ -23,7 +22,6 @@ type VisitaRow = {
   id: string;
   data_hora: string;
   status: string;
-  imoveis: { id: string; titulo: string; bairro: string; cidade: string } | null;
   corretor: { nome: string } | null;
 };
 
@@ -47,12 +45,7 @@ function ListaVisitas({ visitas, vazio }: { visitas: VisitaRow[]; vazio: string 
                   {formatoDataHora.format(new Date(v.data_hora))}
                 </div>
                 <div className="hint" style={{ margin: 0 }}>
-                  {v.imoveis ? (
-                    <Link href={`/imoveis/${v.imoveis.id}`}>{v.imoveis.titulo}</Link>
-                  ) : (
-                    `Com ${v.corretor?.nome ?? "o corretor"}`
-                  )}
-                  {v.imoveis?.bairro ? ` · ${v.imoveis.bairro}, ${v.imoveis.cidade}` : ""}
+                  Com {v.corretor?.nome ?? "o corretor"}
                 </div>
               </div>
               <span className={`badge ${badge.className}`}>{badge.label}</span>
@@ -78,7 +71,7 @@ export default async function MeusAgendamentosPage() {
 
   const { data: dadosFuturas } = await supabase
     .from("visitas")
-    .select("id, data_hora, status, imoveis(id, titulo, bairro, cidade), corretor:corretor_id(nome)")
+    .select("id, data_hora, status, corretor:corretor_id(nome)")
     .eq("comprador_id", user.id)
     .gte("data_hora", agora)
     .order("data_hora", { ascending: true });
@@ -86,7 +79,7 @@ export default async function MeusAgendamentosPage() {
 
   const { data: dadosPassadas } = await supabase
     .from("visitas")
-    .select("id, data_hora, status, imoveis(id, titulo, bairro, cidade), corretor:corretor_id(nome)")
+    .select("id, data_hora, status, corretor:corretor_id(nome)")
     .eq("comprador_id", user.id)
     .lt("data_hora", agora)
     .order("data_hora", { ascending: false })
@@ -110,11 +103,6 @@ export default async function MeusAgendamentosPage() {
               <Link href="/buscar-profissionais" className="btn btn-primary btn-sm">
                 Buscar um profissional →
               </Link>
-              {MARKETPLACE_ATIVO && (
-                <Link href="/imoveis" className="btn btn-outline btn-sm">
-                  Ver imóveis →
-                </Link>
-              )}
             </div>
           )}
         </section>

@@ -24,7 +24,6 @@ const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
 type VisitaLembrete = {
   id: string;
   data_hora: string;
-  imoveis: { titulo: string; bairro: string; cidade: string } | null;
   comprador: { nome: string; email: string | null } | null;
   corretor: { nome: string; email: string | null } | null;
 };
@@ -45,7 +44,7 @@ export async function GET(request: NextRequest) {
   const { data } = await supabase
     .from("visitas")
     .select(
-      "id, data_hora, imoveis(titulo, bairro, cidade), comprador:comprador_id(nome, email), corretor:corretor_id(nome, email)",
+      "id, data_hora, comprador:comprador_id(nome, email), corretor:corretor_id(nome, email)",
     )
     .eq("status", "confirmada")
     .is("lembrete_enviado_em", null)
@@ -68,8 +67,8 @@ export async function GET(request: NextRequest) {
 
   for (const visita of visitas) {
     const quando = formatoDataHora.format(new Date(visita.data_hora));
-    const imovel = visita.imoveis;
-    const local = imovel ? `${imovel.titulo} — ${imovel.bairro}, ${imovel.cidade}` : "o imóvel";
+    const nomeContraparte = (papel: "interessado" | "responsavel") =>
+      papel === "interessado" ? visita.corretor?.nome ?? "o corretor" : visita.comprador?.nome ?? "o cliente";
 
     const destinatarios = [
       visita.comprador?.email
@@ -92,8 +91,8 @@ export async function GET(request: NextRequest) {
             <p>Olá, ${dest.nome}.</p>
             <p>${
               dest.papel === "interessado"
-                ? `Sua visita a <strong>${local}</strong> está confirmada para <strong>${quando}</strong>.`
-                : `Você tem uma visita confirmada em <strong>${local}</strong> às <strong>${quando}</strong>.`
+                ? `Sua visita com <strong>${nomeContraparte("interessado")}</strong> está confirmada para <strong>${quando}</strong>.`
+                : `Você tem uma visita confirmada com <strong>${nomeContraparte("responsavel")}</strong> às <strong>${quando}</strong>.`
             }</p>
             ${rodapeTransacionalHtml()}
           `,

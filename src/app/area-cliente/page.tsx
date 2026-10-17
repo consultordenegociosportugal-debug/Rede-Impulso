@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
-import { MARKETPLACE_ATIVO } from "@/lib/modulos";
 
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "short",
@@ -15,7 +14,6 @@ type VisitaRow = {
   id: string;
   data_hora: string;
   status: string;
-  imoveis: { id: string; titulo: string; bairro: string } | null;
   corretor: { nome: string } | null;
 };
 
@@ -37,7 +35,7 @@ export default async function AreaClientePage() {
 
   const { data: dadosVisitas } = await supabase
     .from("visitas")
-    .select("id, data_hora, status, imoveis(id, titulo, bairro), corretor:corretor_id(nome)")
+    .select("id, data_hora, status, corretor:corretor_id(nome)")
     .eq("comprador_id", user.id)
     .gte("data_hora", new Date().toISOString())
     .order("data_hora", { ascending: true })
@@ -55,19 +53,13 @@ export default async function AreaClientePage() {
         <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>Olá, {primeiroNome}</h1>
         <p className="muted">O que você procura hoje?</p>
 
-        <div className={MARKETPLACE_ATIVO ? "grid grid-2 mt-24" : "mt-24"}>
+        <div className="mt-24">
           <Link href="/buscar-profissionais" className="card">
             <strong style={{ fontSize: 16 }}>🔎 Buscar um profissional</strong>
             <p className="hint" style={{ marginBottom: 0 }}>
               Por nome, por cidade ou perto de você.
             </p>
           </Link>
-          {MARKETPLACE_ATIVO && (
-            <Link href="/imoveis" className="card">
-              <strong style={{ fontSize: 16 }}>🏠 Ver imóveis disponíveis</strong>
-              <p className="hint" style={{ marginBottom: 0 }}>Comprar, alugar ou vender.</p>
-            </Link>
-          )}
         </div>
 
         <section className="mt-24">
@@ -91,8 +83,7 @@ export default async function AreaClientePage() {
                     {formatoDataHora.format(new Date(v.data_hora))}
                   </div>
                   <div className="hint" style={{ margin: 0 }}>
-                    {v.imoveis ? v.imoveis.titulo : `Com ${v.corretor?.nome ?? "o corretor"}`}
-                    {v.imoveis?.bairro ? ` · ${v.imoveis.bairro}` : ""}
+                    Com {v.corretor?.nome ?? "o corretor"}
                   </div>
                 </div>
               ))}

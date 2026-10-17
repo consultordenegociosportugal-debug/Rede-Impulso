@@ -1,71 +1,25 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
 import { BotoesSocial } from "@/components/botoes-social";
-import { formatarTelefone, formatarCnpj, formatarCreci, formatarInstagram } from "@/lib/mascaras";
+import { formatarTelefone, formatarCreci, formatarInstagram } from "@/lib/mascaras";
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
-import { MARKETPLACE_ATIVO } from "@/lib/modulos";
 import { ConfirmarCodigoEmail } from "@/components/confirmar-codigo-email";
 
-type Papel = "corretor" | "imobiliaria" | "construtora";
-type Campo =
-  | "nome"
-  | "creci"
-  | "bairros"
-  | "cnpj"
-  | "nomeFantasia"
-  | "cidade"
-  | "telefone"
-  | "dataNascimento"
-  | "email"
-  | "senha";
+type Campo = "nome" | "creci" | "bairros" | "telefone" | "dataNascimento" | "email" | "senha";
 type ErrosCampo = Partial<Record<Campo, string>>;
 
-const CHECKS = [
-  "Selo de avaliação exibido após 1º negócio",
-  "Depoimentos aparecem no mural de conquistas",
-  "Elegível para sugestão automática por bairro",
-];
-
-const TOTAL_PASSOS = 3;
+const TOTAL_PASSOS = 2;
 
 const TELEFONE_OK = /^\(\d{2}\)\s?9\s?\d{4}-?\d{4}$/;
 const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const CNPJ_OK = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
 
-// Imobiliária/construtora pausadas junto com a vitrine de imóveis — o
-// pivô para agendamento direto foca só no corretor (ver MARKETPLACE_ATIVO
-// em src/lib/modulos.ts). O papel/tabela continuam existindo no banco,
-// só não aparecem mais como opção de cadastro novo.
-const PAPEIS: { valor: Papel; titulo: string; descricao: string }[] = [
-  {
-    valor: "corretor",
-    titulo: "Corretor autônomo",
-    descricao: "Trabalho por conta própria, com CRECI no meu nome.",
-  },
-  ...(MARKETPLACE_ATIVO
-    ? [
-        {
-          valor: "imobiliaria" as const,
-          titulo: "Imobiliária",
-          descricao: "Represento uma empresa com CNPJ e equipe.",
-        },
-        {
-          valor: "construtora" as const,
-          titulo: "Construtora/Incorporadora",
-          descricao: "Lanço empreendimentos novos, na planta ou prontos.",
-        },
-      ]
-    : []),
-];
-
-const TITULO_PASSO = ["Quem é você", "Contato e acesso", "Documentos e confirmação"];
+const TITULO_PASSO = ["Quem é você", "Contato e acesso"];
 
 /** Mensagens do Supabase chegam em inglês — aqui viram texto acionável em pt-BR. */
 function traduzErroAuth(mensagem: string) {
@@ -85,24 +39,11 @@ function traduzErroAuth(mensagem: string) {
   return mensagem;
 }
 
-function papelValido(valor: string | null): Papel | null {
-  if (valor === "imobiliaria" || valor === "construtora" || valor === "corretor") return valor;
-  return null;
-}
-
-function CadastroProfissionalConteudo() {
-  // Pré-seleciona o cartão certo quando vem de /comece-agora
-  // (?papel=imobiliaria|construtora). useSearchParams precisa do
-  // Suspense boundary abaixo — sem ele, o valor lido no servidor e no
-  // cliente diverge e quebra a hidratação.
-  const papelDaUrl = papelValido(useSearchParams().get("papel"));
+export default function CadastroProfissionalPage() {
   const [passo, setPasso] = useState(1);
-  const [papel, setPapel] = useState<Papel>(papelDaUrl ?? "corretor");
   const [nome, setNome] = useState("");
   const [creci, setCreci] = useState("");
   const [bairros, setBairros] = useState("");
-  const [cnpj, setCnpj] = useState("");
-  const [nomeFantasia, setNomeFantasia] = useState("");
   const [cidade, setCidade] = useState("");
   const [telefone, setTelefone] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
@@ -119,8 +60,7 @@ function CadastroProfissionalConteudo() {
   const primeiroCampo = useRef<HTMLInputElement>(null);
   const jaMontou = useRef(false);
 
-  // Foco no primeiro campo a cada troca de passo (não no carregamento inicial,
-  // para não pular por cima da escolha de tipo de cadastro).
+  // Foco no primeiro campo a cada troca de passo (não no carregamento inicial).
   useEffect(() => {
     if (!jaMontou.current) {
       jaMontou.current = true;
@@ -141,20 +81,12 @@ function CadastroProfissionalConteudo() {
   function validarPasso(alvo: number): ErrosCampo {
     const problemas: ErrosCampo = {};
     if (alvo === 1) {
-      if (!nome.trim())
-        problemas.nome =
-          papel === "corretor" ? "Digite seu nome completo." : "Digite o nome do responsável.";
+      if (!nome.trim()) problemas.nome = "Digite seu nome completo.";
       else if (!nome.trim().includes(" ")) problemas.nome = "Informe nome e sobrenome.";
 
-      if (papel === "corretor") {
-        if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
-        else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
-        if (!bairros.trim()) problemas.bairros = "Informe ao menos um bairro onde você atua.";
-      } else {
-        if (!cnpj.trim()) problemas.cnpj = "Informe o CNPJ da imobiliária.";
-        else if (!CNPJ_OK.test(cnpj)) problemas.cnpj = "CNPJ incompleto — são 14 dígitos.";
-        if (!nomeFantasia.trim()) problemas.nomeFantasia = "Informe o nome fantasia.";
-      }
+      if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
+      else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
+      if (!bairros.trim()) problemas.bairros = "Informe ao menos um bairro onde você atua.";
     }
     if (alvo === 2) {
       if (!telefone) problemas.telefone = "Informe seu WhatsApp com DDD.";
@@ -190,8 +122,8 @@ function CadastroProfissionalConteudo() {
   }
 
   // Nos passos intermediários o formulário não tem botão de submit, então o
-  // Enter não dispara nada sozinho — aqui ele avança o passo, como nos grandes
-  // marketplaces. O guard em handleSubmit continua protegendo o envio.
+  // Enter não dispara nada sozinho — aqui ele avança o passo. O guard em
+  // handleSubmit continua protegendo o envio.
   function handleKeyDown(e: React.KeyboardEvent<HTMLFormElement>) {
     if (e.key !== "Enter" || passo >= TOTAL_PASSOS) return;
     const alvo = e.target as HTMLElement;
@@ -203,9 +135,14 @@ function CadastroProfissionalConteudo() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    // Enter num campo intermediário avança o passo em vez de enviar o cadastro.
     if (passo < TOTAL_PASSOS) {
       avancar();
+      return;
+    }
+
+    const problemas = validarPasso(TOTAL_PASSOS);
+    if (Object.keys(problemas).length > 0) {
+      setErrosCampo(problemas);
       return;
     }
 
@@ -223,31 +160,19 @@ function CadastroProfissionalConteudo() {
         // (ex.: ainda apontando pra localhost de um ambiente de teste).
         // Setar aqui explicitamente garante o domínio certo sempre.
         emailRedirectTo: new URL("/auth/callback", window.location.origin).toString(),
-        data:
-          papel === "corretor"
-            ? {
-                role: "corretor",
-                nome,
-                telefone,
-                data_nascimento: dataNascimento,
-                rede_social: redeSocial || null,
-                creci,
-                bairros_atuacao: bairros
-                  .split(",")
-                  .map((b) => b.trim())
-                  .filter(Boolean),
-                cidade: cidade || null,
-              }
-            : {
-                role: papel,
-                nome,
-                telefone,
-                data_nascimento: dataNascimento,
-                rede_social: redeSocial || null,
-                cnpj,
-                nome_fantasia: nomeFantasia,
-                cidade: cidade || null,
-              },
+        data: {
+          role: "corretor",
+          nome,
+          telefone,
+          data_nascimento: dataNascimento,
+          rede_social: redeSocial || null,
+          creci,
+          bairros_atuacao: bairros
+            .split(",")
+            .map((b) => b.trim())
+            .filter(Boolean),
+          cidade: cidade || null,
+        },
       },
     });
 
@@ -279,27 +204,20 @@ function CadastroProfissionalConteudo() {
         <div className="wrap">
           <div style={{ maxWidth: 480, margin: "64px auto" }}>
             <div className="card" style={{ textAlign: "center" }}>
-              <span className="badge badge-primary">
-                {status === "logado" && papel === "corretor" ? "Cadastro criado" : "Verificação pendente"}
-              </span>
+              {status === "logado" && <div className="celebra-icone">✓</div>}
+              <span className="badge badge-primary">Cadastro criado</span>
               <h1 style={{ fontSize: 22, margin: "12px 0 4px" }}>
-                {status === "aguardando_confirmacao"
-                  ? "Falta só confirmar seu e-mail"
-                  : papel === "corretor"
-                    ? "Tudo pronto!"
-                    : "Cadastro enviado para análise"}
+                {status === "aguardando_confirmacao" ? "Falta só confirmar seu e-mail" : "Tudo pronto!"}
               </h1>
               <p className="muted">
                 {status === "aguardando_confirmacao"
                   ? `Enviamos um código de confirmação para ${email}.`
-                  : papel === "corretor"
-                    ? "Sua conta já está ativa — você já pode cadastrar clientes e agendar visitas."
-                    : "Analisamos seus dados antes de liberar o perfil público."}
+                  : "Sua conta já está ativa — você já pode cadastrar clientes e agendar visitas."}
               </p>
               {status === "aguardando_confirmacao" && (
                 <ConfirmarCodigoEmail email={email} onVerificado={() => setStatus("logado")} />
               )}
-              {status === "logado" && papel === "corretor" && (
+              {status === "logado" && (
                 <Link href="/painel-negocios" className="btn btn-primary btn-sm mt-16">
                   Ir para o meu painel →
                 </Link>
@@ -320,9 +238,7 @@ function CadastroProfissionalConteudo() {
         <div style={{ paddingTop: 40 }}>
           <span className="eyebrow">Cadastro profissional</span>
           <div className={styles.passoTopo}>
-            <h1 style={{ fontSize: 30, margin: "8px 0 4px" }}>
-              {MARKETPLACE_ATIVO ? "Corretor, imobiliária ou construtora" : "Cadastro de corretor"}
-            </h1>
+            <h1 style={{ fontSize: 30, margin: "8px 0 4px" }}>Cadastro de corretor</h1>
             <span className={styles.passoContador}>
               Passo {passo} de {TOTAL_PASSOS}
             </span>
@@ -340,59 +256,17 @@ function CadastroProfissionalConteudo() {
           <form className="card mt-16" onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
             {passo === 1 && (
               <>
-                <div
-                  className={`${styles.escolhaGrid} mb-16`}
-                  role="radiogroup"
-                  aria-label="Tipo de cadastro"
-                >
-                  {PAPEIS.map((opcao) => (
-                    <label
-                      key={opcao.valor}
-                      className={`${styles.escolha} ${papel === opcao.valor ? styles.escolhaAtiva : ""}`}
-                    >
-                      <input
-                        type="radio"
-                        name="papel"
-                        value={opcao.valor}
-                        checked={papel === opcao.valor}
-                        onChange={() => {
-                          setPapel(opcao.valor);
-                          setErrosCampo({});
-                        }}
-                        className={styles.escolhaInput}
-                      />
-                      <span className={styles.escolhaTitulo}>{opcao.titulo}</span>
-                      <span className={styles.escolhaDesc}>{opcao.descricao}</span>
-                    </label>
-                  ))}
-                </div>
-
                 <div className={`${styles.notice} mb-24`}>
                   <span aria-hidden="true">ℹ️</span>
-                  {papel === "corretor" ? (
-                    <span>
-                      <strong>Corretor autônomo</strong>: o CRECI e os bairros que
-                      você informar aparecem no seu perfil público — são eles que
-                      fazem a Rede sugerir você para imóveis da região.
-                    </span>
-                  ) : papel === "imobiliaria" ? (
-                    <span>
-                      <strong>Imobiliária</strong>: a conta fica no CNPJ da empresa,
-                      e o nome fantasia é o que identifica vocês no perfil público.
-                    </span>
-                  ) : (
-                    <span>
-                      <strong>Construtora/Incorporadora</strong>: a conta fica no
-                      CNPJ da empresa — publique seus empreendimentos com as mesmas
-                      ferramentas de anúncio da Rede Impulso.
-                    </span>
-                  )}
+                  <span>
+                    O CRECI e os bairros que você informar aparecem no seu perfil
+                    público — são eles que fazem a Rede sugerir você pros clientes
+                    da região.
+                  </span>
                 </div>
 
                 <div className="field">
-                  <label htmlFor="nome">
-                    {papel === "corretor" ? "Nome completo" : "Nome do responsável"}
-                  </label>
+                  <label htmlFor="nome">Nome completo</label>
                   <input
                     ref={primeiroCampo}
                     type="text"
@@ -415,111 +289,56 @@ function CadastroProfissionalConteudo() {
                   )}
                 </div>
 
-                {papel === "corretor" ? (
-                  <div className="grid grid-2">
-                    <div className="field">
-                      <label htmlFor="creci">Número do CRECI</label>
-                      <input
-                        type="text"
-                        id="creci"
-                        placeholder="7027-MA"
-                        value={creci}
-                        onChange={(e) => {
-                          setCreci(formatarCreci(e.target.value));
-                          limparErroDe("creci");
-                        }}
-                        className={errosCampo.creci ? styles.campoInvalido : undefined}
-                        aria-invalid={errosCampo.creci ? true : undefined}
-                        aria-describedby={errosCampo.creci ? "erro-creci" : undefined}
-                        required
-                      />
-                      {errosCampo.creci ? (
-                        <p className={styles.erroCampo} id="erro-creci">
-                          {errosCampo.creci}
-                        </p>
-                      ) : (
-                        <p className="hint">Número e sigla do estado, como no seu registro.</p>
-                      )}
-                    </div>
-                    <div className="field">
-                      <label htmlFor="bairro">Bairros de atuação</label>
-                      <input
-                        type="text"
-                        id="bairro"
-                        placeholder="Jóquei, Renascença"
-                        value={bairros}
-                        onChange={(e) => {
-                          setBairros(e.target.value);
-                          limparErroDe("bairros");
-                        }}
-                        className={errosCampo.bairros ? styles.campoInvalido : undefined}
-                        aria-invalid={errosCampo.bairros ? true : undefined}
-                        aria-describedby={errosCampo.bairros ? "erro-bairro" : undefined}
-                        required
-                      />
-                      {errosCampo.bairros ? (
-                        <p className={styles.erroCampo} id="erro-bairro">
-                          {errosCampo.bairros}
-                        </p>
-                      ) : (
-                        <p className="hint">Separe por vírgula. Dá para ajustar depois.</p>
-                      )}
-                    </div>
+                <div className="grid grid-2">
+                  <div className="field">
+                    <label htmlFor="creci">Número do CRECI</label>
+                    <input
+                      type="text"
+                      id="creci"
+                      placeholder="7027-MA"
+                      value={creci}
+                      onChange={(e) => {
+                        setCreci(formatarCreci(e.target.value));
+                        limparErroDe("creci");
+                      }}
+                      className={errosCampo.creci ? styles.campoInvalido : undefined}
+                      aria-invalid={errosCampo.creci ? true : undefined}
+                      aria-describedby={errosCampo.creci ? "erro-creci" : undefined}
+                      required
+                    />
+                    {errosCampo.creci ? (
+                      <p className={styles.erroCampo} id="erro-creci">
+                        {errosCampo.creci}
+                      </p>
+                    ) : (
+                      <p className="hint">Número e sigla do estado, como no seu registro.</p>
+                    )}
                   </div>
-                ) : (
-                  <div className="grid grid-2">
-                    <div className="field">
-                      <label htmlFor="cnpj">CNPJ</label>
-                      <input
-                        type="text"
-                        id="cnpj"
-                        placeholder="00.000.000/0001-00"
-                        value={cnpj}
-                        onChange={(e) => {
-                          setCnpj(formatarCnpj(e.target.value));
-                          limparErroDe("cnpj");
-                        }}
-                        pattern="\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}"
-                        title="CNPJ no formato 00.000.000/0001-00"
-                        className={errosCampo.cnpj ? styles.campoInvalido : undefined}
-                        aria-invalid={errosCampo.cnpj ? true : undefined}
-                        aria-describedby={errosCampo.cnpj ? "erro-cnpj" : undefined}
-                        required
-                      />
-                      {errosCampo.cnpj ? (
-                        <p className={styles.erroCampo} id="erro-cnpj">
-                          {errosCampo.cnpj}
-                        </p>
-                      ) : (
-                        <p className="hint">Usamos para conferir o registro da empresa.</p>
-                      )}
-                    </div>
-                    <div className="field">
-                      <label htmlFor="nomeFantasia">Nome fantasia</label>
-                      <input
-                        type="text"
-                        id="nomeFantasia"
-                        placeholder="Imobiliária Horizonte"
-                        value={nomeFantasia}
-                        onChange={(e) => {
-                          setNomeFantasia(e.target.value);
-                          limparErroDe("nomeFantasia");
-                        }}
-                        className={errosCampo.nomeFantasia ? styles.campoInvalido : undefined}
-                        aria-invalid={errosCampo.nomeFantasia ? true : undefined}
-                        aria-describedby={errosCampo.nomeFantasia ? "erro-fantasia" : undefined}
-                        required
-                      />
-                      {errosCampo.nomeFantasia ? (
-                        <p className={styles.erroCampo} id="erro-fantasia">
-                          {errosCampo.nomeFantasia}
-                        </p>
-                      ) : (
-                        <p className="hint">É esse nome que aparece no perfil público.</p>
-                      )}
-                    </div>
+                  <div className="field">
+                    <label htmlFor="bairro">Bairros de atuação</label>
+                    <input
+                      type="text"
+                      id="bairro"
+                      placeholder="Jóquei, Renascença"
+                      value={bairros}
+                      onChange={(e) => {
+                        setBairros(e.target.value);
+                        limparErroDe("bairros");
+                      }}
+                      className={errosCampo.bairros ? styles.campoInvalido : undefined}
+                      aria-invalid={errosCampo.bairros ? true : undefined}
+                      aria-describedby={errosCampo.bairros ? "erro-bairro" : undefined}
+                      required
+                    />
+                    {errosCampo.bairros ? (
+                      <p className={styles.erroCampo} id="erro-bairro">
+                        {errosCampo.bairros}
+                      </p>
+                    ) : (
+                      <p className="hint">Separe por vírgula. Dá para ajustar depois.</p>
+                    )}
                   </div>
-                )}
+                </div>
 
                 <div className="field">
                   <label htmlFor="cidade">
@@ -540,19 +359,14 @@ function CadastroProfissionalConteudo() {
                   </p>
                 </div>
 
-                {/* Atalho para quem prefere não criar mais uma senha. O CRECI
-                    ou o CNPJ não viajam com o login social, então esses dados
-                    são pedidos de novo em /completar-cadastro — por isso o
-                    aviso logo abaixo. */}
                 <BotoesSocial
-                  papel={papel}
+                  papel="corretor"
                   bloqueado={!aceitouTermos}
                   avisoBloqueado="Marque o aceite abaixo para continuar com Google ou Facebook."
                 />
                 <p className="hint" style={{ textAlign: "center" }}>
-                  Entrando com Google ou Facebook, você confirma{" "}
-                  {papel === "corretor" ? "CRECI e bairros" : "CNPJ e nome fantasia"}{" "}
-                  na tela seguinte, e depois envia os documentos de verificação.
+                  Entrando com Google ou Facebook, você confirma CRECI e bairros na
+                  tela seguinte.
                 </p>
                 <label className={styles.termos} style={{ marginTop: 12 }}>
                   <input
@@ -613,7 +427,7 @@ function CadastroProfissionalConteudo() {
                         {errosCampo.telefone}
                       </p>
                     ) : (
-                      <p className="hint">Entra na verificação do seu cadastro.</p>
+                      <p className="hint">É por aqui que o cliente fala com você.</p>
                     )}
                   </div>
                   <div className="field">
@@ -713,62 +527,9 @@ function CadastroProfissionalConteudo() {
                       value={redeSocial}
                       onChange={(e) => setRedeSocial(formatarInstagram(e.target.value))}
                     />
-                    <p className="hint">Acelera a verificação — dá para preencher depois.</p>
+                    <p className="hint">Ajuda na verificação do seu perfil — pode preencher depois.</p>
                   </div>
                 </div>
-              </>
-            )}
-
-            {passo === 3 && (
-              <>
-                <div className="field">
-                  <label>Documentos de verificação</label>
-                  <p className="hint" style={{ marginTop: 0 }}>
-                    Depois de confirmar seu e-mail e entrar, você envia{" "}
-                    {papel === "corretor"
-                      ? "seu documento de identidade e comprovante do CRECI"
-                      : "o comprovante de CNPJ"}
-                    .
-                  </p>
-                </div>
-                <div className="card-flat mb-16" style={{ fontSize: 13.5 }}>
-                  <strong>{nome}</strong>
-                  <div className="muted">
-                    {papel === "corretor" ? `CRECI ${creci}` : nomeFantasia} ·{" "}
-                    {email}
-                  </div>
-                  <div className="muted">{telefone}</div>
-                </div>
-                <label className={styles.termos}>
-                  <input
-                    type="checkbox"
-                    checked={aceitouTermos}
-                    onChange={(e) => setAceitouTermos(e.target.checked)}
-                    required
-                    className={styles.termosCheck}
-                  />
-                  <span>
-                    Li e aceito os{" "}
-                    <Link
-                      href="/termos-de-uso"
-                      target="_blank"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ textDecoration: "underline" }}
-                    >
-                      Termos de Uso
-                    </Link>{" "}
-                    e a{" "}
-                    <Link
-                      href="/privacidade"
-                      target="_blank"
-                      onClick={(e) => e.stopPropagation()}
-                      style={{ textDecoration: "underline" }}
-                    >
-                      Política de Privacidade
-                    </Link>
-                    .
-                  </span>
-                </label>
               </>
             )}
 
@@ -803,18 +564,10 @@ function CadastroProfissionalConteudo() {
                   className="btn btn-primary btn-block"
                   disabled={status === "loading" || !aceitouTermos}
                 >
-                  {status === "loading"
-                    ? "Enviando…"
-                    : "Enviar cadastro para verificação"}
+                  {status === "loading" ? "Enviando…" : "Criar cadastro de corretor"}
                 </button>
               )}
             </div>
-            {passo === TOTAL_PASSOS && (
-              <p className="hint" style={{ textAlign: "center" }}>
-                Analisamos documentos, telefone, e-mail e rede social antes de
-                liberar o perfil público.
-              </p>
-            )}
           </form>
 
           <p className={`muted ${styles.rodapeConta}`}>
@@ -840,9 +593,7 @@ function CadastroProfissionalConteudo() {
                 <div>
                   <div style={{ fontWeight: 600 }}>{nome || "Seu nome"}</div>
                   <div className="muted" style={{ fontSize: 13 }}>
-                    {papel === "corretor"
-                      ? `Corretor(a)${creci ? " · " + creci : ""}`
-                      : nomeFantasia || (papel === "imobiliaria" ? "Imobiliária" : "Construtora")}
+                    Corretor(a){creci ? " · " + creci : ""}
                   </div>
                   <div className="stars mt-8" aria-label="sem avaliações ainda">
                     ★★★★★{" "}
@@ -852,22 +603,6 @@ function CadastroProfissionalConteudo() {
                   </div>
                 </div>
               </div>
-              <div className="mt-16">
-                <span className="badge badge-primary">
-                  Verificação pendente
-                </span>
-              </div>
-              <div
-                className="mt-16"
-                style={{ borderTop: "1px solid var(--line)", paddingTop: 14 }}
-              >
-                {CHECKS.map((check) => (
-                  <div key={check} className={styles.checkRow}>
-                    <span className={styles.dot} />
-                    {check}
-                  </div>
-                ))}
-              </div>
             </div>
           </aside>
         </div>
@@ -875,13 +610,5 @@ function CadastroProfissionalConteudo() {
 
       <Footer />
     </>
-  );
-}
-
-export default function CadastroProfissionalPage() {
-  return (
-    <Suspense fallback={null}>
-      <CadastroProfissionalConteudo />
-    </Suspense>
   );
 }

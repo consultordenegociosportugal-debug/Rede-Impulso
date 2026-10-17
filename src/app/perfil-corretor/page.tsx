@@ -1,6 +1,5 @@
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/server";
-import { VincularButton } from "./vincular-button";
 import { AgendarComCorretorButton } from "./agendar-com-corretor-button";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
@@ -12,16 +11,14 @@ type PerfilRow = {
   corretor_perfis: {
     estrelas: number;
     total_negocios: number;
-    imobiliaria_id: string | null;
     created_at: string;
+    organizacao: { nome: string } | null;
   } | null;
 };
 
 type DepoimentoRow = {
   texto: string;
   estrelas: number;
-  autor: { role: string } | null;
-  negocios: { imoveis: { bairro: string } | null } | null;
 };
 
 function iniciais(nome: string) {
@@ -43,9 +40,9 @@ function renderStars(estrelas: number) {
 export default async function PerfilCorretorPage({
   searchParams,
 }: {
-  searchParams: Promise<{ id?: string; imovel_id?: string }>;
+  searchParams: Promise<{ id?: string }>;
 }) {
-  const { id, imovel_id } = await searchParams;
+  const { id } = await searchParams;
 
   if (!id) {
     return (
@@ -73,15 +70,13 @@ export default async function PerfilCorretorPage({
     supabase
       .from("profiles")
       .select(
-        "id, nome, role, corretor_perfis!profile_id(estrelas, total_negocios, imobiliaria_id, created_at)",
+        "id, nome, role, corretor_perfis!profile_id(estrelas, total_negocios, created_at, organizacao:organizacao_catalogo_id(nome))",
       )
       .eq("id", id)
       .single(),
     supabase
       .from("depoimentos")
-      .select(
-        "texto, estrelas, autor:profiles!autor_id(role), negocios(imoveis(bairro))",
-      )
+      .select("texto, estrelas")
       .eq("corretor_id", id)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -108,16 +103,7 @@ export default async function PerfilCorretorPage({
   }
 
   const cp = perfil.corretor_perfis;
-
-  let orgLabel = "Corretor autônomo";
-  if (cp.imobiliaria_id) {
-    const { data: imobiliaria } = await supabase
-      .from("imobiliaria_perfis")
-      .select("nome_fantasia")
-      .eq("profile_id", cp.imobiliaria_id)
-      .single();
-    orgLabel = imobiliaria?.nome_fantasia ?? "Imobiliária";
-  }
+  const orgLabel = cp.organizacao?.nome ?? "Corretor autônomo";
 
   // eslint-disable-next-line react-hooks/purity -- Server Component, runs once per request; needs wall-clock time
   const agora = Date.now();
@@ -190,28 +176,12 @@ export default async function PerfilCorretorPage({
                   depoimentos.map((d, i) => (
                     <div key={i} className={styles.testi}>
                       <p>&ldquo;{d.texto}&rdquo;</p>
-                      <div className={styles.who}>
-                        {d.autor?.role === "vendedor"
-                          ? "Cliente vendedor"
-                          : "Cliente comprador"}
-                        {d.negocios?.imoveis?.bairro
-                          ? ` · bairro ${d.negocios.imoveis.bairro}`
-                          : ""}
-                      </div>
+                      <div className={styles.who}>Cliente</div>
                     </div>
                   ))
                 )}
               </div>
             </div>
-
-            {imovel_id && (
-              <VincularButton
-                imovelId={imovel_id}
-                corretorId={perfil.id}
-                corretorNome={perfil.nome}
-                imobiliariaId={cp.imobiliaria_id}
-              />
-            )}
           </div>
         </div>
       </div>

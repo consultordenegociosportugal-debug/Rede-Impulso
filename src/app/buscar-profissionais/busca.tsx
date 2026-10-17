@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-type Papel = "corretor" | "imobiliaria" | "construtora";
+type Papel = "corretor";
 type Modo = "nome" | "cidade" | "proximas";
 
 type Resultado = {
@@ -16,14 +16,10 @@ type Resultado = {
 
 const ICONE_PAPEL: Record<Papel, string> = {
   corretor: "🧑‍💼",
-  imobiliaria: "🏢",
-  construtora: "🏗️",
 };
 
 const LABEL_PAPEL: Record<Papel, string> = {
   corretor: "Corretor autônomo",
-  imobiliaria: "Imobiliária",
-  construtora: "Construtora/incorporadora",
 };
 
 async function buscar(modo: "nome" | "cidade", valor: string): Promise<Resultado[]> {

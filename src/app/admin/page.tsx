@@ -9,11 +9,6 @@ import { Footer } from "@/components/footer";
 const TIPO_LABEL: Record<string, string> = {
   identidade: "Identidade (RG/CNH)",
   creci: "CRECI",
-  cnpj: "CNPJ",
-  comprovante_residencia: "Comprovante de residência",
-  registro_serventia: "Registro da serventia",
-  documento_imovel: "Documento do imóvel",
-  foto_imovel: "Foto do imóvel",
 };
 
 const STATUS_BADGE: Record<string, string> = {
@@ -190,12 +185,6 @@ export default async function AdminPage() {
           <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
             <Link href="/admin/catalogo" className="btn btn-outline btn-sm">
               🏢 Catálogo de cidades e organizações
-            </Link>
-            <Link href="/admin/agentes" className="btn btn-outline btn-sm">
-              ⚡ Agentes de elétricos
-            </Link>
-            <Link href="/admin/direitos-autorais" className="btn btn-outline btn-sm">
-              © Direitos autorais
             </Link>
           </div>
         </div>

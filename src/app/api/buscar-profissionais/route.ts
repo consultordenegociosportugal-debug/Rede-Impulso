@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { MARKETPLACE_ATIVO } from "@/lib/modulos";
-
-type Papel = "corretor" | "imobiliaria" | "construtora";
 
 type Resultado = {
   id: string;
   nome: string;
-  papel: Papel;
+  papel: "corretor";
   cidade: string | null;
   detalhe: string | null;
 };
@@ -19,20 +16,9 @@ type CorretorRow = {
   profiles: { nome: string } | null;
 };
 
-type EmpresaRow = {
-  profile_id: string;
-  nome_fantasia: string | null;
-  cidade: string | null;
-  profiles: { nome: string } | null;
-};
-
 // Busca de corretor para o cliente — mesma ideia das 3 abas do AppBarber
 // (nome, cidade, "próximas"), sem distância real: ver comentário na
 // migração 0046 sobre essa limitação honesta.
-//
-// Imobiliária e construtora pausadas junto com o marketplace: a página
-// de destino (perfil-corretor) só aceita role "corretor", então buscá-
-// -las aqui levaria a um link quebrado.
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const modo = searchParams.get("modo") === "cidade" ? "cidade" : "nome";
@@ -45,9 +31,6 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const termo = `%${q}%`;
 
-  // corretor_perfis tem duas FKs pra profiles (profile_id e
-  // imobiliaria_id) — sem apontar qual, o PostgREST recusa o embed por
-  // ambiguidade (erro PGRST201).
   let corretorQuery = supabase
     .from("corretor_perfis")
     .select("profile_id, creci, cidade, profiles!corretor_perfis_profile_id_fkey!inner(nome)")
@@ -57,62 +40,16 @@ export async function GET(request: NextRequest) {
       ? corretorQuery.ilike("cidade", termo)
       : corretorQuery.ilike("profiles.nome", termo);
 
-  let imobiliarias: EmpresaRow[] = [];
-  let construtoras: EmpresaRow[] = [];
-  let corretores: CorretorRow[];
+  const { data: dadosCorretores } = await corretorQuery;
+  const corretores = (dadosCorretores ?? []) as unknown as CorretorRow[];
 
-  if (MARKETPLACE_ATIVO) {
-    let imobiliariaQuery = supabase
-      .from("imobiliaria_perfis")
-      .select("profile_id, nome_fantasia, cidade, profiles!inner(nome)")
-      .limit(12);
-    imobiliariaQuery =
-      modo === "cidade"
-        ? imobiliariaQuery.ilike("cidade", termo)
-        : imobiliariaQuery.ilike("nome_fantasia", termo);
-
-    let construtoraQuery = supabase
-      .from("construtora_perfis")
-      .select("profile_id, nome_fantasia, cidade, profiles!inner(nome)")
-      .limit(12);
-    construtoraQuery =
-      modo === "cidade"
-        ? construtoraQuery.ilike("cidade", termo)
-        : construtoraQuery.ilike("nome_fantasia", termo);
-
-    const [{ data: dadosCorretores }, { data: dadosImobiliarias }, { data: dadosConstrutoras }] =
-      await Promise.all([corretorQuery, imobiliariaQuery, construtoraQuery]);
-    imobiliarias = (dadosImobiliarias ?? []) as unknown as EmpresaRow[];
-    construtoras = (dadosConstrutoras ?? []) as unknown as EmpresaRow[];
-    corretores = (dadosCorretores ?? []) as unknown as CorretorRow[];
-  } else {
-    const { data: dadosCorretores } = await corretorQuery;
-    corretores = (dadosCorretores ?? []) as unknown as CorretorRow[];
-  }
-
-  const resultados: Resultado[] = [
-    ...corretores.map((r) => ({
-      id: r.profile_id,
-      nome: r.profiles?.nome ?? "Corretor",
-      papel: "corretor" as const,
-      cidade: r.cidade,
-      detalhe: r.creci ? `CRECI ${r.creci}` : null,
-    })),
-    ...imobiliarias.map((r) => ({
-      id: r.profile_id,
-      nome: r.nome_fantasia || r.profiles?.nome || "Imobiliária",
-      papel: "imobiliaria" as const,
-      cidade: r.cidade,
-      detalhe: "Imobiliária",
-    })),
-    ...construtoras.map((r) => ({
-      id: r.profile_id,
-      nome: r.nome_fantasia || r.profiles?.nome || "Construtora",
-      papel: "construtora" as const,
-      cidade: r.cidade,
-      detalhe: "Construtora/incorporadora",
-    })),
-  ];
+  const resultados: Resultado[] = corretores.map((r) => ({
+    id: r.profile_id,
+    nome: r.profiles?.nome ?? "Corretor",
+    papel: "corretor" as const,
+    cidade: r.cidade,
+    detalhe: r.creci ? `CRECI ${r.creci}` : null,
+  }));
 
   return NextResponse.json({ resultados });
 }

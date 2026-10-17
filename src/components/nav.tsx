@@ -5,38 +5,12 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
-import { MOBILIDADE_ATIVA, MARKETPLACE_ATIVO } from "@/lib/modulos";
 
 type NavLink = { href: string; label: string };
 type NavItem =
   | { type: "link"; href: string; label: string }
   | { type: "group"; label: string; children: NavLink[] }
   | { type: "divider" };
-
-// Mobilidade (motorista de aplicativo + elétricos) — adormecida desde
-// 2026-10 (ver src/lib/modulos.ts).
-const NAV_ITEMS_MOBILIDADE: NavItem[] = [
-  {
-    type: "group",
-    label: "Motorista",
-    children: [
-      { href: "/motorista", label: "Radar do motorista" },
-      { href: "/motorista/raio-x", label: "Raio-X do lucro real" },
-      { href: "/motorista/apoio", label: "Mapa de apoio" },
-    ],
-  },
-  {
-    type: "group",
-    label: "Elétricos",
-    children: [
-      { href: "/eletricos", label: "Visão geral" },
-      { href: "/eletricos/veiculos", label: "Comprar e vender" },
-      { href: "/eletricos/eletropostos", label: "Eletropostos" },
-      { href: "/eletricos/oficinas", label: "Oficinas especializadas" },
-      { href: "/eletricos/comunidade", label: "Comunidade" },
-    ],
-  },
-];
 
 // Núcleo permanente da plataforma desde o pivô para agendamento direto
 // (modelo AppBarber): corretor gerencia sua agenda e seus clientes.
@@ -66,59 +40,10 @@ const NAV_ITEMS_CORE: NavItem[] = [
   { type: "link", href: "/sobre", label: "Como funciona" },
 ];
 
-// Vitrine de imóveis e planos de equipe — pausados desde o pivô para
-// agendamento direto (ver MARKETPLACE_ATIVO em src/lib/modulos.ts).
-const NAV_ITEMS_MARKETPLACE: NavItem[] = [
-  {
-    type: "group",
-    label: "Imóveis",
-    children: [
-      { href: "/imoveis", label: "Buscar imóveis" },
-      { href: "/publicar-imovel", label: "Publicar imóvel" },
-      { href: "/foto-do-imovel", label: "Foto do imóvel" },
-      { href: "/favoritos", label: "Favoritos" },
-    ],
-  },
-  {
-    type: "group",
-    label: "Serviços",
-    children: [
-      { href: "/servicos", label: "Ver serviços" },
-      { href: "/oferecer-servico", label: "Oferecer serviço" },
-    ],
-  },
-  {
-    type: "group",
-    label: "Profissionais",
-    children: [
-      { href: "/sugestao-corretores", label: "Sugestão de corretores" },
-      { href: "/painel-corretores", label: "Painel de corretores" },
-      { href: "/planos", label: "Planos de equipe" },
-    ],
-  },
-  {
-    type: "group",
-    label: "Negócios",
-    children: [
-      { href: "/modelos-contratos", label: "Contratos e documentos" },
-      { href: "/mural-conquistas", label: "Mural de conquistas" },
-      { href: "/oferta-pos-negocio", label: "Oferta pós-negócio" },
-    ],
-  },
-];
-
-// Núcleo (agendamento) é sempre visível. Marketplace de imóveis/planos e
-// mobilidade (motorista + elétricos) só aparecem quando acordados, cada
-// um separado por um divisor visual. Início sempre abre a lista.
+// Início sempre abre a lista; núcleo de agendamento é sempre visível.
 const NAV_ITEMS: NavItem[] = [
   { type: "link", href: "/", label: "Início" },
   ...NAV_ITEMS_CORE,
-  ...(MARKETPLACE_ATIVO
-    ? ([{ type: "divider" }, ...NAV_ITEMS_MARKETPLACE] as NavItem[])
-    : []),
-  ...(MOBILIDADE_ATIVA
-    ? ([{ type: "divider" }, ...NAV_ITEMS_MOBILIDADE] as NavItem[])
-    : []),
   { type: "link", href: "/cadastro-cliente", label: "Cadastro cliente" },
 ];
 
@@ -129,7 +54,6 @@ const NAV_ITEMS_VISITANTE: NavItem[] = [
   { type: "link", href: "/", label: "Home" },
   { type: "link", href: "/sobre", label: "Sobre" },
   { type: "link", href: "/#funcionalidades", label: "Funções" },
-  ...(MARKETPLACE_ATIVO ? ([{ type: "link", href: "/planos", label: "Preços" }] as NavItem[]) : []),
   { type: "link", href: "/comece-agora", label: "Teste grátis" },
   { type: "link", href: "/blog", label: "Blog" },
   { type: "link", href: "/entrar", label: "Acessar" },
@@ -143,7 +67,6 @@ const NAV_ITEMS_CLIENTE: NavItem[] = [
   { type: "link", href: "/area-cliente", label: "Início" },
   { type: "link", href: "/buscar-profissionais", label: "Buscar" },
   { type: "link", href: "/meus-agendamentos", label: "Meus agendamentos" },
-  ...(MARKETPLACE_ATIVO ? ([{ type: "link", href: "/imoveis", label: "Ver imóveis" }] as NavItem[]) : []),
 ];
 
 // Gestor de uma imobiliária/construtora — só vê as métricas dos seus
@@ -275,15 +198,6 @@ export function Nav({ active }: { active: string }) {
                       onClick={() => setOpen(false)}
                     >
                       Minhas negociações
-                    </Link>
-                  )}
-                  {MOBILIDADE_ATIVA && (
-                    <Link
-                      href="/motorista/raio-x"
-                      className={active === "/motorista/raio-x" ? "active" : undefined}
-                      onClick={() => setOpen(false)}
-                    >
-                      Meu Raio-X
                     </Link>
                   )}
                   <Link

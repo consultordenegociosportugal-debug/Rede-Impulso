@@ -37,7 +37,6 @@ type VisitaRow = {
   status: string;
   observacoes: string | null;
   google_event_id: string | null;
-  imoveis: { id: string; titulo: string; bairro: string } | null;
   comprador: { nome: string; telefone: string | null } | null;
   cliente_avulso: { nome: string; telefone: string | null } | null;
 };
@@ -59,17 +58,16 @@ export default async function PainelNegociosPage({
     redirect("/entrar");
   }
 
-  // Visitas em que este usuário é o responsável. `imoveis`/`comprador`
-  // seguem aparecendo quando a visita vem do fluxo antigo ligado a um
-  // imóvel; `cliente_avulso` aparece quando o corretor cadastrou e
-  // agendou o cliente diretamente.
+  // Visitas em que este usuário é o responsável. `comprador` aparece
+  // quando o cliente agendou direto logado; `cliente_avulso` aparece
+  // quando o corretor cadastrou e agendou o cliente diretamente.
   const inicioDeHoje = new Date();
   inicioDeHoje.setHours(0, 0, 0, 0);
 
   const { data: dadosVisitas } = await supabase
     .from("visitas")
     .select(
-      "id, data_hora, status, observacoes, google_event_id, imoveis(id, titulo, bairro), comprador:comprador_id(nome, telefone), cliente_avulso:cliente_avulso_id(nome, telefone)",
+      "id, data_hora, status, observacoes, google_event_id, comprador:comprador_id(nome, telefone), cliente_avulso:cliente_avulso_id(nome, telefone)",
     )
     .eq("corretor_id", user.id)
     .gte("data_hora", inicioDeHoje.toISOString())
@@ -190,19 +188,10 @@ export default async function PainelNegociosPage({
                       <div style={{ minWidth: 220, flex: 1 }}>
                         <div style={{ fontWeight: 600, fontSize: 14 }}>
                           {formatoDataHora.format(new Date(visita.data_hora))}
-                          {visita.imoveis ? (
-                            <>
-                              {" · "}
-                              <Link href={`/imoveis/${visita.imoveis.id}`}>
-                                {visita.imoveis.titulo}
-                              </Link>
-                            </>
-                          ) : null}
                         </div>
                         <div className="hint" style={{ margin: 0 }}>
                           Cliente: {nomeCliente ?? "—"}
                           {telefoneCliente ? ` · ${telefoneCliente}` : ""}
-                          {visita.imoveis?.bairro ? ` · ${visita.imoveis.bairro}` : ""}
                         </div>
                         {visita.observacoes && (
                           <div className="hint" style={{ margin: 0 }}>

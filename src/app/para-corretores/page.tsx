@@ -55,7 +55,6 @@ type DepoimentoRow = {
   texto: string;
   estrelas: number;
   corretor: { nome: string } | null;
-  negocios: { imoveis: { titulo: string; bairro: string } | null } | null;
 };
 
 function iniciais(nome: string) {
@@ -78,9 +77,7 @@ export default async function ParaCorretoresPage() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("depoimentos")
-    .select(
-      "id, texto, estrelas, corretor:profiles!corretor_id(nome), negocios(imoveis(titulo, bairro))",
-    )
+    .select("id, texto, estrelas, corretor:profiles!corretor_id(nome)")
     .order("created_at", { ascending: false })
     .limit(3);
 
@@ -150,7 +147,6 @@ export default async function ParaCorretoresPage() {
             </div>
             <div className="grid grid-3">
               {depoimentos.map((d) => {
-                const imovel = d.negocios?.imoveis;
                 const nome = d.corretor?.nome ?? "Corretor";
                 return (
                   <div key={d.id} className={`card ${styles.depoimento}`}>
@@ -162,9 +158,6 @@ export default async function ParaCorretoresPage() {
                       <div className="avatar sm">{iniciais(nome)}</div>
                       <div style={{ fontSize: 12 }}>
                         <strong>{nome}</strong>
-                        {imovel && (
-                          <div className="muted mono">bairro {imovel.bairro}</div>
-                        )}
                       </div>
                     </div>
                   </div>

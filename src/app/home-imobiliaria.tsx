@@ -4,7 +4,6 @@ import { ComoVaiUsar } from "@/components/como-vai-usar";
 import { SOBRE_PARAGRAFOS, SOBRE_MODULOS, OBJETIVOS } from "@/lib/conteudo-institucional";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
-import { MARKETPLACE_ATIVO } from "@/lib/modulos";
 
 const FUNCIONALIDADES = [
   { icone: "🗓️", titulo: "Agendamento automático de visitas" },
@@ -165,24 +164,6 @@ export function HomeImobiliaria() {
           </Link>
         </div>
       </section>
-
-      {MARKETPLACE_ATIVO && (
-        <section id="precos">
-          <div className="wrap-narrow" style={{ textAlign: "center" }}>
-            <div className={styles.sectionHead}>
-              <span className="eyebrow">Preços</span>
-              <h2>Até 2 corretores na equipe sempre grátis</h2>
-            </div>
-            <p className="muted">
-              Quer convidar mais gente pra equipe?{" "}
-              <Link href="/planos" style={{ textDecoration: "underline" }}>
-                Veja os planos a partir de R$ 69,90/mês
-              </Link>
-              .
-            </p>
-          </div>
-        </section>
-      )}
 
       <section style={{ background: "var(--surface-2)" }}>
         <div className="wrap">

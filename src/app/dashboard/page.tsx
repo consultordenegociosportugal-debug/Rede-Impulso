@@ -26,7 +26,7 @@ function diaSemanaNoFuso(instante: Date) {
   }).format(instante);
 }
 
-const PAPEIS_COM_DASHBOARD = ["corretor", "imobiliaria", "construtora", "vendedor"];
+const PAPEIS_COM_DASHBOARD = ["corretor"];
 
 const DIAS_SEM_RETORNO = 14;
 
@@ -72,16 +72,7 @@ export default async function DashboardPage() {
     );
   }
 
-  const ehImobiliaria = role === "imobiliaria";
-
-  let scopeIds = [user.id];
-  if (ehImobiliaria) {
-    const { data: equipe } = await supabase
-      .from("corretor_perfis")
-      .select("profile_id")
-      .eq("imobiliaria_id", user.id);
-    scopeIds = [user.id, ...(equipe ?? []).map((c) => c.profile_id)];
-  }
+  const scopeIds = [user.id];
 
   const inicioPeriodo = new Date();
   inicioPeriodo.setDate(inicioPeriodo.getDate() - PERIODO_DIAS);

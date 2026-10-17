@@ -1,58 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { destinoPosLogin } from "@/lib/destino-pos-login";
-import {
-  formatarTelefone,
-  formatarCnpj,
-  formatarCreci,
-} from "@/lib/mascaras";
+import { formatarTelefone, formatarCreci } from "@/lib/mascaras";
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 
-type Papel = "comprador" | "vendedor" | "corretor" | "imobiliaria" | "construtora";
-type Campo =
-  | "nome"
-  | "telefone"
-  | "dataNascimento"
-  | "creci"
-  | "bairros"
-  | "cnpj"
-  | "nomeFantasia";
+type Papel = "comprador" | "corretor";
+type Campo = "nome" | "telefone" | "dataNascimento" | "creci" | "bairros";
 type ErrosCampo = Partial<Record<Campo, string>>;
 
 const TELEFONE_OK = /^\(\d{2}\)\s?9\s?\d{4}-?\d{4}$/;
-const CNPJ_OK = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
 
 const PAPEIS: { valor: Papel; titulo: string; descricao: string }[] = [
   {
     valor: "comprador",
-    titulo: "Quero comprar",
-    descricao: "Ver imóveis, favoritar e conversar com quem anuncia.",
-  },
-  {
-    valor: "vendedor",
-    titulo: "Quero vender",
-    descricao: "Anunciar meu imóvel e receber propostas.",
+    titulo: "Sou cliente",
+    descricao: "Quero agendar uma visita com um corretor.",
   },
   {
     valor: "corretor",
     titulo: "Corretor autônomo",
     descricao: "Trabalho por conta própria, com CRECI no meu nome.",
-  },
-  {
-    valor: "imobiliaria",
-    titulo: "Imobiliária",
-    descricao: "Represento uma empresa com CNPJ e equipe.",
-  },
-  {
-    valor: "construtora",
-    titulo: "Construtora/Incorporadora",
-    descricao: "Lanço empreendimentos novos, na planta ou prontos.",
   },
 ];
 
@@ -84,8 +56,6 @@ export function CompletarCadastroForm({
   const [papel, setPapel] = useState<Papel>(papelInicial(papelSugerido, roleAtual));
   const [creci, setCreci] = useState("");
   const [bairros, setBairros] = useState("");
-  const [cnpj, setCnpj] = useState("");
-  const [nomeFantasia, setNomeFantasia] = useState("");
   const [cidade, setCidade] = useState("");
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
@@ -118,11 +88,6 @@ export function CompletarCadastroForm({
       if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
       else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
       if (!bairros.trim()) problemas.bairros = "Informe ao menos um bairro onde você atua.";
-    }
-    if (papel === "imobiliaria" || papel === "construtora") {
-      if (!cnpj.trim()) problemas.cnpj = "Informe o CNPJ da empresa.";
-      else if (!CNPJ_OK.test(cnpj)) problemas.cnpj = "CNPJ incompleto — são 14 dígitos.";
-      if (!nomeFantasia.trim()) problemas.nomeFantasia = "Informe o nome fantasia.";
     }
     return problemas;
   }
@@ -187,27 +152,12 @@ export function CompletarCadastroForm({
         setStatus("error");
         return;
       }
-    } else if (papel === "imobiliaria" || papel === "construtora") {
-      const tabela = papel === "imobiliaria" ? "imobiliaria_perfis" : "construtora_perfis";
-      const { error: erroEmpresa } = await supabase
-        .from(tabela)
-        .upsert(
-          { profile_id: user.id, cnpj, nome_fantasia: nomeFantasia, cidade: cidade || null },
-          { onConflict: "profile_id" },
-        );
-      if (erroEmpresa) {
-        setErro(erroEmpresa.message);
-        setStatus("error");
-        return;
-      }
     }
 
     const destino = await destinoPosLogin(supabase, user.id, { depois });
     router.push(destino);
     router.refresh();
   }
-
-  const precisaDocumentos = papel !== "comprador";
 
   return (
     <form className="card mt-24" onSubmit={handleSubmit}>
@@ -268,11 +218,7 @@ export function CompletarCadastroForm({
             {errosCampo.telefone}
           </p>
         ) : (
-          <p className="hint">
-            {IMOBILIARIO_ATIVO
-              ? "É por aqui que a outra parte da negociação fala com você. Não aparece no anúncio."
-              : "É por aqui que compradores do seu elétrico falam com você. Não aparece publicamente."}
-          </p>
+          <p className="hint">É por aqui que o cliente/corretor fala com você.</p>
         )}
       </div>
 
@@ -301,183 +247,105 @@ export function CompletarCadastroForm({
         )}
       </div>
 
-      {IMOBILIARIO_ATIVO && (
-        <div className="field">
-          <label>Qual é o seu papel na Rede?</label>
-          <div
-            className={`${styles.escolhaGrid} mb-16`}
-            role="radiogroup"
-            aria-label="Qual é o seu papel na Rede?"
-          >
-            {PAPEIS.map((opcao) => (
-              <label
-                key={opcao.valor}
-                className={`${styles.escolha} ${papel === opcao.valor ? styles.escolhaAtiva : ""}`}
-              >
-                <input
-                  type="radio"
-                  name="papel"
-                  value={opcao.valor}
-                  checked={papel === opcao.valor}
-                  onChange={() => {
-                    setPapel(opcao.valor);
-                    setErrosCampo({});
-                  }}
-                  className={styles.escolhaInput}
-                />
-                <span className={styles.escolhaTitulo}>{opcao.titulo}</span>
-                <span className={styles.escolhaDesc}>{opcao.descricao}</span>
-              </label>
-            ))}
-          </div>
+      <div className="field">
+        <label>Qual é o seu papel na Rede?</label>
+        <div
+          className={`${styles.escolhaGrid} mb-16`}
+          role="radiogroup"
+          aria-label="Qual é o seu papel na Rede?"
+        >
+          {PAPEIS.map((opcao) => (
+            <label
+              key={opcao.valor}
+              className={`${styles.escolha} ${papel === opcao.valor ? styles.escolhaAtiva : ""}`}
+            >
+              <input
+                type="radio"
+                name="papel"
+                value={opcao.valor}
+                checked={papel === opcao.valor}
+                onChange={() => {
+                  setPapel(opcao.valor);
+                  setErrosCampo({});
+                }}
+                className={styles.escolhaInput}
+              />
+              <span className={styles.escolhaTitulo}>{opcao.titulo}</span>
+              <span className={styles.escolhaDesc}>{opcao.descricao}</span>
+            </label>
+          ))}
         </div>
-      )}
+      </div>
 
       {papel === "corretor" && (
-        <div className="grid grid-2">
-          <div className="field">
-            <label htmlFor="creci">Número do CRECI</label>
-            <input
-              type="text"
-              id="creci"
-              placeholder="7027-MA"
-              value={creci}
-              onChange={(e) => {
-                setCreci(formatarCreci(e.target.value));
-                limparErroDe("creci");
-              }}
-              className={errosCampo.creci ? styles.campoInvalido : undefined}
-              aria-invalid={errosCampo.creci ? true : undefined}
-              aria-describedby={errosCampo.creci ? "erro-creci" : undefined}
-              required
-            />
-            {errosCampo.creci ? (
-              <p className={styles.erroCampo} id="erro-creci">
-                {errosCampo.creci}
-              </p>
-            ) : (
-              <p className="hint">Número e sigla do estado, como no seu registro.</p>
-            )}
+        <>
+          <div className="grid grid-2">
+            <div className="field">
+              <label htmlFor="creci">Número do CRECI</label>
+              <input
+                type="text"
+                id="creci"
+                placeholder="7027-MA"
+                value={creci}
+                onChange={(e) => {
+                  setCreci(formatarCreci(e.target.value));
+                  limparErroDe("creci");
+                }}
+                className={errosCampo.creci ? styles.campoInvalido : undefined}
+                aria-invalid={errosCampo.creci ? true : undefined}
+                aria-describedby={errosCampo.creci ? "erro-creci" : undefined}
+                required
+              />
+              {errosCampo.creci ? (
+                <p className={styles.erroCampo} id="erro-creci">
+                  {errosCampo.creci}
+                </p>
+              ) : (
+                <p className="hint">Número e sigla do estado, como no seu registro.</p>
+              )}
+            </div>
+            <div className="field">
+              <label htmlFor="bairro">Bairros de atuação</label>
+              <input
+                type="text"
+                id="bairro"
+                placeholder="Jóquei, Renascença"
+                value={bairros}
+                onChange={(e) => {
+                  setBairros(e.target.value);
+                  limparErroDe("bairros");
+                }}
+                className={errosCampo.bairros ? styles.campoInvalido : undefined}
+                aria-invalid={errosCampo.bairros ? true : undefined}
+                aria-describedby={errosCampo.bairros ? "erro-bairro" : undefined}
+                required
+              />
+              {errosCampo.bairros ? (
+                <p className={styles.erroCampo} id="erro-bairro">
+                  {errosCampo.bairros}
+                </p>
+              ) : (
+                <p className="hint">Separe por vírgula. Dá para ajustar depois.</p>
+              )}
+            </div>
           </div>
           <div className="field">
-            <label htmlFor="bairro">Bairros de atuação</label>
+            <label htmlFor="cidadeAtuacao">
+              Cidade de atuação{" "}
+              <span className="muted" style={{ fontWeight: 400 }}>
+                (opcional)
+              </span>
+            </label>
             <input
               type="text"
-              id="bairro"
-              placeholder="Jóquei, Renascença"
-              value={bairros}
-              onChange={(e) => {
-                setBairros(e.target.value);
-                limparErroDe("bairros");
-              }}
-              className={errosCampo.bairros ? styles.campoInvalido : undefined}
-              aria-invalid={errosCampo.bairros ? true : undefined}
-              aria-describedby={errosCampo.bairros ? "erro-bairro" : undefined}
-              required
+              id="cidadeAtuacao"
+              placeholder="São Luís"
+              value={cidade}
+              onChange={(e) => setCidade(e.target.value)}
             />
-            {errosCampo.bairros ? (
-              <p className={styles.erroCampo} id="erro-bairro">
-                {errosCampo.bairros}
-              </p>
-            ) : (
-              <p className="hint">Separe por vírgula. Dá para ajustar depois.</p>
-            )}
           </div>
-        </div>
+        </>
       )}
-
-      {(papel === "imobiliaria" || papel === "construtora") && (
-        <div className="grid grid-2">
-          <div className="field">
-            <label htmlFor="cnpj">CNPJ</label>
-            <input
-              type="text"
-              id="cnpj"
-              placeholder="00.000.000/0001-00"
-              value={cnpj}
-              onChange={(e) => {
-                setCnpj(formatarCnpj(e.target.value));
-                limparErroDe("cnpj");
-              }}
-              pattern="\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}"
-              title="CNPJ no formato 00.000.000/0001-00"
-              className={errosCampo.cnpj ? styles.campoInvalido : undefined}
-              aria-invalid={errosCampo.cnpj ? true : undefined}
-              aria-describedby={errosCampo.cnpj ? "erro-cnpj" : undefined}
-              required
-            />
-            {errosCampo.cnpj ? (
-              <p className={styles.erroCampo} id="erro-cnpj">
-                {errosCampo.cnpj}
-              </p>
-            ) : (
-              <p className="hint">Usamos para conferir o registro da empresa.</p>
-            )}
-          </div>
-          <div className="field">
-            <label htmlFor="nomeFantasia">Nome fantasia</label>
-            <input
-              type="text"
-              id="nomeFantasia"
-              placeholder="Imobiliária Horizonte"
-              value={nomeFantasia}
-              onChange={(e) => {
-                setNomeFantasia(e.target.value);
-                limparErroDe("nomeFantasia");
-              }}
-              className={errosCampo.nomeFantasia ? styles.campoInvalido : undefined}
-              aria-invalid={errosCampo.nomeFantasia ? true : undefined}
-              aria-describedby={errosCampo.nomeFantasia ? "erro-fantasia" : undefined}
-              required
-            />
-            {errosCampo.nomeFantasia ? (
-              <p className={styles.erroCampo} id="erro-fantasia">
-                {errosCampo.nomeFantasia}
-              </p>
-            ) : (
-              <p className="hint">É esse nome que aparece no perfil público.</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {(papel === "corretor" || papel === "imobiliaria" || papel === "construtora") && (
-        <div className="field">
-          <label htmlFor="cidadeAtuacao">
-            Cidade de atuação{" "}
-            <span className="muted" style={{ fontWeight: 400 }}>
-              (opcional)
-            </span>
-          </label>
-          <input
-            type="text"
-            id="cidadeAtuacao"
-            placeholder="São Luís"
-            value={cidade}
-            onChange={(e) => setCidade(e.target.value)}
-          />
-        </div>
-      )}
-
-      <div className={`${styles.notice} mb-16`}>
-        <span aria-hidden="true">ℹ️</span>
-        {precisaDocumentos ? (
-          <span>
-            No próximo passo você envia os documentos de verificação — é o que
-            libera{" "}
-            {papel === "vendedor"
-              ? "a publicação dos seus imóveis"
-              : "o seu perfil público"}
-            .
-          </span>
-        ) : (
-          <span>
-            <strong>Como comprador</strong>, você não precisa enviar documento de
-            identidade agora — só quando iniciar uma negociação por um imóvel
-            específico.
-          </span>
-        )}
-      </div>
 
       <label className={styles.termos}>
         <input

@@ -3,27 +3,18 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import {
-  formatarTelefone,
-  formatarCnpj,
-  formatarCreci,
-  formatarInstagram,
-} from "@/lib/mascaras";
+import { formatarTelefone, formatarCreci, formatarInstagram } from "@/lib/mascaras";
 import styles from "./page.module.css";
 
-type Campo = "nome" | "telefone" | "creci" | "bairros" | "cnpj" | "nomeFantasia" | "registro";
+type Campo = "nome" | "telefone" | "creci" | "bairros";
 type ErrosCampo = Partial<Record<Campo, string>>;
 
 const TELEFONE_OK = /^\(\d{2}\)\s?9\s?\d{4}-?\d{4}$/;
-const CNPJ_OK = /^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/;
 
 const ROLE_LABEL: Record<string, string> = {
-  comprador: "Comprador",
-  vendedor: "Vendedor",
+  comprador: "Cliente",
   corretor: "Corretor",
-  imobiliaria: "Imobiliária",
-  construtora: "Construtora/Incorporadora",
-  cartorio: "Cartório",
+  gestor: "Gestor",
 };
 
 function iniciais(nome: string) {
@@ -46,9 +37,6 @@ export function EditarPerfilForm({
   fotoUrlAtual,
   role,
   dadosCorretor,
-  dadosImobiliaria,
-  dadosConstrutora,
-  dadosCartorio,
 }: {
   userId: string;
   emailAtual: string;
@@ -58,9 +46,6 @@ export function EditarPerfilForm({
   fotoUrlAtual: string | null;
   role: string;
   dadosCorretor: { creci: string; bairros_atuacao: string[]; cidade: string | null } | null;
-  dadosImobiliaria: { cnpj: string; nome_fantasia: string; cidade: string | null } | null;
-  dadosConstrutora: { cnpj: string; nome_fantasia: string; cidade: string | null } | null;
-  dadosCartorio: { registro_serventia: string } | null;
 }) {
   const router = useRouter();
   const inputFotoRef = useRef<HTMLInputElement>(null);
@@ -74,14 +59,7 @@ export function EditarPerfilForm({
 
   const [creci, setCreci] = useState(dadosCorretor?.creci ?? "");
   const [bairros, setBairros] = useState((dadosCorretor?.bairros_atuacao ?? []).join(", "));
-  const [cnpj, setCnpj] = useState(dadosImobiliaria?.cnpj ?? dadosConstrutora?.cnpj ?? "");
-  const [nomeFantasia, setNomeFantasia] = useState(
-    dadosImobiliaria?.nome_fantasia ?? dadosConstrutora?.nome_fantasia ?? "",
-  );
-  const [cidade, setCidade] = useState(
-    dadosCorretor?.cidade ?? dadosImobiliaria?.cidade ?? dadosConstrutora?.cidade ?? "",
-  );
-  const [registro, setRegistro] = useState(dadosCartorio?.registro_serventia ?? "");
+  const [cidade, setCidade] = useState(dadosCorretor?.cidade ?? "");
 
   const [status, setStatus] = useState<"idle" | "loading" | "sucesso" | "error">("idle");
   const [erro, setErro] = useState<string | null>(null);
@@ -115,14 +93,6 @@ export function EditarPerfilForm({
       if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
       else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
       if (!bairros.trim()) problemas.bairros = "Informe ao menos um bairro onde você atua.";
-    }
-    if (role === "imobiliaria" || role === "construtora") {
-      if (!cnpj.trim()) problemas.cnpj = "Informe o CNPJ da empresa.";
-      else if (!CNPJ_OK.test(cnpj)) problemas.cnpj = "CNPJ incompleto — são 14 dígitos.";
-      if (!nomeFantasia.trim()) problemas.nomeFantasia = "Informe o nome fantasia.";
-    }
-    if (role === "cartorio" && !registro.trim()) {
-      problemas.registro = "Informe o registro da serventia.";
     }
     return problemas;
   }
@@ -191,27 +161,6 @@ export function EditarPerfilForm({
         .eq("profile_id", userId);
       if (erroCorretor) {
         setErro(erroCorretor.message);
-        setStatus("error");
-        return;
-      }
-    } else if (role === "imobiliaria" || role === "construtora") {
-      const tabela = role === "imobiliaria" ? "imobiliaria_perfis" : "construtora_perfis";
-      const { error: erroEmpresa } = await supabase
-        .from(tabela)
-        .update({ cnpj, nome_fantasia: nomeFantasia, cidade: cidade || null })
-        .eq("profile_id", userId);
-      if (erroEmpresa) {
-        setErro(erroEmpresa.message);
-        setStatus("error");
-        return;
-      }
-    } else if (role === "cartorio") {
-      const { error: erroCartorio } = await supabase
-        .from("cartorio_perfis")
-        .update({ registro_serventia: registro })
-        .eq("profile_id", userId);
-      if (erroCartorio) {
-        setErro(erroCartorio.message);
         setStatus("error");
         return;
       }
@@ -380,60 +329,7 @@ export function EditarPerfilForm({
         </div>
       )}
 
-      {(role === "imobiliaria" || role === "construtora") && (
-        <div className="grid grid-2">
-          <div className="field">
-            <label htmlFor="cnpj">CNPJ</label>
-            <input
-              type="text"
-              id="cnpj"
-              placeholder="00.000.000/0001-00"
-              value={cnpj}
-              onChange={(e) => {
-                setCnpj(formatarCnpj(e.target.value));
-                limparErroDe("cnpj");
-              }}
-              pattern="\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}"
-              title="CNPJ no formato 00.000.000/0001-00"
-              className={errosCampo.cnpj ? styles.campoInvalido : undefined}
-              aria-invalid={errosCampo.cnpj ? true : undefined}
-              aria-describedby={errosCampo.cnpj ? "erro-cnpj" : undefined}
-              required
-            />
-            {errosCampo.cnpj && (
-              <p className={styles.erroCampo} id="erro-cnpj">
-                {errosCampo.cnpj}
-              </p>
-            )}
-          </div>
-          <div className="field">
-            <label htmlFor="nomeFantasia">Nome fantasia</label>
-            <input
-              type="text"
-              id="nomeFantasia"
-              placeholder="Imobiliária Horizonte"
-              value={nomeFantasia}
-              onChange={(e) => {
-                setNomeFantasia(e.target.value);
-                limparErroDe("nomeFantasia");
-              }}
-              className={errosCampo.nomeFantasia ? styles.campoInvalido : undefined}
-              aria-invalid={errosCampo.nomeFantasia ? true : undefined}
-              aria-describedby={errosCampo.nomeFantasia ? "erro-fantasia" : undefined}
-              required
-            />
-            {errosCampo.nomeFantasia ? (
-              <p className={styles.erroCampo} id="erro-fantasia">
-                {errosCampo.nomeFantasia}
-              </p>
-            ) : (
-              <p className="hint">É esse nome que aparece no perfil público.</p>
-            )}
-          </div>
-        </div>
-      )}
-
-      {(role === "corretor" || role === "imobiliaria" || role === "construtora") && (
+      {role === "corretor" && (
         <div className="field">
           <label htmlFor="cidadeAtuacao">
             Cidade de atuação{" "}
@@ -449,30 +345,6 @@ export function EditarPerfilForm({
             onChange={(e) => setCidade(e.target.value)}
           />
           <p className="hint">Ajuda quem está procurando um profissional perto de onde mora.</p>
-        </div>
-      )}
-
-      {role === "cartorio" && (
-        <div className="field">
-          <label htmlFor="registro">Registro da serventia</label>
-          <input
-            type="text"
-            id="registro"
-            value={registro}
-            onChange={(e) => {
-              setRegistro(e.target.value);
-              limparErroDe("registro");
-            }}
-            className={errosCampo.registro ? styles.campoInvalido : undefined}
-            aria-invalid={errosCampo.registro ? true : undefined}
-            aria-describedby={errosCampo.registro ? "erro-registro" : undefined}
-            required
-          />
-          {errosCampo.registro && (
-            <p className={styles.erroCampo} id="erro-registro">
-              {errosCampo.registro}
-            </p>
-          )}
         </div>
       )}
 

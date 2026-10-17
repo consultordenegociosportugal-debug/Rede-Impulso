@@ -80,12 +80,10 @@ async function avisarAgendamentoClienteAvulso(
 // front mandou — fecha a corrida em que duas pessoas pedem o mesmo
 // horário quase ao mesmo tempo.
 //
-// Três formatos de corpo, conforme quem está agendando:
-//   1. { imovel_id, data, horario } — fluxo antigo, cliente agenda uma
-//      visita a um imóvel específico; o corretor vem do imóvel.
-//   2. { corretor_id, data, horario } — cliente logado agenda direto
-//      com um corretor, sem imóvel.
-//   3. { corretor_id, data, horario, cliente_avulso: { nome, telefone } }
+// Dois formatos de corpo, conforme quem está agendando:
+//   1. { corretor_id, data, horario } — cliente logado agenda direto
+//      com um corretor.
+//   2. { corretor_id, data, horario, cliente_avulso: { nome, telefone } }
 //      — o CORRETOR logado cadastra um cliente de balcão (sem conta) e
 //      já agenda para ele. Só o próprio corretor pode fazer isso.
 export async function POST(request: NextRequest) {
@@ -99,14 +97,12 @@ export async function POST(request: NextRequest) {
   }
 
   const {
-    imovel_id: imovelId,
-    corretor_id: corretorIdBody,
+    corretor_id: corretorId,
     cliente_avulso: clienteAvulso,
     data,
     horario,
     observacoes,
   } = (await request.json()) as {
-    imovel_id?: string;
     corretor_id?: string;
     cliente_avulso?: {
       nome?: string;
@@ -120,20 +116,8 @@ export async function POST(request: NextRequest) {
     observacoes?: string;
   };
 
-  if ((!imovelId && !corretorIdBody) || !data || !horario || !/^\d{2}:\d{2}$/.test(horario)) {
+  if (!corretorId || !data || !horario || !/^\d{2}:\d{2}$/.test(horario)) {
     return NextResponse.json({ erro: "Requisição inválida." }, { status: 400 });
-  }
-
-  let corretorId = corretorIdBody ?? null;
-  if (!corretorId && imovelId) {
-    const { data: resolvido, error: erroRpc } = await supabase.rpc(
-      "corretor_responsavel_imovel",
-      { p_imovel_id: imovelId },
-    );
-    if (erroRpc || !resolvido) {
-      return NextResponse.json({ erro: "Imóvel não encontrado." }, { status: 404 });
-    }
-    corretorId = resolvido;
   }
 
   if (clienteAvulso && corretorId !== user.id) {
@@ -189,7 +173,6 @@ export async function POST(request: NextRequest) {
   const { data: visita, error } = await supabase
     .from("visitas")
     .insert({
-      imovel_id: imovelId ?? null,
       corretor_id: corretorId,
       comprador_id: clienteAvulsoId ? null : user.id,
       cliente_avulso_id: clienteAvulsoId,

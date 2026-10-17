@@ -29,9 +29,6 @@ export default async function EditarPerfilPage() {
     cidade: string | null;
     organizacao_catalogo_id: string | null;
   } | null = null;
-  let dadosImobiliaria: { cnpj: string; nome_fantasia: string; cidade: string | null } | null = null;
-  let dadosConstrutora: { cnpj: string; nome_fantasia: string; cidade: string | null } | null = null;
-  let dadosCartorio: { registro_serventia: string } | null = null;
 
   if (role === "corretor") {
     const { data } = await supabase
@@ -40,27 +37,6 @@ export default async function EditarPerfilPage() {
       .eq("profile_id", user.id)
       .single();
     dadosCorretor = data;
-  } else if (role === "imobiliaria") {
-    const { data } = await supabase
-      .from("imobiliaria_perfis")
-      .select("cnpj, nome_fantasia, cidade")
-      .eq("profile_id", user.id)
-      .single();
-    dadosImobiliaria = data;
-  } else if (role === "construtora") {
-    const { data } = await supabase
-      .from("construtora_perfis")
-      .select("cnpj, nome_fantasia, cidade")
-      .eq("profile_id", user.id)
-      .single();
-    dadosConstrutora = data;
-  } else if (role === "cartorio") {
-    const { data } = await supabase
-      .from("cartorio_perfis")
-      .select("registro_serventia")
-      .eq("profile_id", user.id)
-      .single();
-    dadosCartorio = data;
   }
 
   return (
@@ -85,9 +61,6 @@ export default async function EditarPerfilPage() {
             fotoUrlAtual={profile?.foto_url ?? null}
             role={role}
             dadosCorretor={dadosCorretor}
-            dadosImobiliaria={dadosImobiliaria}
-            dadosConstrutora={dadosConstrutora}
-            dadosCartorio={dadosCartorio}
           />
 
           {role === "corretor" && (

@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
-import { IMOBILIARIO_ATIVO } from "@/lib/modulos";
 import { BotoesSocial } from "@/components/botoes-social";
 import { formatarTelefone, formatarInstagram } from "@/lib/mascaras";
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
@@ -12,7 +11,6 @@ import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 import { ConfirmarCodigoEmail } from "@/components/confirmar-codigo-email";
 
-type Papel = "comprador" | "vendedor";
 type Campo = "nome" | "telefone" | "dataNascimento" | "email" | "senha";
 type ErrosCampo = Partial<Record<Campo, string>>;
 
@@ -20,19 +18,6 @@ const TOTAL_PASSOS = 2;
 
 const TELEFONE_OK = /^\(\d{2}\)\s?9\s?\d{4}-?\d{4}$/;
 const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-const PAPEIS: { valor: Papel; titulo: string; descricao: string }[] = [
-  {
-    valor: "comprador",
-    titulo: "Quero comprar",
-    descricao: "Ver imóveis, favoritar e conversar com quem anuncia.",
-  },
-  {
-    valor: "vendedor",
-    titulo: "Quero vender",
-    descricao: "Anunciar meu imóvel e receber propostas.",
-  },
-];
 
 const TITULO_PASSO = ["Quem é você", "Acesso à sua conta"];
 
@@ -56,7 +41,6 @@ function traduzErroAuth(mensagem: string) {
 
 export default function CadastroClientePage() {
   const [passo, setPasso] = useState(1);
-  const [papel, setPapel] = useState<Papel>("comprador");
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
@@ -69,13 +53,11 @@ export default function CadastroClientePage() {
   const [erro, setErro] = useState<string | null>(null);
   const [emailJaUsado, setEmailJaUsado] = useState(false);
   const [errosCampo, setErrosCampo] = useState<ErrosCampo>({});
-  const [imoveisPublicados, setImoveisPublicados] = useState<number | null>(null);
 
   const primeiroCampo = useRef<HTMLInputElement>(null);
   const jaMontou = useRef(false);
 
-  // Foco no primeiro campo a cada troca de passo (não no carregamento inicial,
-  // para não pular por cima da escolha de papel).
+  // Foco no primeiro campo a cada troca de passo (não no carregamento inicial).
   useEffect(() => {
     if (!jaMontou.current) {
       jaMontou.current = true;
@@ -83,21 +65,6 @@ export default function CadastroClientePage() {
     }
     primeiroCampo.current?.focus();
   }, [passo]);
-
-  // Contagem real de imóveis publicados — mesma consulta honesta da home.
-  useEffect(() => {
-    let ativo = true;
-    createClient()
-      .from("imoveis")
-      .select("id", { count: "exact", head: true })
-      .eq("status", "publicado")
-      .then(({ count }) => {
-        if (ativo && count) setImoveisPublicados(count);
-      });
-    return () => {
-      ativo = false;
-    };
-  }, []);
 
   function limparErroDe(campo: Campo) {
     setErrosCampo((atuais) => {
@@ -148,8 +115,8 @@ export default function CadastroClientePage() {
   }
 
   // Nos passos intermediários o formulário não tem botão de submit, então o
-  // Enter não dispara nada sozinho — aqui ele avança o passo, como nos grandes
-  // marketplaces. O guard em handleSubmit continua protegendo o envio.
+  // Enter não dispara nada sozinho — aqui ele avança o passo. O guard em
+  // handleSubmit continua protegendo o envio.
   function handleKeyDown(e: React.KeyboardEvent<HTMLFormElement>) {
     if (e.key !== "Enter" || passo >= TOTAL_PASSOS) return;
     const alvo = e.target as HTMLElement;
@@ -188,7 +155,7 @@ export default function CadastroClientePage() {
         // Setar aqui explicitamente garante o domínio certo sempre.
         emailRedirectTo: new URL("/auth/callback", window.location.origin).toString(),
         data: {
-          role: papel,
+          role: "comprador",
           nome,
           telefone,
           data_nascimento: dataNascimento,
@@ -240,13 +207,7 @@ export default function CadastroClientePage() {
               {status === "aguardando_confirmacao" && (
                 <ConfirmarCodigoEmail email={email} onVerificado={() => setStatus("logado")} />
               )}
-              {papel === "vendedor" && status === "logado" && (
-                <p className="hint">
-                  Depois de entrar, você vai enviar seu documento de
-                  identidade para liberar a publicação de imóveis.
-                </p>
-              )}
-              {status === "logado" && papel === "comprador" && (
+              {status === "logado" && (
                 <Link href="/area-cliente" className="btn btn-primary btn-sm mt-16">
                   Ir para minha área →
                 </Link>
@@ -265,14 +226,10 @@ export default function CadastroClientePage() {
 
       <div className="wrap">
         <div className={styles.layout}>
-          <span className="eyebrow">{IMOBILIARIO_ATIVO ? "Cadastro de cliente" : "Criar conta"}</span>
+          <span className="eyebrow">Criar conta</span>
           <div className={styles.passoTopo}>
             <h1 style={{ fontSize: 28, margin: "8px 0 0" }}>
-              {passo === 1
-                ? IMOBILIARIO_ATIVO
-                  ? "Você quer comprar ou vender?"
-                  : "Crie sua conta grátis"
-                : "Só falta o acesso"}
+              {passo === 1 ? "Crie sua conta grátis" : "Só falta o acesso"}
             </h1>
             <span className={styles.passoContador}>
               Passo {passo} de {TOTAL_PASSOS}
@@ -280,9 +237,7 @@ export default function CadastroClientePage() {
           </div>
           <p className="muted">
             {passo === 1
-              ? IMOBILIARIO_ATIVO
-                ? "A documentação pedida muda de acordo com o seu papel no negócio."
-                : "Para salvar seu Raio-X, anunciar seu elétrico e participar da comunidade."
+              ? "Pra agendar uma visita com um corretor em poucos cliques."
               : "Esse e-mail e essa senha serão usados para entrar na Rede Impulso."}
           </p>
           <div className="progresso-etapas mt-16" style={{ maxWidth: 320 }}>
@@ -297,53 +252,6 @@ export default function CadastroClientePage() {
           <form className="card mt-16" onSubmit={handleSubmit} onKeyDown={handleKeyDown}>
             {passo === 1 && (
               <>
-                {/* Sem imobiliário não há papel a escolher: a conta nasce
-                    como "comprador", que não exige documentos. */}
-                {IMOBILIARIO_ATIVO && (
-                  <>
-                    <div
-                      className={`${styles.escolhaGrid} mb-16`}
-                      role="radiogroup"
-                      aria-label="Você quer comprar ou vender?"
-                    >
-                      {PAPEIS.map((opcao) => (
-                        <label
-                          key={opcao.valor}
-                          className={`${styles.escolha} ${papel === opcao.valor ? styles.escolhaAtiva : ""}`}
-                        >
-                          <input
-                            type="radio"
-                            name="papel"
-                            value={opcao.valor}
-                            checked={papel === opcao.valor}
-                            onChange={() => setPapel(opcao.valor)}
-                            className={styles.escolhaInput}
-                          />
-                          <span className={styles.escolhaTitulo}>{opcao.titulo}</span>
-                          <span className={styles.escolhaDesc}>{opcao.descricao}</span>
-                        </label>
-                      ))}
-                    </div>
-
-                    <div className={`${styles.notice} mb-24`}>
-                      <span aria-hidden="true">ℹ️</span>
-                      {papel === "comprador" ? (
-                        <span>
-                          <strong>Como comprador</strong>, você não precisa enviar
-                          documento de identidade agora — só quando iniciar uma
-                          negociação por um imóvel específico.
-                        </span>
-                      ) : (
-                        <span>
-                          <strong>Como vendedor</strong>, depois de entrar você envia
-                          seu documento de identidade — é ele que libera a publicação.
-                          Fotos e documentos do imóvel entram na hora de anunciar.
-                        </span>
-                      )}
-                    </div>
-                  </>
-                )}
-
                 <div className="field">
                   <label htmlFor="nome">Nome completo</label>
                   <input
@@ -366,7 +274,7 @@ export default function CadastroClientePage() {
                       {errosCampo.nome}
                     </p>
                   ) : (
-                    <p className="hint">É o nome que aparece para quem negocia com você.</p>
+                    <p className="hint">É o nome que aparece para o corretor que te atender.</p>
                   )}
                 </div>
                 <div className="field">
@@ -393,8 +301,7 @@ export default function CadastroClientePage() {
                     </p>
                   ) : (
                     <p className="hint">
-                      É por aqui que a outra parte da negociação fala com você. Não
-                      aparece no anúncio.
+                      É por aqui que o corretor fala com você. Não aparece publicamente.
                     </p>
                   )}
                 </div>
@@ -420,16 +327,16 @@ export default function CadastroClientePage() {
                     </p>
                   ) : (
                     <p className="hint">
-                      É preciso ter 18 anos ou mais para negociar pela Rede Impulso.
+                      É preciso ter 18 anos ou mais para usar a Rede Impulso.
                     </p>
                   )}
                 </div>
 
                 {/* Atalho: quem prefere não criar mais uma senha entra com a
-                    conta que já tem. O papel escolhido acima segue junto, e o
-                    WhatsApp é pedido depois em /completar-cadastro. */}
+                    conta que já tem. O WhatsApp é pedido depois em
+                    /completar-cadastro. */}
                 <BotoesSocial
-                  papel={papel}
+                  papel="comprador"
                   bloqueado={!aceitouTermos}
                   avisoBloqueado="Marque o aceite abaixo para continuar com Google ou Facebook."
                 />
@@ -470,7 +377,7 @@ export default function CadastroClientePage() {
                 <div className={styles.resumo}>
                   <span aria-hidden="true">👤</span>
                   <span>
-                    <strong>{nome.trim().split(" ")[0]}</strong> · {papel} · {telefone}
+                    <strong>{nome.trim().split(" ")[0]}</strong> · {telefone}
                   </span>
                 </div>
 
@@ -613,28 +520,12 @@ export default function CadastroClientePage() {
                   className="btn btn-primary btn-block"
                   disabled={status === "loading" || !aceitouTermos}
                 >
-                  {status === "loading"
-                    ? "Enviando…"
-                    : papel === "comprador"
-                      ? "Criar cadastro de comprador"
-                      : "Criar cadastro de vendedor"}
+                  {status === "loading" ? "Enviando…" : "Criar minha conta"}
                 </button>
               )}
             </div>
 
-            <p className={styles.confianca}>
-              Criar conta é gratuito.
-              {imoveisPublicados !== null && (
-                <>
-                  {" "}
-                  <span>
-                    {imoveisPublicados} imóve{imoveisPublicados === 1 ? "l" : "is"} publicado
-                    {imoveisPublicados === 1 ? "" : "s"}
-                  </span>{" "}
-                  na Rede Impulso.
-                </>
-              )}
-            </p>
+            <p className={styles.confianca}>Criar conta é gratuito.</p>
           </form>
 
           <p className={`muted ${styles.rodapeConta}`}>
