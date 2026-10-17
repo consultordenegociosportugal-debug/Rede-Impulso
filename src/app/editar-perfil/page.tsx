@@ -4,6 +4,7 @@ import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { EditarPerfilForm } from "./form";
 import { VincularOrganizacao } from "./vincular-organizacao";
+import { ExcluirConta } from "./excluir-conta";
 
 export default async function EditarPerfilPage() {
   const supabase = await createClient();
@@ -66,6 +67,8 @@ export default async function EditarPerfilPage() {
           {role === "corretor" && (
             <VincularOrganizacao organizacaoAtualId={dadosCorretor?.organizacao_catalogo_id ?? null} />
           )}
+
+          <ExcluirConta />
         </div>
       </div>
 
