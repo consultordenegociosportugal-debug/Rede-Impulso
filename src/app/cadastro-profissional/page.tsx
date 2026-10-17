@@ -11,6 +11,7 @@ import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 import { MARKETPLACE_ATIVO } from "@/lib/modulos";
+import { ConfirmarCodigoEmail } from "@/components/confirmar-codigo-email";
 
 type Papel = "corretor" | "imobiliaria" | "construtora";
 type Campo =
@@ -278,9 +279,12 @@ function CadastroProfissionalConteudo() {
               </h1>
               <p className="muted">
                 {status === "aguardando_confirmacao"
-                  ? `Enviamos um link de confirmação para ${email}. Depois disso, analisamos seus dados antes de liberar o perfil público.`
+                  ? `Enviamos um código de confirmação para ${email}.`
                   : "Analisamos seus dados antes de liberar o perfil público."}
               </p>
+              {status === "aguardando_confirmacao" && (
+                <ConfirmarCodigoEmail email={email} onVerificado={() => setStatus("logado")} />
+              )}
             </div>
           </div>
         </div>
@@ -616,7 +620,7 @@ function CadastroProfissionalConteudo() {
                         {errosCampo.email}
                       </p>
                     ) : (
-                      <p className="hint">Enviamos o link de confirmação para cá.</p>
+                      <p className="hint">Você vai receber um código de confirmação nesse endereço.</p>
                     )}
                   </div>
                 </div>

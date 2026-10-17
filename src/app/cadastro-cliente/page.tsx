@@ -10,6 +10,7 @@ import { formatarTelefone, formatarInstagram } from "@/lib/mascaras";
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
+import { ConfirmarCodigoEmail } from "@/components/confirmar-codigo-email";
 
 type Papel = "comprador" | "vendedor";
 type Campo = "nome" | "telefone" | "dataNascimento" | "email" | "senha";
@@ -223,10 +224,13 @@ export default function CadastroClientePage() {
               </h1>
               <p className="muted">
                 {status === "aguardando_confirmacao"
-                  ? `Enviamos um link de confirmação para ${email}. Clique nele para ativar sua conta.`
+                  ? `Enviamos um código de confirmação para ${email}.`
                   : "Sua conta já está ativa."}
               </p>
-              {papel === "vendedor" && (
+              {status === "aguardando_confirmacao" && (
+                <ConfirmarCodigoEmail email={email} onVerificado={() => setStatus("logado")} />
+              )}
+              {papel === "vendedor" && status === "logado" && (
                 <p className="hint">
                   Depois de entrar, você vai enviar seu documento de
                   identidade para liberar a publicação de imóveis.
@@ -484,7 +488,7 @@ export default function CadastroClientePage() {
                       {errosCampo.email}
                     </p>
                   ) : (
-                    <p className="hint">Enviamos um link de confirmação para esse endereço.</p>
+                    <p className="hint">Você vai receber um código de confirmação nesse endereço.</p>
                   )}
                 </div>
                 <div className="field">
