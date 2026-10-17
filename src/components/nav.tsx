@@ -12,12 +12,13 @@ type NavItem =
   | { type: "group"; label: string; children: NavLink[] }
   | { type: "divider" };
 
-// Núcleo permanente da plataforma desde o pivô para agendamento direto
-// (modelo AppBarber): corretor gerencia sua agenda e seus clientes.
-const NAV_ITEMS_CORE: NavItem[] = [
-  { type: "link", href: "/comece-agora", label: "Comece agora" },
-  { type: "link", href: "/cadastro-profissional", label: "Cadastro profissional" },
-  { type: "link", href: "/para-corretores", label: "Para corretores" },
+// Menu de quem já é corretor logado — só o que ele usa no dia a dia.
+// "Comece agora"/"Cadastro profissional"/"Cadastro cliente" eram links de
+// cadastro deixados aqui por engano: quem já tem conta via esses links no
+// próprio menu, clicava sem perceber que já estava logado, e caía de volta
+// na tela de cadastro — foi relatado como "volta pra tela de cadastro".
+const NAV_ITEMS: NavItem[] = [
+  { type: "link", href: "/", label: "Início" },
   {
     type: "group",
     label: "Agendamento",
@@ -38,13 +39,6 @@ const NAV_ITEMS_CORE: NavItem[] = [
     ],
   },
   { type: "link", href: "/sobre", label: "Como funciona" },
-];
-
-// Início sempre abre a lista; núcleo de agendamento é sempre visível.
-const NAV_ITEMS: NavItem[] = [
-  { type: "link", href: "/", label: "Início" },
-  ...NAV_ITEMS_CORE,
-  { type: "link", href: "/cadastro-cliente", label: "Cadastro cliente" },
 ];
 
 // Menu de quem ainda não logou: mesmas 8 abas do site público de
