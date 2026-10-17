@@ -21,6 +21,12 @@ export default async function ComeceAgoraPage() {
             Escolha a opção que melhor te descreve. Cadastro, agendamento e lembrete por
             e-mail são sempre grátis — sem cartão, sem prazo pra acabar.
           </p>
+          <p className="hint">
+            Já tem conta?{" "}
+            <a href="/entrar" style={{ textDecoration: "underline" }}>
+              Entrar
+            </a>
+          </p>
         </div>
       </header>
 
@@ -46,9 +52,9 @@ export default async function ComeceAgoraPage() {
             </div>
             <div className="card">
               <div style={{ fontSize: 20 }}>2️⃣</div>
-              <strong style={{ fontSize: 14.5 }}>Complete seu perfil</strong>
+              <strong style={{ fontSize: 14.5 }}>Configure sua disponibilidade</strong>
               <p className="hint" style={{ marginBottom: 0 }}>
-                Documentos de verificação liberam seu perfil público de corretor.
+                Dias e horários em que você atende visitas — leva poucos minutos.
               </p>
             </div>
             <div className="card">

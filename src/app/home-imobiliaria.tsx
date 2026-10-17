@@ -77,9 +77,14 @@ export function HomeImobiliaria() {
           Agendamento direto entre corretor e cliente — sem trocar mensagem pra combinar
           dia e hora.
         </p>
-        <Link href="/comece-agora" className="btn btn-primary">
-          Comece agora →
-        </Link>
+        <div className="flex gap-8" style={{ justifyContent: "center", flexWrap: "wrap" }}>
+          <Link href="/comece-agora" className="btn btn-primary">
+            Comece agora →
+          </Link>
+          <Link href="/entrar" className="btn btn-outline">
+            Já tenho conta — Entrar
+          </Link>
+        </div>
       </main>
 
       <section id="sobre">
