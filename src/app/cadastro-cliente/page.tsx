@@ -21,6 +21,17 @@ const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const TITULO_PASSO = ["Quem é você", "Acesso à sua conta"];
 
+// Pra onde rolar/focar quando a validação do passo barra o avanço — sem
+// isso o único aviso era um texto pequeno embaixo do campo, fácil de não
+// perceber (relatado como "clico em Continuar e não acontece nada").
+const CAMPO_ID: Record<Campo, string> = {
+  nome: "nome",
+  telefone: "tel",
+  dataNascimento: "dataNascimento",
+  email: "email",
+  senha: "senha",
+};
+
 /** Mensagens do Supabase chegam em inglês — aqui viram texto acionável em pt-BR. */
 function traduzErroAuth(mensagem: string) {
   const m = mensagem.toLowerCase();
@@ -101,6 +112,14 @@ export default function CadastroClientePage() {
     const problemas = validarPasso(passo);
     if (Object.keys(problemas).length > 0) {
       setErrosCampo(problemas);
+      setErro("Confira os campos destacados abaixo antes de continuar.");
+      const campoComErro = Object.keys(problemas)[0] as Campo;
+      const elementoId = CAMPO_ID[campoComErro];
+      requestAnimationFrame(() => {
+        const el = document.getElementById(elementoId);
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        el?.focus();
+      });
       return;
     }
     setErrosCampo({});
