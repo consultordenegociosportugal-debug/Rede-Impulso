@@ -7,7 +7,7 @@
 
 alter table visitas drop column imovel_id cascade;
 alter table corretor_perfis drop column imobiliaria_id cascade;
-alter table depoimentos drop column negocio_id;
+alter table depoimentos drop column negocio_id cascade;
 
 drop function if exists public.limite_equipe_profissional(uuid);
 
