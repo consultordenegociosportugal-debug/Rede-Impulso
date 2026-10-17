@@ -12,6 +12,7 @@ const STATUS_VISITA: Record<string, { label: string; className: string }> = {
   confirmada: { label: "Confirmada", className: "badge-primary" },
   cancelada: { label: "Cancelada", className: "badge-outline" },
   realizada: { label: "Realizada", className: "badge-outline" },
+  nao_compareceu: { label: "Cliente não apareceu", className: "badge-outline" },
 };
 
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
@@ -218,6 +219,7 @@ export default async function PainelNegociosPage({
                       <VisitaAcoes
                         visitaId={visita.id}
                         status={visita.status}
+                        dataHora={visita.data_hora}
                         googleEventId={visita.google_event_id}
                         googleConfigurado={googleConfigurado}
                       />

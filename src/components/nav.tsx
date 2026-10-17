@@ -146,6 +146,13 @@ const NAV_ITEMS_CLIENTE: NavItem[] = [
   ...(MARKETPLACE_ATIVO ? ([{ type: "link", href: "/imoveis", label: "Ver imóveis" }] as NavItem[]) : []),
 ];
 
+// Gestor de uma imobiliária/construtora — só vê as métricas dos seus
+// próprios corretores, nunca a agenda operacional (isso é do corretor).
+const NAV_ITEMS_GESTOR: NavItem[] = [
+  { type: "link", href: "/painel-gestor", label: "Painel do gestor" },
+  { type: "link", href: "/editar-perfil", label: "Meu perfil" },
+];
+
 function groupIsActive(item: Extract<NavItem, { type: "group" }>, active: string) {
   return item.children.some((c) => c.href === active);
 }
@@ -310,7 +317,14 @@ export function Nav({ active }: { active: string }) {
       </div>
       <div className={open ? "nav-panel open" : "nav-panel"}>
         <div className="nav-links">
-          {(!user ? NAV_ITEMS_VISITANTE : role === "comprador" ? NAV_ITEMS_CLIENTE : NAV_ITEMS).map((item, indice) => {
+          {(!user
+            ? NAV_ITEMS_VISITANTE
+            : role === "comprador"
+              ? NAV_ITEMS_CLIENTE
+              : role === "gestor"
+                ? NAV_ITEMS_GESTOR
+                : NAV_ITEMS
+          ).map((item, indice) => {
             if (item.type === "divider") {
               return <div className="nav-divider" key={`divisor-${indice}`} aria-hidden="true" />;
             }

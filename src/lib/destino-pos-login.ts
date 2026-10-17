@@ -75,5 +75,7 @@ export async function destinoPosLogin(
 
   if (profile?.role === "corretor") return "/painel-negocios";
 
+  if (profile?.role === "gestor") return "/painel-gestor";
+
   return "/";
 }
