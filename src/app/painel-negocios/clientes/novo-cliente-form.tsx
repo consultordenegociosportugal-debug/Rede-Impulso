@@ -38,15 +38,27 @@ export function NovoClienteForm() {
 
   useEffect(() => {
     if (!corretorId) return;
+    // Trocar a data rápido dispara várias buscas em paralelo — sem este
+    // guard, uma resposta antiga que chega depois de uma mais nova
+    // sobrescrevia o resultado certo com um estado desatualizado.
+    let cancelado = false;
     setStatus("buscando-horarios");
     fetch(`/api/visitas/horarios-disponiveis?corretor_id=${corretorId}&data=${data}`)
       .then((r) => r.json())
       .then((dados: { configurado: boolean; horarios: string[] }) => {
+        if (cancelado) return;
         setConfigurado(dados.configurado);
         setHorarios(dados.configurado ? dados.horarios : []);
       })
-      .catch(() => setConfigurado(false))
-      .finally(() => setStatus("preenchendo"));
+      .catch(() => {
+        if (!cancelado) setConfigurado(false);
+      })
+      .finally(() => {
+        if (!cancelado) setStatus("preenchendo");
+      });
+    return () => {
+      cancelado = true;
+    };
   }, [corretorId, data]);
 
   async function enviar(e: React.FormEvent) {
