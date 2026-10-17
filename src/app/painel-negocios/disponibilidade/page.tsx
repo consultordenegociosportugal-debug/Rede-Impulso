@@ -34,8 +34,8 @@ export default async function DisponibilidadePage() {
         <span className="eyebrow">Agendamento</span>
         <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>Minha disponibilidade</h1>
         <p className="muted mb-16">
-          Marque os dias e horários em que você atende visitas. Quem pedir uma
-          visita a um imóvel seu vai ver só os horários livres e agendar direto
+          Marque os dias e horários em que você atende visitas. Quem agendar
+          com você vê só os horários livres e já sai com a visita confirmada
           — sem você precisar confirmar manualmente.
         </p>
 
