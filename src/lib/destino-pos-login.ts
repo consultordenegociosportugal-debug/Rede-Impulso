@@ -20,6 +20,19 @@ export function caminhoInternoSeguro(depois?: string | null): string | null {
   return depois;
 }
 
+const PAPEIS_RECONHECIDOS = ["comprador", "corretor", "gestor"];
+
+/**
+ * Contas de antes da limpeza do marketplace podem ter um `role` que não
+ * existe mais (ex.: "vendedor"). `/completar-cadastro` usa isso pra saber
+ * se já pode liberar o usuário ou se precisa segurá-lo até ele escolher um
+ * papel válido — sem essa checagem, um papel desconhecido com telefone já
+ * preenchido criava um loop (completar-cadastro ↔ destinoPosLogin).
+ */
+export function papelReconhecido(role: string | null | undefined): boolean {
+  return !!role && PAPEIS_RECONHECIDOS.includes(role);
+}
+
 /**
  * Decide para onde o usuário vai depois de autenticar. É a mesma
  * decisão para e-mail/senha (`/entrar`) e para o retorno do OAuth
@@ -59,5 +72,10 @@ export async function destinoPosLogin(
 
   if (profile?.role === "gestor") return "/painel-gestor";
 
-  return "/";
+  // Papel que não existe mais (ex.: "vendedor", de antes da limpeza do
+  // marketplace) — manda completar o cadastro pra escolher um papel válido.
+  // Importante: nunca retornar "/" aqui — a home também chama essa função
+  // pra decidir pra onde mandar quem já está logado, e "/" criaria um loop
+  // infinito de redirecionamento pra quem tiver um papel desconhecido.
+  return "/completar-cadastro";
 }

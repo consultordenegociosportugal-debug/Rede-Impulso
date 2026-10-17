@@ -50,12 +50,14 @@ function papelInicial(sugerido: string | null, atual: string): Papel {
 
 export function CompletarCadastroForm({
   nomeAtual,
+  telefoneAtual,
   emailAtual,
   roleAtual,
   papelSugerido,
   depois,
 }: {
   nomeAtual: string;
+  telefoneAtual: string;
   emailAtual: string;
   roleAtual: string;
   papelSugerido: string | null;
@@ -63,7 +65,7 @@ export function CompletarCadastroForm({
 }) {
   const router = useRouter();
   const [nome, setNome] = useState(nomeAtual);
-  const [telefone, setTelefone] = useState("");
+  const [telefone, setTelefone] = useState(formatarTelefone(telefoneAtual));
   const [dataNascimento, setDataNascimento] = useState("");
   const [papel, setPapel] = useState<Papel>(papelInicial(papelSugerido, roleAtual));
   const [creci, setCreci] = useState("");

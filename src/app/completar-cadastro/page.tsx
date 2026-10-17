@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
-import { caminhoInternoSeguro, destinoPosLogin } from "@/lib/destino-pos-login";
+import { caminhoInternoSeguro, destinoPosLogin, papelReconhecido } from "@/lib/destino-pos-login";
 import { CompletarCadastroForm } from "./form";
 
 /**
@@ -37,9 +37,11 @@ export default async function CompletarCadastroPage({
     .eq("id", user.id)
     .single();
 
-  // Já completou (ou entrou por e-mail/senha e nunca precisou disso):
-  // não faz sentido segurar o usuário aqui.
-  if (profile?.telefone?.trim()) {
+  // Já completou (telefone + um papel que a Rede Impulso reconhece hoje):
+  // não faz sentido segurar o usuário aqui. Uma conta antiga com papel
+  // desconhecido (ex.: "vendedor") passa direto pelo formulário mesmo já
+  // tendo telefone, pra poder escolher um papel válido.
+  if (profile?.telefone?.trim() && papelReconhecido(profile.role)) {
     redirect(await destinoPosLogin(supabase, user.id, { depois: destinoDepois }));
   }
 
@@ -58,6 +60,7 @@ export default async function CompletarCadastroPage({
 
           <CompletarCadastroForm
             nomeAtual={profile?.nome ?? ""}
+            telefoneAtual={profile?.telefone ?? ""}
             emailAtual={user.email ?? ""}
             roleAtual={profile?.role ?? "comprador"}
             papelSugerido={papel ?? null}
