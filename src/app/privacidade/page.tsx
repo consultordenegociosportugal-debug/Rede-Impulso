@@ -35,24 +35,22 @@ export default function PrivacidadePage() {
             <ul>
               <li>
                 <strong>Cadastro:</strong> nome, telefone, e-mail, senha
-                (armazenada de forma criptografada), rede social
+                (armazenada de forma criptografada), data de nascimento, rede
+                social
               </li>
               <li>
-                <strong>Verificação profissional:</strong> CRECI, CNPJ, e
-                documentos como RG/CNH enviados para análise
+                <strong>Corretor:</strong> CRECI, bairros e cidade de atuação
+                e, opcionalmente, documentos de identidade enviados para
+                reforçar a confiança no perfil público
               </li>
               <li>
-                <strong>Localização:</strong> coordenadas GPS, apenas quando
-                você usa a busca por localização ou publica um imóvel com
-                localização marcada
+                <strong>Agendamento:</strong> dias e horários de
+                disponibilidade, visitas marcadas, dados de clientes
+                cadastrados por um corretor sem conta própria, avaliações
+                (NPS) após cada visita
               </li>
               <li>
-                <strong>Fotos:</strong> fotos de imóveis, de documentos de
-                verificação e fotos anexadas a manifestações de interesse
-              </li>
-              <li>
-                <strong>Uso da plataforma:</strong> imóveis favoritados,
-                negócios em andamento, matrículas em cursos
+                <strong>Uso da plataforma:</strong> matrículas em cursos
               </li>
             </ul>
 
@@ -61,9 +59,9 @@ export default function PrivacidadePage() {
             </h2>
             <ul>
               <li>Criar e manter sua conta</li>
-              <li>Conectar você a corretores, imobiliárias ou clientes relevantes</li>
-              <li>Verificar identidade e credenciais profissionais</li>
-              <li>Localizar imóveis publicados perto de você</li>
+              <li>Conectar clientes a corretores e corretores à construtora/imobiliária que os gerencia</li>
+              <li>Viabilizar o agendamento direto de visitas e seus lembretes por e-mail</li>
+              <li>Calcular métricas de atendimento para o gestor da organização do corretor</li>
               <li>Processar matrículas em cursos</li>
               <li>Cumprir obrigações legais e prevenir fraude</li>
             </ul>
@@ -72,13 +70,16 @@ export default function PrivacidadePage() {
               4. Com quem compartilhamos
             </h2>
             <p>
-              Dados de contato podem ser compartilhados com a outra parte de
-              um negócio em andamento (ex: corretor vinculado a um imóvel
-              vê dados do vendedor). Documentos de verificação são vistos
-              apenas pela equipe de administração da Rede Impulso. Não
-              vendemos dados pessoais a terceiros. Pagamentos de cursos são
-              processados por um provedor externo (Mercado Pago), sujeito à
-              política de privacidade própria dele.
+              Dados de contato são compartilhados entre o corretor e o
+              cliente de uma mesma visita agendada (é assim que um consegue
+              falar com o outro). O gestor de uma organização vê apenas
+              métricas agregadas dos corretores vinculados a ela — não vê
+              dados de contato dos clientes. Documentos de verificação
+              enviados por corretores são vistos apenas pela equipe de
+              administração da Rede Impulso. Não vendemos dados pessoais a
+              terceiros. Pagamentos de cursos são processados por um provedor
+              externo (Mercado Pago), sujeito à política de privacidade
+              própria dele.
             </p>
 
             <h2 style={{ fontSize: 18, marginTop: 28 }}>
@@ -119,8 +120,10 @@ export default function PrivacidadePage() {
               8. Como exercer esses direitos
             </h2>
             <p>
-              Entre em contato pelo e-mail de contato a definir. Vamos
-              responder dentro do prazo legal aplicável.
+              Para eliminar seus dados, você pode excluir sua própria conta a
+              qualquer momento em &quot;Editar perfil&quot;. Para os demais
+              direitos, entre em contato pelo e-mail de contato a definir —
+              vamos responder dentro do prazo legal aplicável.
             </p>
 
             <h2 style={{ fontSize: 18, marginTop: 28 }}>9. Cookies</h2>

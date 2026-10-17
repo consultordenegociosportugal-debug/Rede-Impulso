@@ -30,6 +30,9 @@ export default async function VerificacaoPage({
 
   const tiposNecessarios = TIPOS_POR_ROLE[profile?.role ?? "comprador"] ?? [];
 
+  const destinoPadrao =
+    profile?.role === "gestor" ? "/painel-gestor" : profile?.role === "corretor" ? "/painel-negocios" : "/area-cliente";
+
   const { data: documentos } = await supabase
     .from("documentos_verificacao")
     .select("tipo, status")
@@ -47,14 +50,14 @@ export default async function VerificacaoPage({
                 Nenhum documento necessário
               </h1>
               <p className="muted">
-                Como comprador, você só precisa enviar documentos quando
-                iniciar uma negociação por um imóvel específico.
+                Essa verificação é só para corretores — o seu perfil não
+                precisa enviar nenhum documento.
               </p>
               <Link
-                href={depois && depois.startsWith("/") ? depois : "/imoveis"}
+                href={depois && depois.startsWith("/") ? depois : destinoPadrao}
                 className="btn btn-primary btn-sm mt-16"
               >
-                {depois && depois.startsWith("/") ? "Continuar" : "Ver imóveis disponíveis"}
+                Voltar
               </Link>
             </div>
           </div>
