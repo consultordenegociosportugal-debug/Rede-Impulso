@@ -64,6 +64,19 @@ type ClienteAvulsoRow = {
   } | null;
 };
 
+type NpsRow = {
+  id: string;
+  nota: number;
+  comentario: string | null;
+  created_at: string;
+  visitas: {
+    corretor: {
+      nome: string;
+      corretor_perfis: { organizacao: { nome: string } | null } | null;
+    } | null;
+  } | null;
+};
+
 export default async function AdminPage() {
   const supabase = await createClient();
   const {
@@ -119,6 +132,37 @@ export default async function AdminPage() {
     .limit(100);
 
   const clientesAvulsos = (clientesAvulsosData ?? []) as unknown as ClienteAvulsoRow[];
+
+  const { data: npsData } = await supabase
+    .from("nps_respostas")
+    .select(
+      "id, nota, comentario, created_at, visitas!inner(corretor:corretor_id(nome, corretor_perfis!profile_id(organizacao:organizacao_catalogo_id(nome))))",
+    )
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  const npsRespostas = (npsData ?? []) as unknown as NpsRow[];
+
+  const npsPorCorretor = new Map<string, { nome: string; organizacao: string | null; notas: number[] }>();
+  for (const r of npsRespostas) {
+    const nome = r.visitas?.corretor?.nome ?? "—";
+    const organizacao = r.visitas?.corretor?.corretor_perfis?.organizacao?.nome ?? null;
+    const entry = npsPorCorretor.get(nome) ?? { nome, organizacao, notas: [] };
+    entry.notas.push(r.nota);
+    npsPorCorretor.set(nome, entry);
+  }
+  const npsResumo = Array.from(npsPorCorretor.values())
+    .map((c) => ({
+      ...c,
+      media: c.notas.reduce((s, n) => s + n, 0) / c.notas.length,
+      total: c.notas.length,
+    }))
+    .sort((a, b) => b.media - a.media);
+
+  const mediaGeral =
+    npsRespostas.length > 0
+      ? npsRespostas.reduce((s, r) => s + r.nota, 0) / npsRespostas.length
+      : null;
 
   const porPerfil = new Map<string, { perfil: NonNullable<DocumentoRow["profiles"]>; docs: typeof comUrls }>();
   for (const doc of comUrls) {
@@ -263,6 +307,47 @@ export default async function AdminPage() {
                 </div>
               );
             })}
+          </div>
+        )}
+
+        <h2 style={{ fontSize: 20, margin: "40px 0 4px" }}>
+          Qualidade do atendimento (NPS)
+        </h2>
+        <p className="muted mb-16">
+          Nota de 0 a 10 que o cliente dá depois da visita.
+          {mediaGeral !== null && (
+            <>
+              {" "}
+              Média geral: <strong>{mediaGeral.toFixed(1)}</strong> ({npsRespostas.length}{" "}
+              avaliações).
+            </>
+          )}
+        </p>
+
+        {npsResumo.length === 0 ? (
+          <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
+            <p className="muted" style={{ margin: 0 }}>
+              Nenhuma avaliação recebida ainda.
+            </p>
+          </div>
+        ) : (
+          <div className="card mb-24" style={{ padding: "8px 20px" }}>
+            {npsResumo.map((c) => (
+              <div key={c.nome} className="list-row">
+                <div className="flex between items-center" style={{ width: "100%", gap: 12 }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: 14 }}>{c.nome}</div>
+                    {c.organizacao && <div className="hint" style={{ margin: 0 }}>{c.organizacao}</div>}
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontWeight: 600, fontSize: 18 }}>{c.media.toFixed(1)}</div>
+                    <div className="hint" style={{ margin: 0 }}>
+                      {c.total} avaliaç{c.total === 1 ? "ão" : "ões"}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 

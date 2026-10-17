@@ -24,6 +24,7 @@ export function NovoClienteForm() {
   const router = useRouter();
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [email, setEmail] = useState("");
   const [cidade, setCidade] = useState("");
   const [imovelInteresse, setImovelInteresse] = useState("");
   const [data, setData] = useState(hojeISO());
@@ -67,6 +68,7 @@ export function NovoClienteForm() {
           cliente_avulso: {
             nome: nome.trim(),
             telefone: telefone.trim() || undefined,
+            email: email.trim() || undefined,
             cidade: cidade.trim() || undefined,
             imovel_interesse: imovelInteresse.trim() || undefined,
           },
@@ -103,6 +105,7 @@ export function NovoClienteForm() {
           onClick={() => {
             setNome("");
             setTelefone("");
+            setEmail("");
             setCidade("");
             setImovelInteresse("");
             setHorario(null);
@@ -144,6 +147,22 @@ export function NovoClienteForm() {
             placeholder="(98) 9 9999-9999"
           />
         </div>
+      </div>
+
+      <div className="field">
+        <label htmlFor="cliente-email">
+          E-mail do cliente{" "}
+          <span className="muted" style={{ fontWeight: 400 }}>
+            (opcional — usado pra enviar a confirmação do agendamento)
+          </span>
+        </label>
+        <input
+          id="cliente-email"
+          type="email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="cliente@email.com"
+        />
       </div>
 
       <div className="grid grid-2" style={{ gap: 12 }}>

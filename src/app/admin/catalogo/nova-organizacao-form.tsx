@@ -12,6 +12,7 @@ export function NovaOrganizacaoForm({ cidades }: { cidades: Cidade[] }) {
   const [tipo, setTipo] = useState<"imobiliaria" | "construtora">("imobiliaria");
   const [cidadeId, setCidadeId] = useState("");
   const [cnpj, setCnpj] = useState("");
+  const [emailGestor, setEmailGestor] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -31,6 +32,7 @@ export function NovaOrganizacaoForm({ cidades }: { cidades: Cidade[] }) {
       tipo,
       cidade_id: cidadeId || null,
       cnpj: cnpj.trim() || null,
+      email_gestor: emailGestor.trim() || null,
     });
 
     setEnviando(false);
@@ -42,6 +44,7 @@ export function NovaOrganizacaoForm({ cidades }: { cidades: Cidade[] }) {
 
     setNome("");
     setCnpj("");
+    setEmailGestor("");
     router.refresh();
   }
 
@@ -71,6 +74,12 @@ export function NovaOrganizacaoForm({ cidades }: { cidades: Cidade[] }) {
           value={cnpj}
           onChange={(e) => setCnpj(e.target.value)}
           placeholder="CNPJ (opcional)"
+        />
+        <input
+          type="email"
+          value={emailGestor}
+          onChange={(e) => setEmailGestor(e.target.value)}
+          placeholder="E-mail do gestor de vendas (opcional)"
         />
       </div>
       <button type="submit" className="btn btn-primary btn-sm mt-12" disabled={enviando}>

@@ -13,6 +13,7 @@ type OrganizacaoRow = {
   nome: string;
   tipo: "imobiliaria" | "construtora";
   cnpj: string | null;
+  email_gestor: string | null;
   cidade: { nome: string; uf: string } | null;
 };
 
@@ -45,7 +46,7 @@ export default async function AdminCatalogoPage() {
     supabase.from("cidades_catalogo").select("id, nome, uf").order("nome", { ascending: true }),
     supabase
       .from("organizacoes_catalogo")
-      .select("id, nome, tipo, cnpj, cidade:cidade_id(nome, uf)")
+      .select("id, nome, tipo, cnpj, email_gestor, cidade:cidade_id(nome, uf)")
       .order("nome", { ascending: true }),
   ]);
 
@@ -124,6 +125,11 @@ export default async function AdminCatalogoPage() {
                           {org.cidade ? ` · ${org.cidade.nome}/${org.cidade.uf}` : ""}
                           {org.cnpj ? ` · ${org.cnpj}` : ""}
                         </div>
+                        {org.email_gestor && (
+                          <div className="hint" style={{ margin: 0 }}>
+                            Gestor: {org.email_gestor}
+                          </div>
+                        )}
                       </div>
                       <ExcluirCatalogoButton tabela="organizacoes_catalogo" id={org.id} />
                     </div>
