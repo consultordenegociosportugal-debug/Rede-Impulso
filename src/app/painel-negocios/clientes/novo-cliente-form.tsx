@@ -24,6 +24,8 @@ export function NovoClienteForm() {
   const router = useRouter();
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
+  const [cidade, setCidade] = useState("");
+  const [imovelInteresse, setImovelInteresse] = useState("");
   const [data, setData] = useState(hojeISO());
   const [horario, setHorario] = useState<string | null>(null);
   const [horarios, setHorarios] = useState<string[]>([]);
@@ -62,7 +64,12 @@ export function NovoClienteForm() {
           data,
           horario,
           observacoes,
-          cliente_avulso: { nome: nome.trim(), telefone: telefone.trim() || undefined },
+          cliente_avulso: {
+            nome: nome.trim(),
+            telefone: telefone.trim() || undefined,
+            cidade: cidade.trim() || undefined,
+            imovel_interesse: imovelInteresse.trim() || undefined,
+          },
         }),
       });
       const dados = await resposta.json();
@@ -96,6 +103,8 @@ export function NovoClienteForm() {
           onClick={() => {
             setNome("");
             setTelefone("");
+            setCidade("");
+            setImovelInteresse("");
             setHorario(null);
             setObservacoes("");
             setStatus("preenchendo");
@@ -133,6 +142,34 @@ export function NovoClienteForm() {
             value={telefone}
             onChange={(e) => setTelefone(e.target.value)}
             placeholder="(98) 9 9999-9999"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-2" style={{ gap: 12 }}>
+        <div className="field">
+          <label htmlFor="cliente-cidade">
+            Cidade <span className="muted" style={{ fontWeight: 400 }}>(opcional)</span>
+          </label>
+          <input
+            id="cliente-cidade"
+            type="text"
+            value={cidade}
+            onChange={(e) => setCidade(e.target.value)}
+            placeholder="Ex.: São Luís"
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="cliente-imovel">
+            Imóvel de interesse{" "}
+            <span className="muted" style={{ fontWeight: 400 }}>(opcional)</span>
+          </label>
+          <input
+            id="cliente-imovel"
+            type="text"
+            value={imovelInteresse}
+            onChange={(e) => setImovelInteresse(e.target.value)}
+            placeholder="Ex.: apê 2 quartos no Renascença"
           />
         </div>
       </div>

@@ -37,7 +37,13 @@ export async function POST(request: NextRequest) {
   } = (await request.json()) as {
     imovel_id?: string;
     corretor_id?: string;
-    cliente_avulso?: { nome?: string; telefone?: string; email?: string };
+    cliente_avulso?: {
+      nome?: string;
+      telefone?: string;
+      email?: string;
+      cidade?: string;
+      imovel_interesse?: string;
+    };
     data?: string;
     horario?: string;
     observacoes?: string;
@@ -92,6 +98,8 @@ export async function POST(request: NextRequest) {
         nome,
         telefone: clienteAvulso.telefone?.trim() || null,
         email: clienteAvulso.email?.trim() || null,
+        cidade: clienteAvulso.cidade?.trim() || null,
+        imovel_interesse: clienteAvulso.imovel_interesse?.trim() || null,
       })
       .select("id")
       .single();

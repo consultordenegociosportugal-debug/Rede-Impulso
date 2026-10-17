@@ -51,6 +51,19 @@ type MatriculaRow = {
   profiles: { nome: string; email: string | null; telefone: string | null } | null;
 };
 
+type ClienteAvulsoRow = {
+  id: string;
+  nome: string;
+  telefone: string | null;
+  cidade: string | null;
+  imovel_interesse: string | null;
+  created_at: string;
+  corretor: {
+    nome: string;
+    corretor_perfis: { organizacao: { nome: string; tipo: string } | null } | null;
+  } | null;
+};
+
 export default async function AdminPage() {
   const supabase = await createClient();
   const {
@@ -97,6 +110,16 @@ export default async function AdminPage() {
 
   const matriculasPendentes = (matriculasData ?? []) as unknown as MatriculaRow[];
 
+  const { data: clientesAvulsosData } = await supabase
+    .from("clientes_avulsos")
+    .select(
+      "id, nome, telefone, cidade, imovel_interesse, created_at, corretor:corretor_id(nome, corretor_perfis!profile_id(organizacao:organizacao_catalogo_id(nome, tipo)))",
+    )
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  const clientesAvulsos = (clientesAvulsosData ?? []) as unknown as ClienteAvulsoRow[];
+
   const porPerfil = new Map<string, { perfil: NonNullable<DocumentoRow["profiles"]>; docs: typeof comUrls }>();
   for (const doc of comUrls) {
     if (!doc.profiles) continue;
@@ -121,6 +144,9 @@ export default async function AdminPage() {
             </h1>
           </div>
           <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+            <Link href="/admin/catalogo" className="btn btn-outline btn-sm">
+              🏢 Catálogo de cidades e organizações
+            </Link>
             <Link href="/admin/agentes" className="btn btn-outline btn-sm">
               ⚡ Agentes de elétricos
             </Link>
@@ -194,6 +220,50 @@ export default async function AdminPage() {
               </div>
             </div>
           ))
+        )}
+
+        <h2 style={{ fontSize: 20, margin: "40px 0 4px" }}>
+          Clientes cadastrados pelos corretores
+        </h2>
+        <p className="muted mb-16">
+          Clientes de balcão (sem login) cadastrados direto pelo corretor, com a
+          imobiliária/construtora que ele estiver vinculado.
+        </p>
+
+        {clientesAvulsos.length === 0 ? (
+          <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
+            <p className="muted" style={{ margin: 0 }}>
+              Nenhum cliente cadastrado por corretor ainda.
+            </p>
+          </div>
+        ) : (
+          <div className="card mb-24" style={{ padding: "8px 20px" }}>
+            {clientesAvulsos.map((cliente) => {
+              const organizacao = cliente.corretor?.corretor_perfis?.organizacao;
+              return (
+                <div key={cliente.id} className="list-row" style={{ flexWrap: "wrap", gap: 12 }}>
+                  <div style={{ flex: 1, minWidth: 200 }}>
+                    <div style={{ fontWeight: 600, fontSize: 13.5 }}>{cliente.nome}</div>
+                    <div className="hint" style={{ margin: 0 }}>
+                      {cliente.telefone ?? "sem telefone"}
+                      {cliente.cidade ? ` · ${cliente.cidade}` : ""}
+                    </div>
+                    {cliente.imovel_interesse && (
+                      <div className="hint" style={{ margin: 0 }}>
+                        Interesse: {cliente.imovel_interesse}
+                      </div>
+                    )}
+                  </div>
+                  <div className="mono" style={{ fontSize: 12, textAlign: "right" }}>
+                    <div>Corretor: {cliente.corretor?.nome ?? "—"}</div>
+                    <div className="muted">
+                      {organizacao ? `${organizacao.nome} (${organizacao.tipo})` : "autônomo"}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
 
         <h2 style={{ fontSize: 20, margin: "40px 0 4px" }}>

@@ -3,6 +3,7 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { EditarPerfilForm } from "./form";
+import { VincularOrganizacao } from "./vincular-organizacao";
 
 export default async function EditarPerfilPage() {
   const supabase = await createClient();
@@ -22,7 +23,12 @@ export default async function EditarPerfilPage() {
 
   const role = profile?.role ?? "comprador";
 
-  let dadosCorretor: { creci: string; bairros_atuacao: string[]; cidade: string | null } | null = null;
+  let dadosCorretor: {
+    creci: string;
+    bairros_atuacao: string[];
+    cidade: string | null;
+    organizacao_catalogo_id: string | null;
+  } | null = null;
   let dadosImobiliaria: { cnpj: string; nome_fantasia: string; cidade: string | null } | null = null;
   let dadosConstrutora: { cnpj: string; nome_fantasia: string; cidade: string | null } | null = null;
   let dadosCartorio: { registro_serventia: string } | null = null;
@@ -30,7 +36,7 @@ export default async function EditarPerfilPage() {
   if (role === "corretor") {
     const { data } = await supabase
       .from("corretor_perfis")
-      .select("creci, bairros_atuacao, cidade")
+      .select("creci, bairros_atuacao, cidade, organizacao_catalogo_id")
       .eq("profile_id", user.id)
       .single();
     dadosCorretor = data;
@@ -83,6 +89,10 @@ export default async function EditarPerfilPage() {
             dadosConstrutora={dadosConstrutora}
             dadosCartorio={dadosCartorio}
           />
+
+          {role === "corretor" && (
+            <VincularOrganizacao organizacaoAtualId={dadosCorretor?.organizacao_catalogo_id ?? null} />
+          )}
         </div>
       </div>
 

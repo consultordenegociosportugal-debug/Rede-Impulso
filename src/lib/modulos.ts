@@ -17,12 +17,18 @@ export const IMOBILIARIO_ATIVO = true;
 
 export const MOBILIDADE_ATIVA = process.env.NEXT_PUBLIC_MODULO_MOBILIDADE === "ativo";
 
-// Vitrine de imóveis (publicar/buscar/favoritar/destacar) e os planos de
-// assinatura por tamanho de equipe — pausados desde o pivô para
-// agendamento direto cliente↔corretor. O cadastro de corretor, o
-// dashboard e o agendamento (visitas, disponibilidade) não dependem
-// disto e continuam ativos sempre.
+// Vitrine de imóveis (publicar/buscar/favoritar/destacar) — pausada
+// desde o pivô para agendamento direto cliente↔corretor. O cadastro de
+// corretor, o dashboard e o agendamento (visitas, disponibilidade) não
+// dependem disto e continuam ativos sempre.
 export const MARKETPLACE_ATIVO = process.env.NEXT_PUBLIC_MARKETPLACE_IMOVEIS === "ativo";
+
+// Nota: o convite de equipe "de verdade" (imobiliária como conta real
+// convidando um corretor, migração 0047) continua pausado dentro de
+// ROTAS_MARKETPLACE abaixo. O vínculo do corretor a uma imobiliária/
+// construtora do CATÁLOGO (migração 0053 — etiqueta cadastrada pelo
+// admin, sem login próprio) é autosserviço e sempre ativo, não precisa
+// de flag — fica em editar-perfil.
 
 // Rotas (páginas e APIs) do módulo de mobilidade. Com o módulo adormecido,
 // o proxy manda as páginas para /pausado e responde às APIs com

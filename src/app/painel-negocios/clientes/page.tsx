@@ -10,6 +10,8 @@ type ClienteRow = {
   nome: string;
   telefone: string | null;
   email: string | null;
+  cidade: string | null;
+  imovel_interesse: string | null;
   created_at: string;
 };
 
@@ -31,7 +33,7 @@ export default async function ClientesPage() {
 
   const { data: clientesData } = await supabase
     .from("clientes_avulsos")
-    .select("id, nome, telefone, email, created_at")
+    .select("id, nome, telefone, email, cidade, imovel_interesse, created_at")
     .eq("corretor_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -101,7 +103,13 @@ export default async function ClientesPage() {
                       <div className="hint" style={{ margin: 0 }}>
                         {cliente.telefone ?? "sem telefone"}
                         {cliente.email ? ` · ${cliente.email}` : ""}
+                        {cliente.cidade ? ` · ${cliente.cidade}` : ""}
                       </div>
+                      {cliente.imovel_interesse && (
+                        <div className="hint" style={{ margin: 0 }}>
+                          Interesse: {cliente.imovel_interesse}
+                        </div>
+                      )}
                     </div>
                     {proxima ? (
                       <span className="badge badge-primary">

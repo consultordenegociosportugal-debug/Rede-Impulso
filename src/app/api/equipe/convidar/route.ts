@@ -24,9 +24,9 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "imobiliaria") {
+  if (profile?.role !== "imobiliaria" && profile?.role !== "construtora") {
     return NextResponse.json(
-      { erro: "Só contas de imobiliária podem convidar corretores." },
+      { erro: "Só contas de imobiliária ou construtora podem convidar corretores." },
       { status: 403 },
     );
   }
@@ -38,13 +38,16 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "E-mail inválido." }, { status: 400 });
   }
 
-  const { data: imobiliariaPerfil } = await supabase
-    .from("imobiliaria_perfis")
+  const tabelaPerfilOrganizacao =
+    profile.role === "imobiliaria" ? "imobiliaria_perfis" : "construtora_perfis";
+  const { data: organizacaoPerfil } = await supabase
+    .from(tabelaPerfilOrganizacao)
     .select("nome_fantasia")
     .eq("profile_id", user.id)
     .single();
 
-  const nomeImobiliaria = imobiliariaPerfil?.nome_fantasia || profile?.nome || "Uma imobiliária";
+  const nomeImobiliaria =
+    organizacaoPerfil?.nome_fantasia || profile?.nome || "Uma empresa parceira";
 
   // Limite de equipe do plano (ver migração 0050) — conta quem já está
   // na equipe mais quem tem convite pendente, pra não deixar a
