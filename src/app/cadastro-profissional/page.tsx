@@ -259,6 +259,16 @@ function CadastroProfissionalConteudo() {
       return;
     }
 
+    // Conta já existe e confirmada: o Supabase não erra aqui (evita
+    // enumeração de e-mail) — só devolve um usuário sem identidades novas.
+    // Sem este check a tela dizia "enviamos um código" e nada era enviado.
+    if (data.user && data.user.identities?.length === 0) {
+      setEmailJaUsado(true);
+      setErro("Já existe uma conta com esse e-mail.");
+      setStatus("error");
+      return;
+    }
+
     setStatus(data.session ? "logado" : "aguardando_confirmacao");
   }
 

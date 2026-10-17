@@ -41,7 +41,7 @@ export async function destinoPosLogin(
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, telefone")
+    .select("role, telefone, is_admin")
     .eq("id", userId)
     .single();
 
@@ -54,6 +54,11 @@ export async function destinoPosLogin(
   }
 
   if (depois) return depois;
+
+  // Admin não tem um "role" próprio — é um privilégio à parte sobre
+  // qualquer papel. Sem isso, cai no fallback de role e vê a home como
+  // se fosse pedir cadastro de novo.
+  if (profile?.is_admin) return "/admin";
 
   if (profile && PRECISA_DOCUMENTOS.includes(profile.role)) {
     const { count } = await supabase
