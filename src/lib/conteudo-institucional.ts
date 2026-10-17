@@ -5,19 +5,19 @@
 // 3 cards de objetivo.
 
 export const SOBRE_PARAGRAFOS = [
-  "A Rede Impulso é o sistema de agendamento e gestão para corretores, imobiliárias e construtoras — organiza a agenda de visitas, conecta profissional e cliente, e acompanha o negócio do primeiro contato até o fechamento.",
+  "A Rede Impulso é o sistema de agendamento direto entre corretor e cliente — o corretor organiza sua própria agenda, e o cliente marca um horário sem precisar trocar mensagem pra combinar dia e hora.",
 ];
 
 export const SOBRE_MODULOS = [
   {
-    titulo: "Módulo de Gestão",
+    titulo: "Módulo do Corretor",
     texto:
-      "Corretor, imobiliária ou construtora administram a equipe, o dashboard de métricas, os relatórios e os imóveis publicados — com agendamento automático baseado na disponibilidade de cada um.",
+      "O corretor configura os horários em que atende, acompanha visitas e clientes no dashboard e no relatório, e pode cadastrar um cliente na hora — mesmo sem o cliente ter conta — e já sair com a visita confirmada.",
   },
   {
     titulo: "Módulo do Cliente",
     texto:
-      "Quem procura um imóvel busca um profissional por nome, cidade ou proximidade, agenda a visita num horário livre e acompanha tudo em \"Meus agendamentos\", sem precisar trocar mensagem pra combinar dia e hora.",
+      "Quem procura um corretor busca por nome, cidade ou proximidade, agenda a visita num horário livre e acompanha tudo em \"Meus agendamentos\", sem precisar trocar mensagem pra combinar dia e hora.",
   },
 ];
 

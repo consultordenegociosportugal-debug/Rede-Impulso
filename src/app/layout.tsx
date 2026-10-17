@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
 import { AssistenteIA } from "@/components/assistente-ia";
 import { Copiloto } from "@/components/copiloto";
-import { MOBILIDADE_ATIVA } from "@/lib/modulos";
+import { MOBILIDADE_ATIVA, MARKETPLACE_ATIVO } from "@/lib/modulos";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -44,9 +44,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         {children}
         {/* Copiloto do motorista só volta com o módulo de mobilidade
-            acordado (ver src/lib/modulos.ts); o padrão é o assistente de
-            imóveis, que é o núcleo atual da plataforma. */}
-        {MOBILIDADE_ATIVA ? <Copiloto /> : <AssistenteIA />}
+            acordado, e o assistente de imóveis só com o marketplace
+            acordado (ver src/lib/modulos.ts) — nenhum dos dois faz
+            sentido no produto de agendamento direto. */}
+        {MOBILIDADE_ATIVA ? <Copiloto /> : MARKETPLACE_ATIVO ? <AssistenteIA /> : null}
       </body>
     </html>
   );

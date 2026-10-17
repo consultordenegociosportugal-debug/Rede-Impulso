@@ -7,8 +7,7 @@ import { Footer } from "@/components/footer";
 
 export const metadata = {
   title: "Sobre | Rede Impulso",
-  description:
-    "A Rede Impulso é o sistema de agendamento e gestão para corretores, imobiliárias e construtoras.",
+  description: "A Rede Impulso é o sistema de agendamento direto entre corretor e cliente.",
 };
 
 export default function SobrePage() {

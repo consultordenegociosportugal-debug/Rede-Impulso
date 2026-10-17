@@ -6,47 +6,47 @@ import { Footer } from "@/components/footer";
 import styles from "./page.module.css";
 
 export const metadata = {
-  title: "Para corretores e imobiliárias | Rede Impulso",
+  title: "Para corretores | Rede Impulso",
   description:
-    "2 imóveis ativos grátis pra sempre, descrição de anúncio escrita por IA, sugestão automática por bairro e selo profissional depois do 1º negócio.",
+    "Agenda com disponibilidade real, cadastro de cliente sem login, lembrete automático por e-mail e selo profissional depois do 1º negócio.",
 };
 
 const BENEFICIOS = [
   {
-    icone: "🤖",
-    titulo: "IA que escreve o anúncio pra você",
+    icone: "🗓️",
+    titulo: "Disponibilidade real, sem ida e volta",
     texto:
-      "Gere a descrição do imóvel a partir dos dados do formulário, ou peça pra IA melhorar um texto que você já escreveu — sem inventar nada que você não informou.",
+      "Configure os dias e horários em que atende uma vez só. Cliente só vê o que está livre — a visita já nasce confirmada.",
   },
   {
-    icone: "📍",
-    titulo: "Sugestão automática por bairro",
+    icone: "🙋",
+    titulo: "Cadastre o cliente e agende na hora",
     texto:
-      "Quando alguém publica um imóvel no seu bairro de atuação, você entra na lista de corretores sugeridos pro vendedor — sem precisar correr atrás.",
+      "Cliente de balcão não precisa criar conta nem senha — você cadastra nome e telefone e já sai com o horário marcado.",
+  },
+  {
+    icone: "🔔",
+    titulo: "Lembrete automático por e-mail",
+    texto:
+      "Um aviso chega pro cliente e pra você antes de cada visita confirmada — ninguém esquece, ninguém fica esperando à toa.",
+  },
+  {
+    icone: "📅",
+    titulo: "Sincronização com Google Agenda",
+    texto:
+      "Conecte sua conta e cada visita confirmada vira um evento automático — sem copiar nada manualmente.",
+  },
+  {
+    icone: "📊",
+    titulo: "Relatório de visitas",
+    texto:
+      "Filtre por período e status e acompanhe tudo o que já foi agendado, confirmado ou realizado.",
   },
   {
     icone: "🏅",
     titulo: "Selo profissional",
     texto:
       "Seu perfil ganha selo de avaliação depois do primeiro negócio fechado, e se destaca pra quem está decidindo em quem confiar.",
-  },
-  {
-    icone: "💬",
-    titulo: "Mural de conquistas",
-    texto:
-      "Cada negócio fechado pode virar depoimento público com estrelas de carreira — prova social real, que você não precisa pedir.",
-  },
-  {
-    icone: "📈",
-    titulo: "Publique de graça, cresça quando quiser",
-    texto:
-      "2 imóveis ativos e 2 corretores na equipe sempre grátis, pra sempre. Pra ampliar a equipe, os planos saem a partir de R$ 69,90/mês — sem cobrança por lead.",
-  },
-  {
-    icone: "🗂️",
-    titulo: "Painel de negócios completo",
-    texto:
-      "Acompanhe cada negociação do primeiro contato ao registro em cartório, num só painel — sem perder nada no caminho.",
   },
 ];
 
@@ -92,12 +92,11 @@ export default async function ParaCorretoresPage() {
 
       <header className={styles.hero}>
         <div className="wrap">
-          <span className="eyebrow">Para corretores e imobiliárias</span>
-          <h1>Feito pra quem vive de fechar negócio.</h1>
+          <span className="eyebrow">Para corretores</span>
+          <h1>Feito pra quem vive de visita e negócio fechado.</h1>
           <p className={styles.lead}>
-            2 imóveis ativos grátis pra sempre. IA que escreve o anúncio,
-            sugestão automática por bairro e selo profissional depois do
-            primeiro negócio — tudo num só lugar, sem taxa por lead.
+            Configure sua disponibilidade, receba agendamentos confirmados e cadastre
+            clientes de balcão sem login — tudo sempre grátis, sem taxa por lead.
           </p>
           <div className={styles.ctaRow}>
             <Link href="/cadastro-profissional" className="btn btn-primary">
@@ -148,9 +147,6 @@ export default async function ParaCorretoresPage() {
                   Negócios que já passaram pela Rede
                 </h2>
               </div>
-              <Link href="/mural-conquistas" className="btn btn-outline btn-sm">
-                Ver mural de conquistas →
-              </Link>
             </div>
             <div className="grid grid-3">
               {depoimentos.map((d) => {
@@ -184,9 +180,8 @@ export default async function ParaCorretoresPage() {
           <span className="eyebrow">Pronto pra começar?</span>
           <h2>Crie seu cadastro profissional em poucos minutos</h2>
           <p className="muted" style={{ maxWidth: 46 + "ch", margin: "0 auto 20px" }}>
-            Corretor autônomo com CRECI ou imobiliária com CNPJ — os dois
-            cabem aqui. Documentos são enviados depois, só pra liberar o
-            perfil público.
+            Corretor autônomo com CRECI — o documento é enviado depois, só pra
+            liberar o perfil público.
           </p>
           <Link href="/cadastro-profissional" className="btn btn-primary">
             Criar cadastro profissional →

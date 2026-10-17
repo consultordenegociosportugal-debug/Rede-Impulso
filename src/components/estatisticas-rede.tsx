@@ -4,20 +4,23 @@ import styles from "./estatisticas-rede.module.css";
 export async function EstatisticasRede({ align = "center" }: { align?: "center" | "start" }) {
   const supabase = await createClient();
 
-  const [{ count: imoveisCount }, { count: corretoresCount }, { count: negociosCount }] =
+  const [{ count: corretoresCount }, { count: visitasCount }, { count: realizadasCount }] =
     await Promise.all([
-      supabase.from("imoveis").select("id", { count: "exact", head: true }).eq("status", "publicado"),
       supabase
         .from("corretor_perfis")
         .select("profile_id", { count: "exact", head: true })
         .eq("ativo", true),
-      supabase.from("negocios").select("id", { count: "exact", head: true }).eq("status", "concluido"),
+      supabase.from("visitas").select("id", { count: "exact", head: true }),
+      supabase
+        .from("visitas")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "realizada"),
     ]);
 
   const stats = [
-    { valor: imoveisCount ?? 0, label: "imóveis publicados" },
     { valor: corretoresCount ?? 0, label: "corretores ativos" },
-    { valor: negociosCount ?? 0, label: "negócios fechados" },
+    { valor: visitasCount ?? 0, label: "visitas agendadas" },
+    { valor: realizadasCount ?? 0, label: "visitas realizadas" },
   ];
 
   if (stats.every((s) => s.valor === 0)) return null;

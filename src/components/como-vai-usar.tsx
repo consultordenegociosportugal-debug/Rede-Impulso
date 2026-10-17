@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { MARKETPLACE_ATIVO } from "@/lib/modulos";
 import styles from "./como-vai-usar.module.css";
 
 type Opcao = {
@@ -33,35 +34,31 @@ export async function ComoVaiUsar() {
 
   const OPCOES: Opcao[] = [
     {
+      icone: "🧑‍💼",
+      titulo: "Sou corretor",
+      descricao:
+        "Trabalho com imóveis e quero organizar minha agenda — cliente agenda sozinho, e eu também posso cadastrar e agendar na hora.",
+      href: logadoComo("corretor") ? "/painel-negocios" : "/cadastro-profissional?papel=corretor",
+      cta: logadoComo("corretor") ? "Ir pro meu painel →" : "Criar meu cadastro de corretor →",
+    },
+    {
+      icone: "🔑",
+      titulo: "Sou cliente",
+      descricao: "Quero agendar uma visita com um corretor.",
+      href: user ? "/area-cliente" : "/cadastro-cliente",
+      cta: user ? "Ir para minha área →" : "Criar minha conta grátis →",
+    },
+  ];
+
+  if (MARKETPLACE_ATIVO) {
+    OPCOES.splice(1, 0, {
       icone: "🏢",
       titulo: "Sou dono de imobiliária",
       descricao: "Quero cadastrar minha empresa e gerenciar a equipe de corretores.",
       href: logadoComo("imobiliaria") ? "/painel-negocios" : "/cadastro-profissional?papel=imobiliaria",
       cta: logadoComo("imobiliaria") ? "Ir pro meu painel →" : "Cadastrar minha imobiliária →",
-    },
-    {
-      icone: "🧑‍💼",
-      titulo: "Sou corretor autônomo ou de uma imobiliária/construtora",
-      descricao:
-        "Trabalho por conta própria ou represento uma empresa — quero publicar imóveis e receber agendamentos de visita direto na minha agenda.",
-      href: logadoComo("corretor") ? "/painel-negocios" : "/cadastro-profissional?papel=corretor",
-      cta: logadoComo("corretor") ? "Ir pro meu painel →" : "Criar meu cadastro de corretor →",
-    },
-    {
-      icone: "🏗️",
-      titulo: "Sou construtora/incorporadora",
-      descricao: "Lanço empreendimentos novos — na planta, em construção ou prontos para morar.",
-      href: logadoComo("construtora") ? "/painel-negocios" : "/cadastro-profissional?papel=construtora",
-      cta: logadoComo("construtora") ? "Ir pro meu painel →" : "Cadastrar minha construtora →",
-    },
-    {
-      icone: "🔑",
-      titulo: "Sou cliente",
-      descricao: "Quero comprar, alugar ou vender um imóvel.",
-      href: user ? "/area-cliente" : "/cadastro-cliente",
-      cta: user ? "Ir para minha área →" : "Criar minha conta grátis →",
-    },
-  ];
+    });
+  }
 
   return (
     <div className="grid grid-2">

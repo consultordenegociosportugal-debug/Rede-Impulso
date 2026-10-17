@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { MARKETPLACE_ATIVO } from "@/lib/modulos";
 
 type Papel = "corretor" | "imobiliaria" | "construtora";
 
@@ -25,9 +26,13 @@ type EmpresaRow = {
   profiles: { nome: string } | null;
 };
 
-// Busca de corretor/imobiliária/construtora para o cliente — mesma ideia
-// das 3 abas do AppBarber (nome, cidade, "próximas"), sem distância real:
-// ver comentário na migração 0046 sobre essa limitação honesta.
+// Busca de corretor para o cliente — mesma ideia das 3 abas do AppBarber
+// (nome, cidade, "próximas"), sem distância real: ver comentário na
+// migração 0046 sobre essa limitação honesta.
+//
+// Imobiliária e construtora pausadas junto com o marketplace: a página
+// de destino (perfil-corretor) só aceita role "corretor", então buscá-
+// -las aqui levaria a um link quebrado.
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const modo = searchParams.get("modo") === "cidade" ? "cidade" : "nome";
@@ -52,30 +57,38 @@ export async function GET(request: NextRequest) {
       ? corretorQuery.ilike("cidade", termo)
       : corretorQuery.ilike("profiles.nome", termo);
 
-  let imobiliariaQuery = supabase
-    .from("imobiliaria_perfis")
-    .select("profile_id, nome_fantasia, cidade, profiles!inner(nome)")
-    .limit(12);
-  imobiliariaQuery =
-    modo === "cidade"
-      ? imobiliariaQuery.ilike("cidade", termo)
-      : imobiliariaQuery.ilike("nome_fantasia", termo);
+  let imobiliarias: EmpresaRow[] = [];
+  let construtoras: EmpresaRow[] = [];
+  let corretores: CorretorRow[];
 
-  let construtoraQuery = supabase
-    .from("construtora_perfis")
-    .select("profile_id, nome_fantasia, cidade, profiles!inner(nome)")
-    .limit(12);
-  construtoraQuery =
-    modo === "cidade"
-      ? construtoraQuery.ilike("cidade", termo)
-      : construtoraQuery.ilike("nome_fantasia", termo);
+  if (MARKETPLACE_ATIVO) {
+    let imobiliariaQuery = supabase
+      .from("imobiliaria_perfis")
+      .select("profile_id, nome_fantasia, cidade, profiles!inner(nome)")
+      .limit(12);
+    imobiliariaQuery =
+      modo === "cidade"
+        ? imobiliariaQuery.ilike("cidade", termo)
+        : imobiliariaQuery.ilike("nome_fantasia", termo);
 
-  const [{ data: dadosCorretores }, { data: dadosImobiliarias }, { data: dadosConstrutoras }] =
-    await Promise.all([corretorQuery, imobiliariaQuery, construtoraQuery]);
+    let construtoraQuery = supabase
+      .from("construtora_perfis")
+      .select("profile_id, nome_fantasia, cidade, profiles!inner(nome)")
+      .limit(12);
+    construtoraQuery =
+      modo === "cidade"
+        ? construtoraQuery.ilike("cidade", termo)
+        : construtoraQuery.ilike("nome_fantasia", termo);
 
-  const corretores = (dadosCorretores ?? []) as unknown as CorretorRow[];
-  const imobiliarias = (dadosImobiliarias ?? []) as unknown as EmpresaRow[];
-  const construtoras = (dadosConstrutoras ?? []) as unknown as EmpresaRow[];
+    const [{ data: dadosCorretores }, { data: dadosImobiliarias }, { data: dadosConstrutoras }] =
+      await Promise.all([corretorQuery, imobiliariaQuery, construtoraQuery]);
+    imobiliarias = (dadosImobiliarias ?? []) as unknown as EmpresaRow[];
+    construtoras = (dadosConstrutoras ?? []) as unknown as EmpresaRow[];
+    corretores = (dadosCorretores ?? []) as unknown as CorretorRow[];
+  } else {
+    const { data: dadosCorretores } = await corretorQuery;
+    corretores = (dadosCorretores ?? []) as unknown as CorretorRow[];
+  }
 
   const resultados: Resultado[] = [
     ...corretores.map((r) => ({

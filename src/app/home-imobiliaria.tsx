@@ -4,21 +4,22 @@ import { ComoVaiUsar } from "@/components/como-vai-usar";
 import { SOBRE_PARAGRAFOS, SOBRE_MODULOS, OBJETIVOS } from "@/lib/conteudo-institucional";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
+import { MARKETPLACE_ATIVO } from "@/lib/modulos";
 
 const FUNCIONALIDADES = [
   { icone: "🗓️", titulo: "Agendamento automático de visitas" },
-  { icone: "🤖", titulo: "IA que escreve o anúncio pra você" },
-  { icone: "📍", titulo: "Sugestão automática por bairro" },
+  { icone: "🙋", titulo: "Cadastro de cliente sem login" },
+  { icone: "🔔", titulo: "Lembrete automático por e-mail" },
+  { icone: "📅", titulo: "Sincronização com Google Agenda" },
+  { icone: "📊", titulo: "Relatório de visitas" },
   { icone: "🏅", titulo: "Selo profissional" },
-  { icone: "💬", titulo: "Mural de conquistas" },
-  { icone: "🚀", titulo: "Destaque pago do anúncio" },
 ];
 
 const COMO_COMECAR = [
   {
     numero: "1",
-    titulo: "Faça seu cadastro",
-    texto: "Corretor autônomo, imobiliária ou construtora — escolha a opção certa.",
+    titulo: "Faça seu cadastro de corretor",
+    texto: "Só CPF e CRECI — leva poucos minutos.",
   },
   {
     numero: "2",
@@ -35,26 +36,26 @@ const COMO_COMECAR = [
 const PERGUNTAS = [
   {
     pergunta: "Preciso ter CNPJ pra me cadastrar?",
-    resposta:
-      "Corretor autônomo não precisa — só CPF e CRECI. Imobiliária e construtora se cadastram com CNPJ.",
+    resposta: "Não. O cadastro de corretor autônomo é só com CPF e CRECI.",
   },
   {
-    pergunta: "O cadastro grátis tem alguma limitação?",
+    pergunta: "O cadastro tem alguma limitação?",
     resposta:
-      "2 imóveis ativos e 2 corretores na equipe sempre grátis, pra sempre, com todas as funcionalidades liberadas — inclusive agendamento automático. Pra ampliar a equipe, tem os planos a partir de R$ 69,90/mês.",
+      "Não. Cadastro, agendamento e lembrete por e-mail são sempre grátis, sem limite de visitas ou de clientes.",
   },
   {
     pergunta: "O cliente paga pra agendar uma visita?",
     resposta: "Não. Agendar visita e usar a Rede Impulso como cliente é sempre grátis.",
   },
   {
-    pergunta: "Como funciona o lembrete de horário?",
+    pergunta: "O cliente precisa ter conta pra agendar?",
     resposta:
-      "Um e-mail automático é enviado pro interessado e pro responsável cerca de 2 horas antes da visita confirmada.",
+      "Não necessariamente — você pode cadastrar o cliente na hora, com nome e telefone, sem ele precisar criar login nenhum.",
   },
   {
-    pergunta: "Posso mudar de plano depois?",
-    resposta: "Sim — a troca de plano vale a partir do próximo vencimento da assinatura.",
+    pergunta: "Como funciona o lembrete de horário?",
+    resposta:
+      "Um e-mail automático é enviado pro cliente e pro corretor cerca de 2 horas antes da visita confirmada.",
   },
 ];
 
@@ -73,7 +74,8 @@ export function HomeImobiliaria() {
           <span className={styles.accent}>um impulso</span>.
         </h1>
         <p className={styles.tagline}>
-          Agendamento e gestão para corretores, imobiliárias, construtoras e seus clientes.
+          Agendamento direto entre corretor e cliente — sem trocar mensagem pra combinar
+          dia e hora.
         </p>
         <Link href="/comece-agora" className="btn btn-primary">
           Comece agora →
@@ -159,21 +161,23 @@ export function HomeImobiliaria() {
         </div>
       </section>
 
-      <section id="precos">
-        <div className="wrap-narrow" style={{ textAlign: "center" }}>
-          <div className={styles.sectionHead}>
-            <span className="eyebrow">Preços</span>
-            <h2>Até 2 corretores na equipe sempre grátis</h2>
+      {MARKETPLACE_ATIVO && (
+        <section id="precos">
+          <div className="wrap-narrow" style={{ textAlign: "center" }}>
+            <div className={styles.sectionHead}>
+              <span className="eyebrow">Preços</span>
+              <h2>Até 2 corretores na equipe sempre grátis</h2>
+            </div>
+            <p className="muted">
+              Quer convidar mais gente pra equipe?{" "}
+              <Link href="/planos" style={{ textDecoration: "underline" }}>
+                Veja os planos a partir de R$ 69,90/mês
+              </Link>
+              .
+            </p>
           </div>
-          <p className="muted">
-            Quer convidar mais gente pra equipe?{" "}
-            <Link href="/planos" style={{ textDecoration: "underline" }}>
-              Veja os planos a partir de R$ 69,90/mês
-            </Link>
-            .
-          </p>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section style={{ background: "var(--surface-2)" }}>
         <div className="wrap">

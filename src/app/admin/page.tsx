@@ -124,9 +124,6 @@ export default async function AdminPage() {
             <Link href="/admin/agentes" className="btn btn-outline btn-sm">
               ⚡ Agentes de elétricos
             </Link>
-            <Link href="/admin/assistente" className="btn btn-outline btn-sm">
-              🧠 Metacognição do assistente
-            </Link>
             <Link href="/admin/direitos-autorais" className="btn btn-outline btn-sm">
               © Direitos autorais
             </Link>
