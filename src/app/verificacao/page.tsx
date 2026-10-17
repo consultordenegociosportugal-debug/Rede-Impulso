@@ -75,8 +75,8 @@ export default async function VerificacaoPage({
             Envie seus documentos, {profile?.nome?.split(" ")[0]}
           </h1>
           <p className="muted">
-            Analisamos os documentos antes de liberar seu perfil público na
-            Rede Impulso.
+            Documentos opcionais — ajudam a passar mais confiança pro cliente
+            que for agendar com você.
           </p>
 
           <VerificacaoForm
