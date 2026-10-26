@@ -5,13 +5,16 @@ import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
 import { BotoesSocial } from "@/components/botoes-social";
-import { formatarTelefone, formatarCreci, formatarInstagram } from "@/lib/mascaras";
+import { formatarTelefone, formatarCreci, formatarInstagram, formatarCpf } from "@/lib/mascaras";
+import { cpfValido } from "@/lib/validacoes";
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 import { ConfirmarCodigoEmail } from "@/components/confirmar-codigo-email";
+import { BairrosInput } from "@/components/bairros-input";
+import { CidadeInput } from "@/components/cidade-input";
 
-type Campo = "nome" | "creci" | "bairros" | "telefone" | "dataNascimento" | "email" | "senha";
+type Campo = "nome" | "cpf" | "creci" | "bairros" | "telefone" | "dataNascimento" | "email" | "senha";
 type ErrosCampo = Partial<Record<Campo, string>>;
 
 const TOTAL_PASSOS = 2;
@@ -26,6 +29,7 @@ const TITULO_PASSO = ["Quem é você", "Contato e acesso"];
 // perceber (relatado como "clico em Continuar e não acontece nada").
 const CAMPO_ID: Record<Campo, string> = {
   nome: "nome",
+  cpf: "cpf",
   creci: "creci",
   bairros: "bairro",
   telefone: "tel",
@@ -55,8 +59,9 @@ function traduzErroAuth(mensagem: string) {
 export default function CadastroProfissionalPage() {
   const [passo, setPasso] = useState(1);
   const [nome, setNome] = useState("");
+  const [cpf, setCpf] = useState("");
   const [creci, setCreci] = useState("");
-  const [bairros, setBairros] = useState("");
+  const [bairros, setBairros] = useState<string[]>([]);
   const [cidade, setCidade] = useState("");
   const [telefone, setTelefone] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
@@ -97,9 +102,12 @@ export default function CadastroProfissionalPage() {
       if (!nome.trim()) problemas.nome = "Digite seu nome completo.";
       else if (!nome.trim().includes(" ")) problemas.nome = "Informe nome e sobrenome.";
 
+      if (!cpf.trim()) problemas.cpf = "Informe seu CPF.";
+      else if (!cpfValido(cpf)) problemas.cpf = "Esse CPF não é válido — confira os números.";
+
       if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
       else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
-      if (!bairros.trim()) problemas.bairros = "Informe ao menos um bairro onde você atua.";
+      if (bairros.length === 0) problemas.bairros = "Informe ao menos um bairro onde você atua.";
     }
     if (alvo === 2) {
       if (!telefone) problemas.telefone = "Informe seu WhatsApp com DDD.";
@@ -187,11 +195,9 @@ export default function CadastroProfissionalPage() {
           telefone,
           data_nascimento: dataNascimento,
           rede_social: redeSocial || null,
+          cpf: cpf.replace(/\D/g, ""),
           creci,
-          bairros_atuacao: bairros
-            .split(",")
-            .map((b) => b.trim())
-            .filter(Boolean),
+          bairros_atuacao: bairros,
           cidade: cidade || null,
         },
       },
@@ -310,6 +316,29 @@ export default function CadastroProfissionalPage() {
                   )}
                 </div>
 
+                <div className="field">
+                  <label htmlFor="cpf">CPF</label>
+                  <input
+                    type="text"
+                    id="cpf"
+                    placeholder="000.000.000-00"
+                    value={cpf}
+                    onChange={(e) => {
+                      setCpf(formatarCpf(e.target.value));
+                      limparErroDe("cpf");
+                    }}
+                    className={errosCampo.cpf ? styles.campoInvalido : undefined}
+                    aria-invalid={errosCampo.cpf ? true : undefined}
+                    aria-describedby={errosCampo.cpf ? "erro-cpf" : undefined}
+                    required
+                  />
+                  {errosCampo.cpf && (
+                    <p className={styles.erroCampo} id="erro-cpf">
+                      {errosCampo.cpf}
+                    </p>
+                  )}
+                </div>
+
                 <div className="grid grid-2">
                   <div className="field">
                     <label htmlFor="creci">Número do CRECI</label>
@@ -337,26 +366,21 @@ export default function CadastroProfissionalPage() {
                   </div>
                   <div className="field">
                     <label htmlFor="bairro">Bairros de atuação</label>
-                    <input
-                      type="text"
+                    <BairrosInput
                       id="bairro"
-                      placeholder="Jóquei, Renascença"
                       value={bairros}
-                      onChange={(e) => {
-                        setBairros(e.target.value);
+                      onChange={(v) => {
+                        setBairros(v);
                         limparErroDe("bairros");
                       }}
-                      className={errosCampo.bairros ? styles.campoInvalido : undefined}
-                      aria-invalid={errosCampo.bairros ? true : undefined}
-                      aria-describedby={errosCampo.bairros ? "erro-bairro" : undefined}
-                      required
+                      placeholder="Jóquei, Renascença…"
                     />
                     {errosCampo.bairros ? (
                       <p className={styles.erroCampo} id="erro-bairro">
                         {errosCampo.bairros}
                       </p>
                     ) : (
-                      <p className="hint">Separe por vírgula. Dá para ajustar depois.</p>
+                      <p className="hint">Digite e aperte Enter. Dá para ajustar depois.</p>
                     )}
                   </div>
                 </div>
@@ -368,13 +392,7 @@ export default function CadastroProfissionalPage() {
                       (opcional)
                     </span>
                   </label>
-                  <input
-                    type="text"
-                    id="cidade"
-                    placeholder="São Luís"
-                    value={cidade}
-                    onChange={(e) => setCidade(e.target.value)}
-                  />
+                  <CidadeInput id="cidade" value={cidade} onChange={setCidade} />
                   <p className="hint">
                     Ajuda quem está procurando um profissional perto de onde mora.
                   </p>

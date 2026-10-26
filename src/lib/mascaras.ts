@@ -22,6 +22,16 @@ export function formatarInstagram(valor: string) {
   return umArroba.replace(/[^@a-zA-Z0-9._]/g, "");
 }
 
+export function formatarCpf(valor: string) {
+  const digitos = valor.replace(/\D/g, "").slice(0, 11);
+  let saida = "";
+  if (digitos.length > 0) saida += digitos.slice(0, 3);
+  if (digitos.length > 3) saida += "." + digitos.slice(3, 6);
+  if (digitos.length > 6) saida += "." + digitos.slice(6, 9);
+  if (digitos.length > 9) saida += "-" + digitos.slice(9, 11);
+  return saida;
+}
+
 export function formatarCnpj(valor: string) {
   const digitos = valor.replace(/\D/g, "").slice(0, 14);
   let saida = "";

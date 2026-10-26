@@ -5,12 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { destinoPosLogin } from "@/lib/destino-pos-login";
-import { formatarTelefone, formatarCreci } from "@/lib/mascaras";
+import { formatarTelefone, formatarCreci, formatarCpf } from "@/lib/mascaras";
+import { cpfValido } from "@/lib/validacoes";
+import { BairrosInput } from "@/components/bairros-input";
+import { CidadeInput } from "@/components/cidade-input";
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 
 type Papel = "comprador" | "corretor";
-type Campo = "nome" | "telefone" | "dataNascimento" | "creci" | "bairros";
+type Campo = "nome" | "telefone" | "dataNascimento" | "cpf" | "creci" | "bairros";
 type ErrosCampo = Partial<Record<Campo, string>>;
 
 const TELEFONE_OK = /^\(\d{2}\)\s?9\s?\d{4}-?\d{4}$/;
@@ -23,6 +26,7 @@ const CAMPO_ID: Record<Campo, string> = {
   nome: "nome",
   telefone: "tel",
   dataNascimento: "dataNascimento",
+  cpf: "cpf",
   creci: "creci",
   bairros: "bairro",
 };
@@ -68,8 +72,9 @@ export function CompletarCadastroForm({
   const [telefone, setTelefone] = useState(formatarTelefone(telefoneAtual));
   const [dataNascimento, setDataNascimento] = useState("");
   const [papel, setPapel] = useState<Papel>(papelInicial(papelSugerido, roleAtual));
+  const [cpf, setCpf] = useState("");
   const [creci, setCreci] = useState("");
-  const [bairros, setBairros] = useState("");
+  const [bairros, setBairros] = useState<string[]>([]);
   const [cidade, setCidade] = useState("");
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
@@ -99,9 +104,11 @@ export function CompletarCadastroForm({
       problemas.dataNascimento = "Você precisa ter 18 anos ou mais para usar a Rede Impulso.";
 
     if (papel === "corretor") {
+      if (!cpf.trim()) problemas.cpf = "Informe seu CPF.";
+      else if (!cpfValido(cpf)) problemas.cpf = "Esse CPF não é válido — confira os números.";
       if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
       else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
-      if (!bairros.trim()) problemas.bairros = "Informe ao menos um bairro onde você atua.";
+      if (bairros.length === 0) problemas.bairros = "Informe ao menos um bairro onde você atua.";
     }
     return problemas;
   }
@@ -160,11 +167,9 @@ export function CompletarCadastroForm({
       const { error: erroCorretor } = await supabase.from("corretor_perfis").upsert(
         {
           profile_id: user.id,
+          cpf: cpf.replace(/\D/g, ""),
           creci,
-          bairros_atuacao: bairros
-            .split(",")
-            .map((b) => b.trim())
-            .filter(Boolean),
+          bairros_atuacao: bairros,
           cidade: cidade || null,
         },
         { onConflict: "profile_id" },
@@ -302,6 +307,28 @@ export function CompletarCadastroForm({
 
       {papel === "corretor" && (
         <>
+          <div className="field">
+            <label htmlFor="cpf">CPF</label>
+            <input
+              type="text"
+              id="cpf"
+              placeholder="000.000.000-00"
+              value={cpf}
+              onChange={(e) => {
+                setCpf(formatarCpf(e.target.value));
+                limparErroDe("cpf");
+              }}
+              className={errosCampo.cpf ? styles.campoInvalido : undefined}
+              aria-invalid={errosCampo.cpf ? true : undefined}
+              aria-describedby={errosCampo.cpf ? "erro-cpf" : undefined}
+              required
+            />
+            {errosCampo.cpf && (
+              <p className={styles.erroCampo} id="erro-cpf">
+                {errosCampo.cpf}
+              </p>
+            )}
+          </div>
           <div className="grid grid-2">
             <div className="field">
               <label htmlFor="creci">Número do CRECI</label>
@@ -329,26 +356,21 @@ export function CompletarCadastroForm({
             </div>
             <div className="field">
               <label htmlFor="bairro">Bairros de atuação</label>
-              <input
-                type="text"
+              <BairrosInput
                 id="bairro"
-                placeholder="Jóquei, Renascença"
                 value={bairros}
-                onChange={(e) => {
-                  setBairros(e.target.value);
+                onChange={(v) => {
+                  setBairros(v);
                   limparErroDe("bairros");
                 }}
-                className={errosCampo.bairros ? styles.campoInvalido : undefined}
-                aria-invalid={errosCampo.bairros ? true : undefined}
-                aria-describedby={errosCampo.bairros ? "erro-bairro" : undefined}
-                required
+                placeholder="Jóquei, Renascença…"
               />
               {errosCampo.bairros ? (
                 <p className={styles.erroCampo} id="erro-bairro">
                   {errosCampo.bairros}
                 </p>
               ) : (
-                <p className="hint">Separe por vírgula. Dá para ajustar depois.</p>
+                <p className="hint">Digite e aperte Enter. Dá para ajustar depois.</p>
               )}
             </div>
           </div>
@@ -359,13 +381,7 @@ export function CompletarCadastroForm({
                 (opcional)
               </span>
             </label>
-            <input
-              type="text"
-              id="cidadeAtuacao"
-              placeholder="São Luís"
-              value={cidade}
-              onChange={(e) => setCidade(e.target.value)}
-            />
+            <CidadeInput id="cidadeAtuacao" value={cidade} onChange={setCidade} />
           </div>
         </>
       )}

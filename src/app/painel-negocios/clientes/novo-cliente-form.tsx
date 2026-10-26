@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { CidadeInput } from "@/components/cidade-input";
 
 type Status = "preenchendo" | "buscando-horarios" | "enviando" | "sucesso";
 
@@ -182,13 +183,7 @@ export function NovoClienteForm() {
           <label htmlFor="cliente-cidade">
             Cidade <span className="muted" style={{ fontWeight: 400 }}>(opcional)</span>
           </label>
-          <input
-            id="cliente-cidade"
-            type="text"
-            value={cidade}
-            onChange={(e) => setCidade(e.target.value)}
-            placeholder="Ex.: São Luís"
-          />
+          <CidadeInput id="cliente-cidade" value={cidade} onChange={setCidade} placeholder="Ex.: São Luís" />
         </div>
         <div className="field">
           <label htmlFor="cliente-imovel">

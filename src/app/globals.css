@@ -612,6 +612,93 @@ textarea:focus {
   outline: 2px solid var(--primary);
   outline-offset: 1px;
 }
+/* Campo de cidade (autocomplete) e de bairros (tags) — cadastro de
+   corretor e cadastro de cliente avulso. */
+.tags-input {
+  position: relative;
+}
+.tags-input-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  width: 100%;
+  min-height: 46px;
+  padding: 7px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface);
+}
+.tags-input-chips:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.tags-input-chips input {
+  flex: 1;
+  min-width: 120px;
+  border: none !important;
+  padding: 5px 2px !important;
+  background: transparent !important;
+  outline: none !important;
+}
+.tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px 4px 10px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 13px;
+  white-space: nowrap;
+}
+.tag-chip button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+.tag-chip button:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.tags-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  padding: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+.tags-suggestions button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 13.5px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.tags-suggestions button:hover {
+  background: var(--surface-2);
+}
+
 .upload-slot {
   border: 1.5px dashed var(--line);
   border-radius: var(--radius-sm);

@@ -25,6 +25,7 @@ export default async function EditarPerfilPage() {
   const role = profile?.role ?? "comprador";
 
   let dadosCorretor: {
+    cpf: string | null;
     creci: string;
     bairros_atuacao: string[];
     cidade: string | null;
@@ -34,7 +35,7 @@ export default async function EditarPerfilPage() {
   if (role === "corretor") {
     const { data } = await supabase
       .from("corretor_perfis")
-      .select("creci, bairros_atuacao, cidade, organizacao_catalogo_id")
+      .select("cpf, creci, bairros_atuacao, cidade, organizacao_catalogo_id")
       .eq("profile_id", user.id)
       .single();
     dadosCorretor = data;
