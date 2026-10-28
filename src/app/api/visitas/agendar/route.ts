@@ -3,32 +3,40 @@ import { createClient } from "@/lib/supabase/server";
 import { horariosDisponiveis } from "@/lib/disponibilidade";
 import { getResend, resendConfigurado, EMAIL_REMETENTE } from "@/lib/resend";
 import { rodapeTransacionalHtml } from "@/lib/email-rodape";
+import { enviarConfirmacaoWhatsapp } from "@/lib/whatsapp";
 
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "full",
   timeStyle: "short",
   timeZone: "America/Sao_Paulo",
 });
+const formatoData = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "full",
+  timeZone: "America/Sao_Paulo",
+});
+const formatoHora = new Intl.DateTimeFormat("pt-BR", {
+  timeStyle: "short",
+  timeZone: "America/Sao_Paulo",
+});
 
-// Aviso de agendamento quando o CORRETOR cadastra o cliente (cliente
-// avulso) — vai pro cliente (se ele informou e-mail), com cópia pro
-// corretor, pra Rede Impulso e, se o corretor estiver vinculado a uma
-// imobiliária/construtora do catálogo (migração 0053) com gestor de
-// vendas cadastrado, pro gestor também. Esses destinatários alimentam
-// as métricas de atendimento que gestores e corretores acompanham.
-async function avisarAgendamentoClienteAvulso(
+// Aviso de agendamento — roda pros dois jeitos de agendar (cliente logado
+// agenda sozinho, ou corretor cadastra um cliente avulso e agenda por
+// ele). Manda e-mail (cliente + cópia pro corretor, pra Rede Impulso e,
+// se o corretor estiver vinculado a uma imobiliária/construtora do
+// catálogo, pro gestor dela) e WhatsApp (cliente e corretor, cada um com
+// seu próprio número) — os dois lados da visita ficam sabendo.
+async function avisarAgendamento(
   supabase: Awaited<ReturnType<typeof createClient>>,
   dados: {
     clienteNome: string;
     clienteEmail: string | null;
+    clienteTelefone: string | null;
     corretorId: string;
     dataHoraIso: string;
   },
 ) {
-  if (!resendConfigurado()) return;
-
   const [{ data: corretor }, { data: corretorPerfil }] = await Promise.all([
-    supabase.from("profiles").select("nome, email").eq("id", dados.corretorId).single(),
+    supabase.from("profiles").select("nome, email, telefone").eq("id", dados.corretorId).single(),
     supabase
       .from("corretor_perfis")
       .select("organizacao:organizacao_catalogo_id(nome, email_gestor)")
@@ -42,35 +50,65 @@ async function avisarAgendamentoClienteAvulso(
     } | null
   )?.organizacao;
 
-  const copias = [
-    corretor?.email,
-    process.env.EMAIL_COPIA_REDE_IMPULSO,
-    organizacao?.email_gestor,
-  ].filter((e): e is string => Boolean(e));
+  const quandoIso = new Date(dados.dataHoraIso);
+  const dataFormatada = formatoData.format(quandoIso);
+  const horaFormatada = formatoHora.format(quandoIso);
 
-  if (!dados.clienteEmail && copias.length === 0) return;
+  if (resendConfigurado()) {
+    const copias = [
+      corretor?.email,
+      process.env.EMAIL_COPIA_REDE_IMPULSO,
+      organizacao?.email_gestor,
+    ].filter((e): e is string => Boolean(e));
 
-  const quando = formatoDataHora.format(new Date(dados.dataHoraIso));
-  const resend = getResend()!;
-
-  try {
-    await resend.emails.send({
-      from: EMAIL_REMETENTE,
-      to: dados.clienteEmail || copias[0],
-      cc: dados.clienteEmail ? copias : copias.slice(1),
-      subject: `Agendamento confirmado com ${corretor?.nome ?? "seu corretor"}`,
-      html: `
-        <p>Olá, ${dados.clienteNome}.</p>
-        <p>Seu agendamento com <strong>${corretor?.nome ?? "o corretor"}</strong>${
-          organizacao ? ` (${organizacao.nome})` : ""
-        } está confirmado para <strong>${quando}</strong>.</p>
-        ${rodapeTransacionalHtml()}
-      `,
-    });
-  } catch {
-    // Mesmo padrão do resto do app: falha de e-mail não derruba o
-    // agendamento, que já está confirmado no banco.
+    if (dados.clienteEmail || copias.length > 0) {
+      const quando = formatoDataHora.format(quandoIso);
+      const resend = getResend()!;
+      try {
+        await resend.emails.send({
+          from: EMAIL_REMETENTE,
+          to: dados.clienteEmail || copias[0],
+          cc: dados.clienteEmail ? copias : copias.slice(1),
+          subject: `Agendamento confirmado com ${corretor?.nome ?? "seu corretor"}`,
+          html: `
+            <p>Olá, ${dados.clienteNome}.</p>
+            <p>Seu agendamento com <strong>${corretor?.nome ?? "o corretor"}</strong>${
+              organizacao ? ` (${organizacao.nome})` : ""
+            } está confirmado para <strong>${quando}</strong>.</p>
+            ${rodapeTransacionalHtml()}
+          `,
+        });
+      } catch {
+        // Mesmo padrão do resto do app: falha de e-mail não derruba o
+        // agendamento, que já está confirmado no banco.
+      }
+    }
   }
+
+  const avisos: Promise<void>[] = [];
+  if (dados.clienteTelefone) {
+    avisos.push(
+      enviarConfirmacaoWhatsapp({
+        telefone: dados.clienteTelefone,
+        nomeDestinatario: dados.clienteNome,
+        nomeContraparte: corretor?.nome ?? "o corretor",
+        dataFormatada,
+        horaFormatada,
+      }),
+    );
+  }
+  if (corretor?.telefone) {
+    avisos.push(
+      enviarConfirmacaoWhatsapp({
+        telefone: corretor.telefone,
+        nomeDestinatario: corretor.nome ?? "Corretor",
+        nomeContraparte: dados.clienteNome,
+        dataFormatada,
+        horaFormatada,
+      }),
+    );
+  }
+  await Promise.all(avisos);
 }
 
 // Agenda uma visita num horário realmente livre — nasce `confirmada`
@@ -191,9 +229,23 @@ export async function POST(request: NextRequest) {
   }
 
   if (clienteAvulso) {
-    await avisarAgendamentoClienteAvulso(supabase, {
+    await avisarAgendamento(supabase, {
       clienteNome: clienteAvulso.nome!.trim(),
       clienteEmail: clienteAvulso.email?.trim() || null,
+      clienteTelefone: clienteAvulso.telefone?.trim() || null,
+      corretorId: corretorId as string,
+      dataHoraIso: visita.data_hora,
+    });
+  } else {
+    const { data: comprador } = await supabase
+      .from("profiles")
+      .select("nome, email, telefone")
+      .eq("id", user.id)
+      .single();
+    await avisarAgendamento(supabase, {
+      clienteNome: comprador?.nome ?? "Cliente",
+      clienteEmail: comprador?.email ?? user.email ?? null,
+      clienteTelefone: comprador?.telefone ?? null,
       corretorId: corretorId as string,
       dataHoraIso: visita.data_hora,
     });
