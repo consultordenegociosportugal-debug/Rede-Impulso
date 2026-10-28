@@ -6,6 +6,9 @@ export function Footer() {
       <div className="wrap" style={{ display: "flex", flexWrap: "wrap", gap: 16, justifyContent: "center", alignItems: "center" }}>
         <span>© 2026 Rede Impulso. Todos os direitos reservados.</span>
         <span style={{ display: "flex", gap: 16 }}>
+          <Link href="/suporte" style={{ textDecoration: "underline" }}>
+            Suporte
+          </Link>
           <Link href="/termos-de-uso" style={{ textDecoration: "underline" }}>
             Termos de Uso
           </Link>
