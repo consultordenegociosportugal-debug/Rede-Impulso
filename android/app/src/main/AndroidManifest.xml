@@ -32,15 +32,4 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-
-    <!-- Câmera: "Foto do imóvel" e fotos ao publicar/editar anúncio usam
-         getUserMedia() via WebView — sem esta permissão o navegador do
-         app nunca chega a perguntar pro usuário. -->
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature android:name="android.hardware.camera" android:required="false" />
-
-    <!-- Localização: "Marcar localização atual" ao publicar imóvel e na
-         busca por foto usam navigator.geolocation(). -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 </manifest>
