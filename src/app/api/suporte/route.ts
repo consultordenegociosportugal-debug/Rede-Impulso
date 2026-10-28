@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getResend, resendConfigurado, EMAIL_REMETENTE } from "@/lib/resend";
 import { rodapeTransacionalHtml } from "@/lib/email-rodape";
 
@@ -21,7 +22,16 @@ export async function POST(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { data: ticket, error } = await supabase
+  // Grava com a service role: quem manda um chamado (logado ou não) não
+  // tem — nem precisa ter — permissão de leitura na tabela, só o admin.
+  // Fazer o insert como o próprio usuário exigiria devolver a linha pra
+  // satisfazer o .select() do client, o que esbarra na RLS de leitura.
+  const admin = createAdminClient();
+  if (!admin) {
+    return NextResponse.json({ erro: "Serviço indisponível." }, { status: 503 });
+  }
+
+  const { data: ticket, error } = await admin
     .from("tickets_suporte")
     .insert({
       profile_id: user?.id ?? null,

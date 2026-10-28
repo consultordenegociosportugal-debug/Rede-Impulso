@@ -1,0 +1,11 @@
+-- O insert público de tickets_suporte (0060) esbarrava num problema real:
+-- o client do app encadeia `.insert().select()`, e o PostgREST precisa
+-- conseguir ler de volta a linha recém-criada pra satisfazer o `.select()`
+-- — o que exige permissão de SELECT, que é só-admin. Resultado: toda
+-- tentativa de abrir um chamado vinha com "violates row-level security
+-- policy", mesmo com o INSERT liberado pra anon/authenticated.
+--
+-- Corrigido no código (api/suporte/route.ts passou a usar a service role
+-- pra gravar, que ignora RLS) — essa política de INSERT não é mais usada
+-- por ninguém, então sai daqui.
+drop policy if exists "tickets_suporte: qualquer um abre um chamado" on tickets_suporte;
