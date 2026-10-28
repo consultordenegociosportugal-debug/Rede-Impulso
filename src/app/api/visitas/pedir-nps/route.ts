@@ -41,7 +41,7 @@ export async function GET(request: NextRequest) {
     .select(
       "id, nps_token, corretor:corretor_id(nome), comprador:comprador_id(nome, email), cliente_avulso:cliente_avulso_id(nome, email)",
     )
-    .eq("status", "confirmada")
+    .in("status", ["confirmada", "realizada"])
     .is("nps_enviado_em", null)
     .lt("data_hora", agora.toISOString())
     .gte("data_hora", inicioJanela.toISOString());

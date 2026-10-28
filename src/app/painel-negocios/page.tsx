@@ -64,15 +64,20 @@ export default async function PainelNegociosPage({
   const inicioDeHoje = new Date();
   inicioDeHoje.setHours(0, 0, 0, 0);
 
+  // Sem o "ou status confirmada", uma visita que passou da data e nunca foi
+  // marcada como realizada/não compareceu some daqui pra sempre — não
+  // aparece mais aqui (já passou) nem no relatório (que não tem os botões
+  // de ação), ficando "confirmada" eternamente sem ninguém poder resolver.
   const { data: dadosVisitas } = await supabase
     .from("visitas")
     .select(
       "id, data_hora, status, observacoes, google_event_id, comprador:comprador_id(nome, telefone), cliente_avulso:cliente_avulso_id(nome, telefone)",
     )
     .eq("corretor_id", user.id)
-    .gte("data_hora", inicioDeHoje.toISOString())
+    .or(`data_hora.gte.${inicioDeHoje.toISOString()},status.eq.confirmada`)
     .order("data_hora", { ascending: true });
   const visitas = (dadosVisitas ?? []) as unknown as VisitaRow[];
+  const futuras = visitas.filter((v) => new Date(v.data_hora) >= inicioDeHoje);
 
   // A integração é opcional em duas camadas: as variáveis de ambiente
   // podem nem existir, e mesmo existindo cada corretor decide se
@@ -86,13 +91,13 @@ export default async function PainelNegociosPage({
         .maybeSingle()
     : { data: null };
 
-  const hoje = visitas.filter(
+  const hoje = futuras.filter(
     (v) => new Date(v.data_hora).toDateString() === new Date().toDateString(),
   ).length;
-  const confirmadas = visitas.filter((v) => v.status === "confirmada").length;
+  const confirmadas = futuras.filter((v) => v.status === "confirmada").length;
 
   const STATS = [
-    { num: String(visitas.length), label: "Próximas visitas" },
+    { num: String(futuras.length), label: "Próximas visitas" },
     { num: String(hoje), label: "Hoje" },
     { num: String(confirmadas), label: "Confirmadas" },
   ];
@@ -176,6 +181,8 @@ export default async function PainelNegociosPage({
                   label: visita.status,
                   className: "badge-outline",
                 };
+                const atrasada =
+                  visita.status === "confirmada" && new Date(visita.data_hora) < inicioDeHoje;
                 const nomeCliente = visita.comprador?.nome ?? visita.cliente_avulso?.nome;
                 const telefoneCliente =
                   visita.comprador?.telefone ?? visita.cliente_avulso?.telefone;
@@ -200,6 +207,7 @@ export default async function PainelNegociosPage({
                         )}
                       </div>
                       <div className="flex gap-8 items-center">
+                        {atrasada && <span className="badge badge-amber">Atrasada</span>}
                         <span className={`badge ${badge.className}`}>{badge.label}</span>
                         {visita.google_event_id && (
                           <span className="badge badge-outline">📅 na agenda</span>
