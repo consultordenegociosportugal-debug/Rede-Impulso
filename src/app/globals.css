@@ -81,6 +81,8 @@ h3,
   margin: 0;
 }
 .eyebrow {
+  display: block;
+  margin-top: 4px;
   font-family: var(--font-mono), monospace;
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -348,7 +350,42 @@ section {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
+}
+/* Nome/e-mail da conta pode ser bem mais longo que o espaço disponível
+   no celular — sem isso ele empurrava o botão de menu (hambúrguer) pra
+   fora da tela em vez de truncar. O limite de largura e o "…" ficam no
+   span de texto, não no .nav-group-label (ele é inline-flex por causa da
+   setinha ao lado, e text-overflow não funciona num container flex). */
+.nav-auth .nav-group-label {
+  min-width: 0;
+}
+.nav-nome-truncado {
+  display: inline-block;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
+  vertical-align: bottom;
+}
+@media (max-width: 480px) {
+  .nav-nome-truncado {
+    max-width: 44px;
+  }
+  .nav-inner {
+    padding: 12px 16px;
+    gap: 8px;
+  }
+  .nav-utility {
+    gap: 6px;
+  }
+  .nav-auth {
+    gap: 4px;
+  }
+  .nav-auth .btn-ghost.btn-sm {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
 }
 .nav-toggle {
   display: flex;

@@ -165,7 +165,7 @@ export function Nav({ active }: { active: string }) {
                   }
                   style={{ fontSize: 12 }}
                 >
-                  {nome ?? user.email}
+                  <span className="nav-nome-truncado">{nome ?? user.email}</span>
                   <svg
                     width="9"
                     height="9"

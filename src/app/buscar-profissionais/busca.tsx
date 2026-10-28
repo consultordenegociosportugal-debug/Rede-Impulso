@@ -126,7 +126,7 @@ export function BuscaProfissionais() {
             value={termo}
             onChange={(e) => setTermo(e.target.value)}
             placeholder={modo === "nome" ? "Nome do corretor ou da empresa" : "Nome da cidade"}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minWidth: 0 }}
           />
           <button type="submit" className="btn btn-primary" disabled={status === "buscando"}>
             {status === "buscando" ? "Buscando…" : "Buscar"}
