@@ -101,21 +101,26 @@ function EntrarForm() {
                 <label htmlFor="senha" style={{ marginBottom: 0 }}>
                   Senha
                 </label>
-                <button
-                  type="button"
-                  onClick={() => setVerSenha((v) => !v)}
-                  style={{
-                    background: "none",
-                    border: "none",
-                    padding: 0,
-                    fontSize: 12,
-                    fontWeight: 600,
-                    color: "var(--primary-dark)",
-                    cursor: "pointer",
-                  }}
-                >
-                  {verSenha ? "Ocultar" : "Mostrar"}
-                </button>
+                <div className="flex gap-8 items-center">
+                  <Link href="/esqueci-senha" style={{ fontSize: 12, fontWeight: 600 }}>
+                    Esqueci minha senha
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setVerSenha((v) => !v)}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      padding: 0,
+                      fontSize: 12,
+                      fontWeight: 600,
+                      color: "var(--primary-dark)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    {verSenha ? "Ocultar" : "Mostrar"}
+                  </button>
+                </div>
               </div>
               <input
                 type={verSenha ? "text" : "password"}
