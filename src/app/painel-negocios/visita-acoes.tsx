@@ -154,7 +154,11 @@ export function VisitaAcoes({
           <button
             type="button"
             className="btn btn-ghost btn-sm"
-            onClick={() => mudar("cancelada")}
+            onClick={() => {
+              if (window.confirm("Cancelar essa visita? O cliente não será avisado automaticamente.")) {
+                mudar("cancelada");
+              }
+            }}
             disabled={salvando}
           >
             Cancelar
