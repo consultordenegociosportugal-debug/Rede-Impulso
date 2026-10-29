@@ -58,16 +58,39 @@ export function VisitaAcoes({
     setErro(null);
     setAviso(null);
 
-    const supabase = createClient();
-    const { error } = await supabase
-      .from("visitas")
-      .update({ status: novoStatus })
-      .eq("id", visitaId);
+    // Cancelar passa pela API em vez de um update direto — não é só
+    // mudar o status, também avisa o cliente por e-mail/WhatsApp, o que
+    // exige a service role.
+    if (novoStatus === "cancelada") {
+      try {
+        const resposta = await fetch("/api/visitas/cancelar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ visita_id: visitaId }),
+        });
+        if (!resposta.ok) {
+          const dados = (await resposta.json().catch(() => ({}))) as { erro?: string };
+          setErro(dados.erro ?? "Não foi possível cancelar a visita.");
+          setSalvando(false);
+          return;
+        }
+      } catch {
+        setErro("Sem conexão no momento. Tente de novo.");
+        setSalvando(false);
+        return;
+      }
+    } else {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("visitas")
+        .update({ status: novoStatus })
+        .eq("id", visitaId);
 
-    if (error) {
-      setErro(error.message);
-      setSalvando(false);
-      return;
+      if (error) {
+        setErro(error.message);
+        setSalvando(false);
+        return;
+      }
     }
 
     // Daqui pra baixo nada pode derrubar a operação — a visita já está
