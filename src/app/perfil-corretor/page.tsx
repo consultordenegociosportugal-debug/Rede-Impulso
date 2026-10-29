@@ -3,11 +3,14 @@ import { createClient } from "@/lib/supabase/server";
 import { AgendarComCorretorButton } from "./agendar-com-corretor-button";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
+import { instagramUrl, facebookUrl } from "@/lib/redes-sociais";
 
 type PerfilRow = {
   id: string;
   nome: string;
   role: string;
+  rede_social: string | null;
+  facebook: string | null;
   corretor_perfis: {
     estrelas: number;
     total_negocios: number;
@@ -70,7 +73,7 @@ export default async function PerfilCorretorPage({
     supabase
       .from("profiles")
       .select(
-        "id, nome, role, corretor_perfis!profile_id(estrelas, total_negocios, created_at, organizacao:organizacao_catalogo_id(nome))",
+        "id, nome, role, rede_social, facebook, corretor_perfis!profile_id(estrelas, total_negocios, created_at, organizacao:organizacao_catalogo_id(nome))",
       )
       .eq("id", id)
       .single(),
@@ -142,6 +145,30 @@ export default async function PerfilCorretorPage({
                     {cp.estrelas.toFixed(1)}
                   </span>
                 </div>
+                {(perfil.rede_social || perfil.facebook) && (
+                  <div className="flex gap-8 mt-8">
+                    {perfil.rede_social && (
+                      <a
+                        href={instagramUrl(perfil.rede_social)}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="btn btn-outline btn-sm"
+                      >
+                        📷 Instagram
+                      </a>
+                    )}
+                    {perfil.facebook && (
+                      <a
+                        href={facebookUrl(perfil.facebook)}
+                        target="_blank"
+                        rel="noopener noreferrer nofollow"
+                        className="btn btn-outline btn-sm"
+                      >
+                        📘 Facebook
+                      </a>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
 

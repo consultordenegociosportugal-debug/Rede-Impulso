@@ -48,6 +48,7 @@ export function EditarPerfilForm({
   nomeAtual,
   telefoneAtual,
   redeSocialAtual,
+  facebookAtual,
   fotoUrlAtual,
   role,
   dadosCorretor,
@@ -57,6 +58,7 @@ export function EditarPerfilForm({
   nomeAtual: string;
   telefoneAtual: string;
   redeSocialAtual: string;
+  facebookAtual: string;
   fotoUrlAtual: string | null;
   role: string;
   dadosCorretor: {
@@ -72,6 +74,7 @@ export function EditarPerfilForm({
   const [nome, setNome] = useState(nomeAtual);
   const [telefone, setTelefone] = useState(formatarTelefone(telefoneAtual));
   const [redeSocial, setRedeSocial] = useState(redeSocialAtual);
+  const [facebook, setFacebook] = useState(facebookAtual);
   const [fotoUrl, setFotoUrl] = useState(fotoUrlAtual);
   const [fotoArquivo, setFotoArquivo] = useState<File | null>(null);
   const [fotoPreview, setFotoPreview] = useState<string | null>(null);
@@ -167,6 +170,7 @@ export function EditarPerfilForm({
         nome: nome.trim(),
         telefone,
         rede_social: redeSocial.trim() || null,
+        facebook: facebook.trim() || null,
         foto_url: novaFotoUrl,
       })
       .eq("id", userId);
@@ -295,16 +299,33 @@ export function EditarPerfilForm({
         )}
       </div>
 
-      <div className="field">
-        <label htmlFor="rede">Instagram (opcional)</label>
-        <input
-          type="text"
-          id="rede"
-          placeholder="@seuusuario"
-          value={redeSocial}
-          onChange={(e) => setRedeSocial(formatarInstagram(e.target.value))}
-        />
+      <div className="grid grid-2">
+        <div className="field">
+          <label htmlFor="rede">Instagram (opcional)</label>
+          <input
+            type="text"
+            id="rede"
+            placeholder="@seuusuario"
+            value={redeSocial}
+            onChange={(e) => setRedeSocial(formatarInstagram(e.target.value))}
+          />
+        </div>
+        <div className="field">
+          <label htmlFor="facebook">Facebook (opcional)</label>
+          <input
+            type="text"
+            id="facebook"
+            placeholder="facebook.com/suapagina"
+            value={facebook}
+            onChange={(e) => setFacebook(e.target.value)}
+          />
+        </div>
       </div>
+      {(redeSocial || facebook) && (
+        <p className="hint" style={{ marginTop: -8 }}>
+          Aparecem no seu perfil público — ajuda quem está te conhecendo a confirmar que é você mesmo.
+        </p>
+      )}
 
       {role === "corretor" && (
         <div className="field">

@@ -18,7 +18,7 @@ export default async function EditarPerfilPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("nome, telefone, rede_social, foto_url, role")
+    .select("nome, telefone, rede_social, facebook, foto_url, role")
     .eq("id", user.id)
     .single();
 
@@ -60,6 +60,7 @@ export default async function EditarPerfilPage() {
             nomeAtual={profile?.nome ?? ""}
             telefoneAtual={profile?.telefone ?? ""}
             redeSocialAtual={profile?.rede_social ?? ""}
+            facebookAtual={profile?.facebook ?? ""}
             fotoUrlAtual={profile?.foto_url ?? null}
             role={role}
             dadosCorretor={dadosCorretor}
