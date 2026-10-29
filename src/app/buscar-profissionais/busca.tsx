@@ -12,6 +12,7 @@ type Resultado = {
   papel: Papel;
   cidade: string | null;
   detalhe: string | null;
+  fotoUrl: string | null;
 };
 
 const ICONE_PAPEL: Record<Papel, string> = {
@@ -158,7 +159,19 @@ export function BuscaProfissionais() {
             resultados.map((r) => (
               <Link key={`${r.papel}-${r.id}`} href={`/perfil-corretor?id=${r.id}`} className="card">
                 <div className="flex items-center gap-8">
-                  <span style={{ fontSize: 20 }} aria-hidden="true">{ICONE_PAPEL[r.papel]}</span>
+                  {r.fotoUrl ? (
+                    <span
+                      className="avatar sm"
+                      style={{
+                        backgroundImage: `url(${r.fotoUrl})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }}
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <span style={{ fontSize: 20 }} aria-hidden="true">{ICONE_PAPEL[r.papel]}</span>
+                  )}
                   <strong style={{ fontSize: 15 }}>{r.nome}</strong>
                 </div>
                 <p className="hint" style={{ marginBottom: 0 }}>

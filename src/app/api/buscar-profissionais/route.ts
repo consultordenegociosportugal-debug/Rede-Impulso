@@ -7,13 +7,14 @@ type Resultado = {
   papel: "corretor";
   cidade: string | null;
   detalhe: string | null;
+  fotoUrl: string | null;
 };
 
 type CorretorRow = {
   profile_id: string;
   creci: string | null;
   cidade: string | null;
-  profiles: { nome: string } | null;
+  profiles: { nome: string; foto_url: string | null } | null;
 };
 
 // Busca de corretor para o cliente — mesma ideia das 3 abas do AppBarber
@@ -33,7 +34,9 @@ export async function GET(request: NextRequest) {
 
   let corretorQuery = supabase
     .from("corretor_perfis")
-    .select("profile_id, creci, cidade, profiles!corretor_perfis_profile_id_fkey!inner(nome)")
+    .select(
+      "profile_id, creci, cidade, profiles!corretor_perfis_profile_id_fkey!inner(nome, foto_url)",
+    )
     .limit(12);
   corretorQuery =
     modo === "cidade"
@@ -49,6 +52,7 @@ export async function GET(request: NextRequest) {
     papel: "corretor" as const,
     cidade: r.cidade,
     detalhe: r.creci ? `CRECI ${r.creci}` : null,
+    fotoUrl: r.profiles?.foto_url ?? null,
   }));
 
   return NextResponse.json({ resultados });

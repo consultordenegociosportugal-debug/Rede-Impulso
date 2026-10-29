@@ -11,6 +11,7 @@ type PerfilRow = {
   role: string;
   rede_social: string | null;
   facebook: string | null;
+  foto_url: string | null;
   corretor_perfis: {
     estrelas: number;
     total_negocios: number;
@@ -73,7 +74,7 @@ export default async function PerfilCorretorPage({
     supabase
       .from("profiles")
       .select(
-        "id, nome, role, rede_social, facebook, corretor_perfis!profile_id(estrelas, total_negocios, created_at, organizacao:organizacao_catalogo_id(nome))",
+        "id, nome, role, rede_social, facebook, foto_url, corretor_perfis!profile_id(estrelas, total_negocios, created_at, organizacao:organizacao_catalogo_id(nome))",
       )
       .eq("id", id)
       .single(),
@@ -131,7 +132,20 @@ export default async function PerfilCorretorPage({
         <div className={styles.layout}>
           <div className="card">
             <div className={styles.head}>
-              <div className="avatar lg">{iniciais(perfil.nome)}</div>
+              <div
+                className="avatar lg"
+                style={
+                  perfil.foto_url
+                    ? {
+                        backgroundImage: `url(${perfil.foto_url})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                      }
+                    : undefined
+                }
+              >
+                {!perfil.foto_url && iniciais(perfil.nome)}
+              </div>
               <div>
                 <div style={{ fontWeight: 600, fontSize: 17 }}>
                   {perfil.nome}
