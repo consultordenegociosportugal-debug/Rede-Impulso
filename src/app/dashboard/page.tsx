@@ -94,8 +94,16 @@ export default async function DashboardPage() {
       .lte("data_hora", new Date().toISOString()),
   ]);
 
-  const visitas = (dadosVisitas ?? []) as unknown as VisitaRow[];
-  const todasVisitas = (dadosTodasVisitas ?? []) as unknown as VisitaRow[];
+  // Cancelada não é atividade real — sem isso, "Visitas agendadas",
+  // "Clientes atendidos" e o gráfico por dia da semana ficam inflados
+  // com visita que não aconteceu, e "sem retorno" mascara o cliente
+  // cujo único contato foi uma visita depois cancelada.
+  const visitas = ((dadosVisitas ?? []) as unknown as VisitaRow[]).filter(
+    (v) => v.status !== "cancelada",
+  );
+  const todasVisitas = ((dadosTodasVisitas ?? []) as unknown as VisitaRow[]).filter(
+    (v) => v.status !== "cancelada",
+  );
 
   // Cliente avulso e comprador autenticado são identidades distintas —
   // combina as duas pra não contar duas vezes o mesmo comprador, nem
