@@ -221,6 +221,15 @@ export async function POST(request: NextRequest) {
     .select("id, data_hora")
     .single();
 
+  if (error?.code === "23505") {
+    // Corrida: outra pessoa confirmou esse exato horário entre a
+    // checagem de disponibilidade acima e este insert.
+    return NextResponse.json(
+      { erro: "Esse horário acabou de ser reservado por outra pessoa. Escolha outro." },
+      { status: 409 },
+    );
+  }
+
   if (error || !visita) {
     return NextResponse.json(
       { erro: error?.message ?? "Não foi possível agendar a visita." },
