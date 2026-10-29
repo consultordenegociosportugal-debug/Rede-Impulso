@@ -77,7 +77,11 @@ export default async function PainelNegociosPage({
     .or(`data_hora.gte.${inicioDeHoje.toISOString()},status.eq.confirmada`)
     .order("data_hora", { ascending: true });
   const visitas = (dadosVisitas ?? []) as unknown as VisitaRow[];
-  const futuras = visitas.filter((v) => new Date(v.data_hora) >= inicioDeHoje);
+  // Cancelada não conta como "próxima" nem "hoje" — senão os números do
+  // topo ficam inflados com visita que não vai mais acontecer.
+  const futuras = visitas.filter(
+    (v) => new Date(v.data_hora) >= inicioDeHoje && v.status !== "cancelada",
+  );
 
   // A integração é opcional em duas camadas: as variáveis de ambiente
   // podem nem existir, e mesmo existindo cada corretor decide se
