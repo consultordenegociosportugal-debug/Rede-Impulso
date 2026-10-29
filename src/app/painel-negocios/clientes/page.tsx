@@ -44,6 +44,7 @@ export default async function ClientesPage() {
     .select("id, data_hora, status, cliente_avulso_id")
     .eq("corretor_id", user.id)
     .not("cliente_avulso_id", "is", null)
+    .neq("status", "cancelada")
     .gte("data_hora", new Date().toISOString())
     .order("data_hora", { ascending: true });
 
