@@ -13,20 +13,22 @@
 //    pela Rede Impulso."
 //   {{1}} nome de quem recebe · {{2}} nome da contraparte · {{3}} data · {{4}} hora
 //
-// lembrete_visita (novo — criar no WhatsApp Manager antes de usar):
+// lembrete_visita (em análise na Meta):
 //   "Olá {{1}}! Lembrete: sua visita com {{2}} é hoje às {{3}}, pela Rede
 //    Impulso."
 //   {{1}} nome de quem recebe · {{2}} nome da contraparte · {{3}} hora
 //
-// cancelamento_visita (novo — criar no WhatsApp Manager antes de usar):
+// cancelamento_visita (em análise na Meta):
 //   "Olá {{1}}! Sua visita com {{2}}, marcada para {{3}} às {{4}}, foi
 //    cancelada pela Rede Impulso."
 //   {{1}} nome de quem recebe · {{2}} nome da contraparte · {{3}} data · {{4}} hora
 //
-// pedido_avaliacao (novo — criar no WhatsApp Manager antes de usar):
+// pedido_avaliacao (em análise na Meta):
 //   "Olá {{1}}! Sua visita com {{2}} já aconteceu. Pode avaliar o
-//    atendimento? Leva menos de um minuto: {{3}}"
+//    atendimento? Leva menos de um minuto: {{3}} Obrigado!"
 //   {{1}} nome de quem recebe · {{2}} nome do corretor · {{3}} link da avaliação
+//   (termina com "Obrigado!" porque a Meta não aceita variável como último
+//   caractere do corpo do modelo)
 
 const VERSAO_GRAPH = "v21.0";
 

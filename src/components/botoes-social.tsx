@@ -4,11 +4,13 @@ import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./botoes-social.module.css";
 
-type Provedor = "google" | "facebook";
+type Provedor = "google";
 
+// Facebook fica fora por enquanto — o app da Meta só tem o produto "Login do
+// Facebook para Empresas" configurado, não o Login do Facebook clássico que
+// o Supabase Auth exige, e habilitar isso exige revisão do app na Meta.
 const PROVEDORES: { valor: Provedor; nome: string }[] = [
   { valor: "google", nome: "Google" },
-  { valor: "facebook", nome: "Facebook" },
 ];
 
 /** Mensagens do Supabase chegam em inglês — aqui viram texto acionável em pt-BR. */
@@ -39,17 +41,6 @@ function IconeGoogle() {
       <path
         fill="#1976D2"
         d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"
-      />
-    </svg>
-  );
-}
-
-function IconeFacebook() {
-  return (
-    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" className={styles.icone}>
-      <path
-        fill="#1877F2"
-        d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.412c0-3.026 1.792-4.697 4.533-4.697 1.313 0 2.686.236 2.686.236v2.971H15.83c-1.491 0-1.956.931-1.956 1.886v2.265h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"
       />
     </svg>
   );
@@ -113,7 +104,7 @@ export function BotoesSocial({
             onClick={() => entrarCom(valor, nome)}
             disabled={bloqueado || carregando !== null}
           >
-            {valor === "google" ? <IconeGoogle /> : <IconeFacebook />}
+            <IconeGoogle />
             {carregando === valor ? "Abrindo…" : `Continuar com ${nome}`}
           </button>
         ))}
