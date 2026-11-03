@@ -116,22 +116,34 @@ export function DisponibilidadeForm({ janelasExistentes }: { janelasExistentes: 
               />
               {dia.label}
             </label>
-            <div className="flex items-center gap-8" style={{ flexWrap: "nowrap" }}>
-              <input
-                type="time"
-                value={linha.inicio}
-                disabled={!linha.ativo}
-                onChange={(e) => atualizar(dia.valor, { inicio: e.target.value })}
-                style={{ width: "auto" }}
-              />
-              <span className="muted">até</span>
-              <input
-                type="time"
-                value={linha.fim}
-                disabled={!linha.ativo}
-                onChange={(e) => atualizar(dia.valor, { fim: e.target.value })}
-                style={{ width: "auto" }}
-              />
+            <div className="flex items-end gap-8" style={{ flexWrap: "nowrap" }}>
+              <label style={{ margin: 0 }}>
+                <span className="hint" style={{ display: "block", marginBottom: 4 }}>
+                  Hora de início
+                </span>
+                <input
+                  type="time"
+                  value={linha.inicio}
+                  disabled={!linha.ativo}
+                  onChange={(e) => atualizar(dia.valor, { inicio: e.target.value })}
+                  style={{ width: "auto" }}
+                />
+              </label>
+              <span className="muted" style={{ paddingBottom: 9 }}>
+                até
+              </span>
+              <label style={{ margin: 0 }}>
+                <span className="hint" style={{ display: "block", marginBottom: 4 }}>
+                  Hora de término
+                </span>
+                <input
+                  type="time"
+                  value={linha.fim}
+                  disabled={!linha.ativo}
+                  onChange={(e) => atualizar(dia.valor, { fim: e.target.value })}
+                  style={{ width: "auto" }}
+                />
+              </label>
             </div>
           </div>
         );

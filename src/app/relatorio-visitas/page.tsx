@@ -17,8 +17,8 @@ const STATUS_BADGE: Record<string, string> = {
   solicitada: "badge-amber",
   confirmada: "badge-primary",
   cancelada: "badge-outline",
-  realizada: "badge-outline",
-  nao_compareceu: "badge-outline",
+  realizada: "badge-primary",
+  nao_compareceu: "badge-coral",
 };
 
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {

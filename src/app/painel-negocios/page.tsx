@@ -5,14 +5,16 @@ import { createClient } from "@/lib/supabase/server";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 import { VisitaAcoes } from "./visita-acoes";
+import { QuadroSemanal } from "./quadro-semanal";
+import { ViewToggle } from "./view-toggle";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
 
 const STATUS_VISITA: Record<string, { label: string; className: string }> = {
   solicitada: { label: "Aguardando você", className: "badge-amber" },
   confirmada: { label: "Confirmada", className: "badge-primary" },
   cancelada: { label: "Cancelada", className: "badge-outline" },
-  realizada: { label: "Realizada", className: "badge-outline" },
-  nao_compareceu: { label: "Cliente não apareceu", className: "badge-outline" },
+  realizada: { label: "Realizada", className: "badge-primary" },
+  nao_compareceu: { label: "Cliente não apareceu", className: "badge-coral" },
 };
 
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
@@ -179,56 +181,61 @@ export default async function PainelNegociosPage({
               </p>
             </div>
           ) : (
-            <div className="card" style={{ padding: "8px 20px" }}>
-              {visitas.map((visita) => {
-                const badge = STATUS_VISITA[visita.status] ?? {
-                  label: visita.status,
-                  className: "badge-outline",
-                };
-                const atrasada =
-                  visita.status === "confirmada" && new Date(visita.data_hora) < inicioDeHoje;
-                const nomeCliente = visita.comprador?.nome ?? visita.cliente_avulso?.nome;
-                const telefoneCliente =
-                  visita.comprador?.telefone ?? visita.cliente_avulso?.telefone;
-                return (
-                  <div key={visita.id} className="list-row">
-                    <div
-                      className="flex between items-center"
-                      style={{ width: "100%", gap: 12, flexWrap: "wrap" }}
-                    >
-                      <div style={{ minWidth: 220, flex: 1 }}>
-                        <div style={{ fontWeight: 600, fontSize: 14 }}>
-                          {formatoDataHora.format(new Date(visita.data_hora))}
-                        </div>
-                        <div className="hint" style={{ margin: 0 }}>
-                          Cliente: {nomeCliente ?? "—"}
-                          {telefoneCliente ? ` · ${telefoneCliente}` : ""}
-                        </div>
-                        {visita.observacoes && (
-                          <div className="hint" style={{ margin: 0 }}>
-                            “{visita.observacoes}”
+            <ViewToggle
+              lista={
+                <div className="card" style={{ padding: "8px 20px" }}>
+                  {visitas.map((visita) => {
+                    const badge = STATUS_VISITA[visita.status] ?? {
+                      label: visita.status,
+                      className: "badge-outline",
+                    };
+                    const atrasada =
+                      visita.status === "confirmada" && new Date(visita.data_hora) < inicioDeHoje;
+                    const nomeCliente = visita.comprador?.nome ?? visita.cliente_avulso?.nome;
+                    const telefoneCliente =
+                      visita.comprador?.telefone ?? visita.cliente_avulso?.telefone;
+                    return (
+                      <div key={visita.id} className="list-row">
+                        <div
+                          className="flex between items-center"
+                          style={{ width: "100%", gap: 12, flexWrap: "wrap" }}
+                        >
+                          <div style={{ minWidth: 220, flex: 1 }}>
+                            <div style={{ fontWeight: 600, fontSize: 14 }}>
+                              {formatoDataHora.format(new Date(visita.data_hora))}
+                            </div>
+                            <div className="hint" style={{ margin: 0 }}>
+                              Cliente: {nomeCliente ?? "—"}
+                              {telefoneCliente ? ` · ${telefoneCliente}` : ""}
+                            </div>
+                            {visita.observacoes && (
+                              <div className="hint" style={{ margin: 0 }}>
+                                “{visita.observacoes}”
+                              </div>
+                            )}
                           </div>
-                        )}
+                          <div className="flex gap-8 items-center">
+                            {atrasada && <span className="badge badge-amber">Atrasada</span>}
+                            <span className={`badge ${badge.className}`}>{badge.label}</span>
+                            {visita.google_event_id && (
+                              <span className="badge badge-outline">📅 na agenda</span>
+                            )}
+                          </div>
+                          <VisitaAcoes
+                            visitaId={visita.id}
+                            status={visita.status}
+                            dataHora={visita.data_hora}
+                            googleEventId={visita.google_event_id}
+                            googleConfigurado={googleConfigurado}
+                          />
+                        </div>
                       </div>
-                      <div className="flex gap-8 items-center">
-                        {atrasada && <span className="badge badge-amber">Atrasada</span>}
-                        <span className={`badge ${badge.className}`}>{badge.label}</span>
-                        {visita.google_event_id && (
-                          <span className="badge badge-outline">📅 na agenda</span>
-                        )}
-                      </div>
-                      <VisitaAcoes
-                        visitaId={visita.id}
-                        status={visita.status}
-                        dataHora={visita.data_hora}
-                        googleEventId={visita.google_event_id}
-                        googleConfigurado={googleConfigurado}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    );
+                  })}
+                </div>
+              }
+              semana={<QuadroSemanal visitas={visitas} googleConfigurado={googleConfigurado} />}
+            />
           )}
         </div>
       </div>

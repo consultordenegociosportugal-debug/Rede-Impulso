@@ -8,8 +8,8 @@ const STATUS_VISITA: Record<string, { label: string; className: string }> = {
   solicitada: { label: "Aguardando confirmação", className: "badge-amber" },
   confirmada: { label: "Confirmada", className: "badge-primary" },
   cancelada: { label: "Cancelada", className: "badge-outline" },
-  realizada: { label: "Realizada", className: "badge-outline" },
-  nao_compareceu: { label: "Você não compareceu", className: "badge-outline" },
+  realizada: { label: "Realizada", className: "badge-primary" },
+  nao_compareceu: { label: "Você não compareceu", className: "badge-coral" },
 };
 
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
