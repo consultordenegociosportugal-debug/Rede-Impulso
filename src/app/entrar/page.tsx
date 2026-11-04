@@ -54,10 +54,7 @@ function EntrarForm() {
       return;
     }
 
-    // Mesma decisão usada no retorno do login social (/auth/callback),
-    // para os dois caminhos não pararem em telas diferentes.
     router.push(await destinoPosLogin(supabase, data.user.id, { depois }));
-    router.refresh();
   }
 
   return (

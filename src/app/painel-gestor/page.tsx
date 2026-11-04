@@ -217,6 +217,11 @@ export default async function PainelGestorPage({
             <Link
               key={p}
               href={`/painel-gestor?periodo=${p}`}
+              // Sem isso, o Next prefetch de cada botão de período assim
+              // que a tela montava, multiplicando requisições concorrentes
+              // pra mesma URL sem necessidade (só 4 períodos, trocados
+              // raramente) — reduz ruído de rede, não é fix de bug.
+              prefetch={false}
               className={`btn btn-sm ${p === periodo ? "btn-primary" : "btn-outline"}`}
             >
               {PERIODO_LABEL[p]}
