@@ -42,7 +42,22 @@ export function BuscaProfissionais() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!termo.trim() || modo === "proximas") return;
+    if (modo === "proximas") return;
+    // Sem esta checagem, clicar "Buscar" vazio (ou com 1 letra) não
+    // fazia nada visível — parecia que o botão estava quebrado. A API
+    // já ignora buscas de menos de 2 letras, então avisamos aqui em vez
+    // de mandar a requisição e mostrar "Nenhum profissional encontrado"
+    // como se o corretor não existisse.
+    if (termo.trim().length < 2) {
+      setResultados(null);
+      setErro(
+        termo.trim()
+          ? "Digite pelo menos 2 letras para buscar."
+          : `Digite ${modo === "nome" ? "um nome" : "uma cidade"} para buscar.`,
+      );
+      setStatus("erro");
+      return;
+    }
     setStatus("buscando");
     setErro(null);
     try {

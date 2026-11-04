@@ -81,6 +81,11 @@ export function Nav({ active }: { active: string }) {
   const [role, setRole] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [open, setOpen] = useState(false);
+  // Até a primeira checagem de sessão resolver, não sabemos se quem
+  // está vendo é visitante, cliente ou corretor — sem este guard, o
+  // menu nascia assumindo "visitante" e trocava pro menu certo um
+  // instante depois, pulando na tela pra quem já estava logado.
+  const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
@@ -91,6 +96,7 @@ export function Nav({ active }: { active: string }) {
         setNome(null);
         setRole(null);
         setIsAdmin(false);
+        setCarregando(false);
         return;
       }
       const { data } = await supabase
@@ -101,6 +107,7 @@ export function Nav({ active }: { active: string }) {
       setNome(data?.nome ?? null);
       setRole(data?.role ?? null);
       setIsAdmin(Boolean(data?.is_admin));
+      setCarregando(false);
     }
 
     supabase.auth.getUser().then(({ data }) => syncUser(data.user ?? null));
@@ -225,13 +232,15 @@ export function Nav({ active }: { active: string }) {
       </div>
       <div className={open ? "nav-panel open" : "nav-panel"}>
         <div className="nav-links">
-          {(!user
-            ? NAV_ITEMS_VISITANTE
-            : role === "comprador"
-              ? NAV_ITEMS_CLIENTE
-              : role === "gestor"
-                ? NAV_ITEMS_GESTOR
-                : NAV_ITEMS
+          {(carregando
+            ? []
+            : !user
+              ? NAV_ITEMS_VISITANTE
+              : role === "comprador"
+                ? NAV_ITEMS_CLIENTE
+                : role === "gestor"
+                  ? NAV_ITEMS_GESTOR
+                  : NAV_ITEMS
           ).map((item, indice) => {
             if (item.type === "divider") {
               return <div className="nav-divider" key={`divisor-${indice}`} aria-hidden="true" />;
