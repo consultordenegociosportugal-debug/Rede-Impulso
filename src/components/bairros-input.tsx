@@ -58,7 +58,13 @@ export function BairrosInput({
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Enter" || e.key === ",") {
+      // Sem o stopPropagation, o Enter também aciona o atalho do
+      // formulário (que avança de passo) — ele lê o `bairros` de antes
+      // desta tecla, então mesmo com o bairro recém-adicionado aqui, a
+      // validação dele ainda vê a lista vazia e deixa um erro preso na
+      // tela ("Informe ao menos um bairro") por cima do bairro já certo.
       e.preventDefault();
+      e.stopPropagation();
       adicionar(texto);
     } else if (e.key === "Backspace" && !texto && value.length > 0) {
       remover(value[value.length - 1]);
