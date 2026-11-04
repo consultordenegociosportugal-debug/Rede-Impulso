@@ -29,6 +29,12 @@
 //   {{1}} nome de quem recebe · {{2}} nome do corretor · {{3}} link da avaliação
 //   (termina com "Obrigado!" porque a Meta não aceita variável como último
 //   caractere do corpo do modelo)
+//
+// resumo_semanal_corretor (a submeter):
+//   "Olá {{1}}! Aqui vai o resumo da sua semana na Rede Impulso: você tem
+//    {{2}} visita(s) agendada(s), sendo {{3}} já confirmada(s) com os
+//    clientes. Continue assim!"
+//   {{1}} nome do corretor · {{2}} total de visitas na semana · {{3}} confirmadas
 
 const VERSAO_GRAPH = "v21.0";
 
@@ -165,5 +171,21 @@ export async function enviarPedidoAvaliacaoWhatsapp(params: EnvioPedidoAvaliacao
     params.nomeDestinatario,
     params.nomeCorretor,
     params.link,
+  ]);
+}
+
+type EnvioResumoSemanal = {
+  telefone: string;
+  nomeCorretor: string;
+  totalVisitas: number;
+  confirmadas: number;
+};
+
+export async function enviarResumoSemanalWhatsapp(params: EnvioResumoSemanal): Promise<void> {
+  const nomeTemplate = process.env.WHATSAPP_TEMPLATE_RESUMO_SEMANAL || "resumo_semanal_corretor";
+  await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+    params.nomeCorretor,
+    String(params.totalVisitas),
+    String(params.confirmadas),
   ]);
 }
