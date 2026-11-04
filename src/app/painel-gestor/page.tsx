@@ -190,11 +190,13 @@ export default async function PainelGestorPage({
   // visitas e 2 realizadas deve aparecer acima de outro com 20 visitas e
   // 5 realizadas. Quem não teve nenhum agendamento no período vai pro
   // fim, sem taxa calculável.
-  const resumoCorretores = Array.from(porCorretor.values()).sort((a, b) => {
-    const taxaA = a.total > 0 ? a.realizadas / a.total : -1;
-    const taxaB = b.total > 0 ? b.realizadas / b.total : -1;
-    return taxaB - taxaA;
-  });
+  const resumoCorretores = Array.from(porCorretor.entries())
+    .map(([id, dados]) => ({ id, ...dados }))
+    .sort((a, b) => {
+      const taxaA = a.total > 0 ? a.realizadas / a.total : -1;
+      const taxaB = b.total > 0 ? b.realizadas / b.total : -1;
+      return taxaB - taxaA;
+    });
   const mediaGeral =
     npsRespostas.length > 0
       ? npsRespostas.reduce((s, r) => s + r.nota, 0) / npsRespostas.length
@@ -260,7 +262,7 @@ export default async function PainelGestorPage({
             {resumoCorretores.map((c) => {
               const media = c.notas.length > 0 ? c.notas.reduce((s, n) => s + n, 0) / c.notas.length : null;
               return (
-                <div key={c.nome} className="list-row">
+                <div key={c.id} className="list-row">
                   <div className="flex between items-center" style={{ width: "100%", gap: 12, flexWrap: "wrap" }}>
                     <div style={{ minWidth: 160 }}>
                       <div style={{ fontWeight: 600, fontSize: 14 }}>{c.nome}</div>
