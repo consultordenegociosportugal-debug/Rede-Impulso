@@ -9,6 +9,8 @@ import { QuadroSemanal } from "./quadro-semanal";
 import { ViewToggle } from "./view-toggle";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
 
+const PAPEIS_COM_PAINEL = ["corretor"];
+
 const STATUS_VISITA: Record<string, { label: string; className: string }> = {
   solicitada: { label: "Aguardando você", className: "badge-amber" },
   confirmada: { label: "Confirmada", className: "badge-primary" },
@@ -58,6 +60,32 @@ export default async function PainelNegociosPage({
 
   if (!user) {
     redirect("/entrar");
+  }
+
+  // Este painel é só do corretor — sem isso, qualquer comprador
+  // autenticado conseguia abrir a tela (e, pelas outras duas, até
+  // configurar disponibilidade e se auto-agendar como se fosse
+  // corretor). Mesmo padrão de /relatorio-visitas.
+  const { data: perfilUsuario } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!PAPEIS_COM_PAINEL.includes(perfilUsuario?.role ?? "")) {
+    return (
+      <>
+        <Nav active="/painel-negocios" />
+        <div className="wrap">
+          <div className="card" style={{ margin: "48px 0", textAlign: "center", padding: "40px 20px" }}>
+            <p className="muted" style={{ margin: 0 }}>
+              Este painel é para quem atende visitas — corretores.
+            </p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
   }
 
   // Visitas em que este usuário é o responsável. `comprador` aparece

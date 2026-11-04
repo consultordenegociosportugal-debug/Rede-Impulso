@@ -5,6 +5,8 @@ import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { NovoClienteForm } from "./novo-cliente-form";
 
+const PAPEIS_COM_CLIENTES = ["corretor"];
+
 type ClienteRow = {
   id: string;
   nome: string;
@@ -29,6 +31,32 @@ export default async function ClientesPage() {
 
   if (!user) {
     redirect("/entrar?depois=/painel-negocios/clientes");
+  }
+
+  // Cadastrar cliente avulso e agendar é operação de corretor — sem
+  // isso, qualquer comprador autenticado conseguia usar este formulário
+  // e se auto-agendar como se fosse corretor (ver migração de RLS que
+  // fecha o mesmo buraco no banco).
+  const { data: perfilUsuario } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  if (!PAPEIS_COM_CLIENTES.includes(perfilUsuario?.role ?? "")) {
+    return (
+      <>
+        <Nav active="/painel-negocios" />
+        <div className="wrap">
+          <div className="card" style={{ margin: "48px 0", textAlign: "center", padding: "40px 20px" }}>
+            <p className="muted" style={{ margin: 0 }}>
+              Esta página é para quem atende visitas — corretores.
+            </p>
+          </div>
+        </div>
+        <Footer />
+      </>
+    );
   }
 
   const { data: clientesData } = await supabase

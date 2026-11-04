@@ -165,6 +165,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // corretorId === user.id já garante que é o próprio usuário, mas não
+  // que esse usuário É corretor — sem isto, qualquer comprador logado
+  // conseguia se auto-agendar como cliente avulso de si mesmo (o RLS
+  // da migração 0065 bloqueia o insert, mas devolveria um erro de banco
+  // genérico em vez desta mensagem).
+  if (clienteAvulso) {
+    const { data: corretorPerfil } = await supabase
+      .from("corretor_perfis")
+      .select("profile_id")
+      .eq("profile_id", corretorId)
+      .maybeSingle();
+    if (!corretorPerfil) {
+      return NextResponse.json(
+        { erro: "Você ainda não está cadastrado como corretor na Rede Impulso." },
+        { status: 403 },
+      );
+    }
+  }
+
   const { configurado, horarios } = await horariosDisponiveis(
     supabase,
     corretorId as string,
