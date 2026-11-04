@@ -107,6 +107,30 @@ export default async function PainelNegociosPage({
     .or(`data_hora.gte.${inicioDeHoje.toISOString()},status.eq.confirmada`)
     .order("data_hora", { ascending: true });
   const visitas = (dadosVisitas ?? []) as unknown as VisitaRow[];
+
+  // Sinal pro corretor quando a agenda está vazia: hoje ele configura
+  // disponibilidade e fica esperando sem nenhuma pista do porquê ninguém
+  // agendou. Olha disponibilidade configurada + perfil completo (foto,
+  // bairros) pra sugerir o próximo passo certo, em vez de só "sem
+  // visitas".
+  let diagnosticoAgendaVazia: { temDisponibilidade: boolean; perfilCompleto: boolean } | null =
+    null;
+  if (visitas.length === 0) {
+    const [{ count: totalDisponibilidade }, { data: perfilCorretor }, { data: fotoPerfil }] =
+      await Promise.all([
+        supabase
+          .from("disponibilidade_semanal")
+          .select("id", { count: "exact", head: true })
+          .eq("profile_id", user.id),
+        supabase.from("corretor_perfis").select("bairros_atuacao").eq("profile_id", user.id).single(),
+        supabase.from("profiles").select("foto_url").eq("id", user.id).single(),
+      ]);
+    diagnosticoAgendaVazia = {
+      temDisponibilidade: (totalDisponibilidade ?? 0) > 0,
+      perfilCompleto: Boolean(fotoPerfil?.foto_url) && (perfilCorretor?.bairros_atuacao?.length ?? 0) > 0,
+    };
+  }
+  const linkPerfilPublico = `https://www.redeimpulso.com.br/perfil-corretor?id=${user.id}`;
   // Cancelada não conta como "próxima" nem "hoje" — senão os números do
   // topo ficam inflados com visita que não vai mais acontecer.
   const futuras = visitas.filter(
@@ -203,9 +227,31 @@ export default async function PainelNegociosPage({
               <p className="muted" style={{ margin: 0 }}>
                 Nenhuma visita agendada para os próximos dias.
               </p>
+              {!diagnosticoAgendaVazia?.temDisponibilidade ? (
+                <p className="hint" style={{ marginTop: 8 }}>
+                  Você ainda não configurou nenhum horário de atendimento — sem isso,
+                  ninguém consegue agendar com você.{" "}
+                  <Link href="/painel-negocios/disponibilidade">Configurar disponibilidade →</Link>
+                </p>
+              ) : !diagnosticoAgendaVazia.perfilCompleto ? (
+                <p className="hint" style={{ marginTop: 8 }}>
+                  Sua disponibilidade está configurada, mas seu perfil ainda está
+                  incompleto (falta foto ou bairros de atuação) — isso pode estar
+                  deixando você de fora da busca de clientes.{" "}
+                  <Link href="/editar-perfil">Completar perfil →</Link>
+                </p>
+              ) : (
+                <p className="hint" style={{ marginTop: 8 }}>
+                  Seu perfil está pronto — compartilhe o link abaixo direto com seus
+                  clientes pra eles agendarem com você:
+                  <br />
+                  <a href={linkPerfilPublico} style={{ wordBreak: "break-all" }}>
+                    {linkPerfilPublico}
+                  </a>
+                </p>
+              )}
               <p className="hint" style={{ marginTop: 8 }}>
-                Configure sua disponibilidade e compartilhe seu perfil, ou cadastre um
-                cliente direto para agendar na hora.
+                Ou cadastre um cliente direto para agendar na hora.
               </p>
             </div>
           ) : (
