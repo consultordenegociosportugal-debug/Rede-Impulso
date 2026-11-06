@@ -183,6 +183,9 @@ export default async function AdminPage() {
             </h1>
           </div>
           <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
+            <Link href="/admin/eventos" className="btn btn-outline btn-sm">
+              🕒 Linha do tempo de visitas
+            </Link>
             <Link href="/admin/suporte" className="btn btn-outline btn-sm">
               💬 Suporte
             </Link>

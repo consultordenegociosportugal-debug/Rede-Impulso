@@ -51,10 +51,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, jaCancelada: true });
   }
 
-  const { error: erroUpdate } = await supabase
-    .from("visitas")
-    .update({ status: "cancelada" })
-    .eq("id", visitaId);
+  const { error: erroUpdate } = await supabase.rpc("atualizar_status_visita_com_motivo", {
+    p_visita_id: visitaId,
+    p_status: "cancelada",
+    p_motivo: "Cancelada pelo corretor",
+  });
 
   if (erroUpdate) {
     return NextResponse.json({ erro: erroUpdate.message }, { status: 500 });

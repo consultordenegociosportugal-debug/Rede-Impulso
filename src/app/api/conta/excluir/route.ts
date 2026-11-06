@@ -54,15 +54,16 @@ export async function POST(_request: NextRequest) {
   const visitasAfetadas = (visitasData ?? []) as unknown as VisitaAfetada[];
 
   for (const visita of visitasAfetadas) {
-    const { error: erroUpdate } = await admin
-      .from("visitas")
-      .update({ status: "cancelada" })
-      .eq("id", visita.id);
+    const souCorretor = visita.corretor_id === user.id;
+    const { error: erroUpdate } = await admin.rpc("atualizar_status_visita_com_motivo", {
+      p_visita_id: visita.id,
+      p_status: "cancelada",
+      p_motivo: souCorretor ? "Conta do corretor foi excluída" : "Conta do cliente foi excluída",
+    });
     if (erroUpdate) continue; // melhor tentar as próximas do que travar a exclusão inteira
 
     // Quem exclui a conta é um dos dois lados da visita — a contraparte
     // é sempre o OUTRO lado, que precisa ser avisado.
-    const souCorretor = visita.corretor_id === user.id;
     const cliente = visita.comprador ?? visita.cliente_avulso;
     const contraparte = souCorretor ? cliente : visita.corretor;
     if (!contraparte) continue;
