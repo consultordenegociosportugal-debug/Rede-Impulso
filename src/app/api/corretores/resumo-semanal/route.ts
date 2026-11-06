@@ -12,13 +12,39 @@ function autorizado(request: NextRequest) {
   return request.headers.get("authorization") === `Bearer ${segredo}`;
 }
 
-function segundaAnterior(agora: Date): Date {
-  const diaSemana = agora.getDay(); // 0 = domingo
+const FUSO = "America/Sao_Paulo";
+
+// `agora.getDay()` + `setHours(0,0,0,0)` usam o fuso do PROCESSO (UTC na
+// Vercel), não o de Brasília — a corrida roda 11h UTC (8h em Brasília),
+// então "meia-noite" calculada assim caía 3h adiantada: a janela da
+// semana passada incluía 21h-23h59 de domingo retrasado por engano.
+function diaDaSemanaNoFuso(instante: Date): number {
+  const nome = new Intl.DateTimeFormat("en-US", { timeZone: FUSO, weekday: "short" }).format(
+    instante,
+  );
+  return ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].indexOf(nome);
+}
+
+function hojeNoFuso(instante: Date): string {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: FUSO }).format(instante);
+}
+
+// Soma (ou subtrai, com n negativo) dias a uma data yyyy-mm-dd — opera só
+// no calendário (nunca num instante real), então Date.UTC normalizar o
+// estouro de mês/ano sozinho não introduz nenhuma ambiguidade de fuso.
+function somarDias(dataISO: string, n: number): string {
+  const [ano, mes, dia] = dataISO.split("-").map(Number);
+  const d = new Date(Date.UTC(ano, mes - 1, dia + n));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    d.getUTCDate(),
+  ).padStart(2, "0")}`;
+}
+
+function segundaAnteriorIso(agora: Date): string {
+  const diaSemana = diaDaSemanaNoFuso(agora);
   const diasDesdeSegunda = diaSemana === 0 ? 6 : diaSemana - 1;
-  const inicio = new Date(agora);
-  inicio.setHours(0, 0, 0, 0);
-  inicio.setDate(inicio.getDate() - diasDesdeSegunda - 7);
-  return inicio;
+  const dataSegunda = somarDias(hojeNoFuso(agora), -diasDesdeSegunda - 7);
+  return `${dataSegunda}T00:00:00-03:00`;
 }
 
 type CorretorRow = {
@@ -37,9 +63,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ erro: "SUPABASE_SERVICE_ROLE_KEY ausente." }, { status: 503 });
   }
 
-  const inicioSemana = segundaAnterior(new Date());
-  const fimSemana = new Date(inicioSemana);
-  fimSemana.setDate(fimSemana.getDate() + 7);
+  const inicioSemanaIso = segundaAnteriorIso(new Date());
+  const fimSemanaIso = `${somarDias(inicioSemanaIso.slice(0, 10), 7)}T00:00:00-03:00`;
 
   // Resumo é só pra quem é corretor de verdade (tem linha em
   // corretor_perfis) — mesma referência usada em /buscar-profissionais e
@@ -66,16 +91,16 @@ export async function GET(request: NextRequest) {
       .select("id", { count: "exact", head: true })
       .eq("corretor_id", corretor.id)
       .neq("status", "cancelada")
-      .gte("data_hora", inicioSemana.toISOString())
-      .lt("data_hora", fimSemana.toISOString());
+      .gte("data_hora", inicioSemanaIso)
+      .lt("data_hora", fimSemanaIso);
 
     const { count: confirmadas } = await supabase
       .from("visitas")
       .select("id", { count: "exact", head: true })
       .eq("corretor_id", corretor.id)
       .in("status", ["confirmada", "realizada"])
-      .gte("data_hora", inicioSemana.toISOString())
-      .lt("data_hora", fimSemana.toISOString());
+      .gte("data_hora", inicioSemanaIso)
+      .lt("data_hora", fimSemanaIso);
 
     await enviarResumoSemanalWhatsapp({
       telefone: corretor.telefone,

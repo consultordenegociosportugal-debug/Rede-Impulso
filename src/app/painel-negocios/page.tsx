@@ -9,6 +9,7 @@ import { QuadroSemanal } from "./quadro-semanal";
 import { ViewToggle } from "./view-toggle";
 import { LinkPerfilPublico } from "./link-perfil-publico";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
+import { hojeISO } from "@/lib/data";
 
 const PAPEIS_COM_PAINEL = ["corretor"];
 
@@ -92,8 +93,12 @@ export default async function PainelNegociosPage({
   // Visitas em que este usuário é o responsável. `comprador` aparece
   // quando o cliente agendou direto logado; `cliente_avulso` aparece
   // quando o corretor cadastrou e agendou o cliente diretamente.
-  const inicioDeHoje = new Date();
-  inicioDeHoje.setHours(0, 0, 0, 0);
+  // -03:00 explícito: `new Date(); .setHours(0,0,0,0)` monta meia-noite no
+  // fuso do PROCESSO (UTC na Vercel), não o de Brasília — ficava até 3h
+  // adiantado ou atrasado do "hoje" real, dependendo da hora do dia (mesma
+  // causa-raiz do bug já corrigido em disponibilidade.ts).
+  const inicioDeHojeIso = `${hojeISO()}T00:00:00-03:00`;
+  const inicioDeHoje = new Date(inicioDeHojeIso);
 
   // Sem o "ou status confirmada", uma visita que passou da data e nunca foi
   // marcada como realizada/não compareceu some daqui pra sempre — não
@@ -105,7 +110,7 @@ export default async function PainelNegociosPage({
       "id, data_hora, status, observacoes, google_event_id, comprador:comprador_id(nome, telefone), cliente_avulso:cliente_avulso_id(nome, telefone)",
     )
     .eq("corretor_id", user.id)
-    .or(`data_hora.gte.${inicioDeHoje.toISOString()},status.eq.confirmada`)
+    .or(`data_hora.gte.${inicioDeHojeIso},status.eq.confirmada`)
     .order("data_hora", { ascending: true });
   const visitas = (dadosVisitas ?? []) as unknown as VisitaRow[];
 
