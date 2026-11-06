@@ -7,6 +7,8 @@ import { formatarTelefone, formatarCreci, formatarInstagram, formatarCpf } from 
 import { cpfValido } from "@/lib/validacoes";
 import { BairrosInput } from "@/components/bairros-input";
 import { CidadeInput } from "@/components/cidade-input";
+import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
+import { paraE164 } from "@/lib/telefone";
 import styles from "./page.module.css";
 
 type Campo = "nome" | "telefone" | "cpf" | "creci" | "bairros";
@@ -72,7 +74,13 @@ export function EditarPerfilForm({
   const inputFotoRef = useRef<HTMLInputElement>(null);
 
   const [nome, setNome] = useState(nomeAtual);
-  const [telefone, setTelefone] = useState(formatarTelefone(telefoneAtual));
+  // Cliente (comprador) pode ser estrangeiro — o TelefoneComPaisInput
+  // reconhece e formata o valor inicial sozinho, então não pré-formata
+  // como brasileiro aqui (corromperia um "+351..." por exemplo). Corretor
+  // e gestor são sempre vinculados a CPF/CRECI ou organização brasileira.
+  const [telefone, setTelefone] = useState(
+    role === "comprador" ? telefoneAtual : formatarTelefone(telefoneAtual),
+  );
   const [redeSocial, setRedeSocial] = useState(redeSocialAtual);
   const [facebook, setFacebook] = useState(facebookAtual);
   const [fotoUrl, setFotoUrl] = useState(fotoUrlAtual);
@@ -108,9 +116,15 @@ export function EditarPerfilForm({
     if (!nome.trim()) problemas.nome = "Digite seu nome completo.";
     else if (!nome.trim().includes(" ")) problemas.nome = "Informe nome e sobrenome.";
 
-    if (!telefone) problemas.telefone = "Informe seu WhatsApp com DDD.";
-    else if (!TELEFONE_OK.test(telefone))
-      problemas.telefone = "Número incompleto — ex: (98) 9 9999-9999.";
+    if (role === "comprador") {
+      if (!telefone) problemas.telefone = "Informe seu WhatsApp.";
+      else if (!paraE164(telefone))
+        problemas.telefone = "Número incompleto — confira o DDD ou o código do país.";
+    } else {
+      if (!telefone) problemas.telefone = "Informe seu WhatsApp com DDD.";
+      else if (!TELEFONE_OK.test(telefone))
+        problemas.telefone = "Número incompleto — ex: (98) 9 9999-9999.";
+    }
 
     if (role === "corretor") {
       if (!cpf.trim()) problemas.cpf = "Informe seu CPF.";
@@ -274,22 +288,38 @@ export function EditarPerfilForm({
 
       <div className="field">
         <label htmlFor="tel">WhatsApp</label>
-        <input
-          type="tel"
-          id="tel"
-          placeholder="(98) 9 9999-9999"
-          value={telefone}
-          onChange={(e) => {
-            setTelefone(formatarTelefone(e.target.value));
-            limparErroDe("telefone");
-          }}
-          pattern="\(\d{2}\)\s?9\s?\d{4}-?\d{4}"
-          title="Celular com DDD, ex: (98) 9 9999-9999"
-          className={errosCampo.telefone ? styles.campoInvalido : undefined}
-          aria-invalid={errosCampo.telefone ? true : undefined}
-          aria-describedby={errosCampo.telefone ? "erro-tel" : undefined}
-          required
-        />
+        {role === "comprador" ? (
+          <TelefoneComPaisInput
+            id="tel"
+            valorInicial={telefone}
+            placeholder="9 9999-9999"
+            onChange={(valor) => {
+              setTelefone(valor);
+              limparErroDe("telefone");
+            }}
+            className={errosCampo.telefone ? styles.campoInvalido : undefined}
+            ariaInvalid={errosCampo.telefone ? true : undefined}
+            ariaDescribedby={errosCampo.telefone ? "erro-tel" : undefined}
+            required
+          />
+        ) : (
+          <input
+            type="tel"
+            id="tel"
+            placeholder="(98) 9 9999-9999"
+            value={telefone}
+            onChange={(e) => {
+              setTelefone(formatarTelefone(e.target.value));
+              limparErroDe("telefone");
+            }}
+            pattern="\(\d{2}\)\s?9\s?\d{4}-?\d{4}"
+            title="Celular com DDD, ex: (98) 9 9999-9999"
+            className={errosCampo.telefone ? styles.campoInvalido : undefined}
+            aria-invalid={errosCampo.telefone ? true : undefined}
+            aria-describedby={errosCampo.telefone ? "erro-tel" : undefined}
+            required
+          />
+        )}
         {errosCampo.telefone ? (
           <p className={styles.erroCampo} id="erro-tel">
             {errosCampo.telefone}
