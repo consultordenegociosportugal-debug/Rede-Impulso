@@ -37,6 +37,7 @@ export default async function AreaClientePage() {
     .from("visitas")
     .select("id, data_hora, status, corretor:corretor_id(nome)")
     .eq("comprador_id", user.id)
+    .neq("status", "cancelada")
     .gte("data_hora", new Date().toISOString())
     .order("data_hora", { ascending: true })
     .limit(3);
