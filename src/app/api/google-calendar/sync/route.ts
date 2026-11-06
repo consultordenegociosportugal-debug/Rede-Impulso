@@ -23,6 +23,7 @@ type VisitaSync = {
   observacoes: string | null;
   google_event_id: string | null;
   comprador: { nome: string; telefone: string | null; email: string | null } | null;
+  cliente_avulso: { nome: string; telefone: string | null; email: string | null } | null;
 };
 
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
   const { data } = await supabase
     .from("visitas")
     .select(
-      "id, corretor_id, data_hora, observacoes, google_event_id, comprador:comprador_id(nome, telefone, email)",
+      "id, corretor_id, data_hora, observacoes, google_event_id, comprador:comprador_id(nome, telefone, email), cliente_avulso:cliente_avulso_id(nome, telefone, email)",
     )
     .eq("id", visitaId)
     .maybeSingle();
@@ -134,13 +135,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ sincronizado: true, motivo: "ja_sincronizada" });
   }
 
-  const contato = [visita.comprador?.telefone, visita.comprador?.email]
-    .filter(Boolean)
-    .join(" · ");
+  // Visita de cliente avulso (cadastrado pelo próprio corretor, sem
+  // login) não tem `comprador` — sem este fallback, o evento criado na
+  // agenda do corretor nascia genérico ("Visita", sem nome nem contato)
+  // pra boa parte dos agendamentos, já que cadastro rápido de cliente é
+  // um caminho normal de uso, não uma exceção rara.
+  const interessado = visita.comprador ?? visita.cliente_avulso;
+
+  const contato = [interessado?.telefone, interessado?.email].filter(Boolean).join(" · ");
 
   const descricao = [
     `Visita agendada pela Rede Impulso em ${formatoDataHora.format(new Date(visita.data_hora))}.`,
-    visita.comprador?.nome ? `Interessado: ${visita.comprador.nome}` : null,
+    interessado?.nome ? `Interessado: ${interessado.nome}` : null,
     contato ? `Contato: ${contato}` : null,
     visita.observacoes ? `Observações: ${visita.observacoes}` : null,
   ]
@@ -148,7 +154,7 @@ export async function POST(request: NextRequest) {
     .join("\n");
 
   const eventId = await criarEvento(accessToken, calendarId, {
-    titulo: `Visita${visita.comprador?.nome ? ` — ${visita.comprador.nome}` : ""}`,
+    titulo: `Visita${interessado?.nome ? ` — ${interessado.nome}` : ""}`,
     descricao,
     inicio: new Date(visita.data_hora),
   });
