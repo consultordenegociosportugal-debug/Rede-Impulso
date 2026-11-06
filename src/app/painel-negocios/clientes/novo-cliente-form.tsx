@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CidadeInput } from "@/components/cidade-input";
+import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
 
 type Status = "preenchendo" | "buscando-horarios" | "enviando" | "sucesso";
 
@@ -37,6 +38,10 @@ export function NovoClienteForm() {
   const [erro, setErro] = useState<string | null>(null);
   const [corretorId, setCorretorId] = useState<string | null>(null);
   const [avisoWhatsapp, setAvisoWhatsapp] = useState(false);
+  // Força o TelefoneComPaisInput a remontar (e esquecer país/número
+  // escolhidos) quando o corretor cadastra outro cliente — ele guarda
+  // esse estado por dentro, não controlado por "telefone" aqui.
+  const [chaveTelefone, setChaveTelefone] = useState(0);
 
   useEffect(() => {
     if (!corretorId) return;
@@ -134,6 +139,7 @@ export function NovoClienteForm() {
             setHorario(null);
             setObservacoes("");
             setAvisoWhatsapp(false);
+            setChaveTelefone((c) => c + 1);
             setStatus("preenchendo");
           }}
         >
@@ -163,12 +169,11 @@ export function NovoClienteForm() {
           <label htmlFor="cliente-telefone">
             Telefone <span className="muted" style={{ fontWeight: 400 }}>(opcional)</span>
           </label>
-          <input
+          <TelefoneComPaisInput
+            key={chaveTelefone}
             id="cliente-telefone"
-            type="tel"
-            value={telefone}
-            onChange={(e) => setTelefone(e.target.value)}
-            placeholder="(98) 9 9999-9999"
+            onChange={setTelefone}
+            placeholder="9 9999-9999"
           />
         </div>
       </div>
