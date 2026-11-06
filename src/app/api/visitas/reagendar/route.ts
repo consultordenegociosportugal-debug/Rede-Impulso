@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { horariosDisponiveis } from "@/lib/disponibilidade";
 import { avisarAgendamento } from "@/lib/avisar-agendamento";
+import { hojeISO } from "@/lib/data";
 
 type VisitaCancelada = {
   id: string;
@@ -37,8 +38,24 @@ export async function POST(request: NextRequest) {
     horario?: string;
   };
 
-  if (!visitaId || !data || !horario || !/^\d{2}:\d{2}$/.test(horario)) {
+  if (
+    !visitaId ||
+    !data ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(data) ||
+    !horario ||
+    !/^\d{2}:\d{2}$/.test(horario)
+  ) {
     return NextResponse.json({ erro: "Requisição inválida." }, { status: 400 });
+  }
+
+  // horariosDisponiveis só filtra horário já passado para o dia de HOJE
+  // — sem esta checagem, nada impedia um POST direto de reagendar pra
+  // um dia já passado.
+  if (data < hojeISO()) {
+    return NextResponse.json(
+      { erro: "Não é possível agendar uma visita no passado." },
+      { status: 400 },
+    );
   }
 
   const { data: visitaData, error: erroBusca } = await supabase

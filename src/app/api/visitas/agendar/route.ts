@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { horariosDisponiveis } from "@/lib/disponibilidade";
 import { avisarAgendamento } from "@/lib/avisar-agendamento";
 import { paraE164 } from "@/lib/telefone";
+import { hojeISO } from "@/lib/data";
 
 // Agenda uma visita num horário realmente livre — nasce `confirmada`
 // direto, sem precisar de confirmação manual depois (esse é o ganho de
@@ -47,8 +48,24 @@ export async function POST(request: NextRequest) {
     observacoes?: string;
   };
 
-  if (!corretorId || !data || !horario || !/^\d{2}:\d{2}$/.test(horario)) {
+  if (
+    !corretorId ||
+    !data ||
+    !/^\d{4}-\d{2}-\d{2}$/.test(data) ||
+    !horario ||
+    !/^\d{2}:\d{2}$/.test(horario)
+  ) {
     return NextResponse.json({ erro: "Requisição inválida." }, { status: 400 });
+  }
+
+  // horariosDisponiveis só filtra horário já passado para o dia de HOJE
+  // — sem esta checagem, nada impedia um POST direto (fora da tela, que
+  // só deixa escolher data >= hoje) de "agendar" num dia já passado.
+  if (data < hojeISO()) {
+    return NextResponse.json(
+      { erro: "Não é possível agendar uma visita no passado." },
+      { status: 400 },
+    );
   }
 
   if (clienteAvulso && corretorId !== user.id) {
@@ -131,25 +148,53 @@ export async function POST(request: NextRequest) {
     }
 
     if (!compradorExistenteId) {
-      const { data: novoCliente, error: erroCliente } = await supabase
-        .from("clientes_avulsos")
-        .insert({
-          corretor_id: user.id,
-          nome,
-          telefone: clienteAvulso.telefone?.trim() || null,
-          email: clienteAvulso.email?.trim() || null,
-          cidade: clienteAvulso.cidade?.trim() || null,
-          imovel_interesse: clienteAvulso.imovel_interesse?.trim() || null,
-        })
-        .select("id")
-        .single();
-      if (erroCliente || !novoCliente) {
-        return NextResponse.json(
-          { erro: erroCliente?.message ?? "Não foi possível cadastrar o cliente." },
-          { status: 500 },
-        );
+      // Mesmo corretor cadastrando o mesmo telefone de novo (pra marcar
+      // outra visita, por exemplo) — reaproveita o cadastro em vez de
+      // duplicar a linha em "Meus clientes", e atualiza com o que veio
+      // de novo no formulário.
+      let clienteExistenteId: string | null = null;
+      if (telefoneNormalizado) {
+        const { data: existente } = await supabase
+          .from("clientes_avulsos")
+          .select("id")
+          .eq("corretor_id", user.id)
+          .eq("telefone", telefoneNormalizado)
+          .maybeSingle();
+        clienteExistenteId = existente?.id ?? null;
       }
-      clienteAvulsoId = novoCliente.id;
+
+      if (clienteExistenteId) {
+        await supabase
+          .from("clientes_avulsos")
+          .update({
+            nome,
+            email: clienteAvulso.email?.trim() || null,
+            cidade: clienteAvulso.cidade?.trim() || null,
+            imovel_interesse: clienteAvulso.imovel_interesse?.trim() || null,
+          })
+          .eq("id", clienteExistenteId);
+        clienteAvulsoId = clienteExistenteId;
+      } else {
+        const { data: novoCliente, error: erroCliente } = await supabase
+          .from("clientes_avulsos")
+          .insert({
+            corretor_id: user.id,
+            nome,
+            telefone: clienteAvulso.telefone?.trim() || null,
+            email: clienteAvulso.email?.trim() || null,
+            cidade: clienteAvulso.cidade?.trim() || null,
+            imovel_interesse: clienteAvulso.imovel_interesse?.trim() || null,
+          })
+          .select("id")
+          .single();
+        if (erroCliente || !novoCliente) {
+          return NextResponse.json(
+            { erro: erroCliente?.message ?? "Não foi possível cadastrar o cliente." },
+            { status: 500 },
+          );
+        }
+        clienteAvulsoId = novoCliente.id;
+      }
     }
   }
 
