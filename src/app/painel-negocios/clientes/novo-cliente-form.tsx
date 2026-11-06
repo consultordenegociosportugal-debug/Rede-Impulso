@@ -19,7 +19,7 @@ const formatoDataLonga = new Intl.DateTimeFormat("pt-BR", {
 // na própria agenda, e a visita já nasce confirmada. Mesmo modelo de
 // slot do AgendarVisitaButton, só que quem está logado é o corretor,
 // não o cliente.
-export function NovoClienteForm() {
+export function NovoClienteForm({ corretorId }: { corretorId: string }) {
   const router = useRouter();
   const [nome, setNome] = useState("");
   const [telefone, setTelefone] = useState("");
@@ -33,7 +33,6 @@ export function NovoClienteForm() {
   const [observacoes, setObservacoes] = useState("");
   const [status, setStatus] = useState<Status>("preenchendo");
   const [erro, setErro] = useState<string | null>(null);
-  const [corretorId, setCorretorId] = useState<string | null>(null);
   const [avisoWhatsapp, setAvisoWhatsapp] = useState(false);
   // Força o TelefoneComPaisInput a remontar (e esquecer país/número
   // escolhidos) quando o corretor cadastra outro cliente — ele guarda
@@ -41,7 +40,6 @@ export function NovoClienteForm() {
   const [chaveTelefone, setChaveTelefone] = useState(0);
 
   useEffect(() => {
-    if (!corretorId) return;
     // Trocar a data rápido dispara várias buscas em paralelo — sem este
     // guard, uma resposta antiga que chega depois de uma mais nova
     // sobrescrevia o resultado certo com um estado desatualizado.
@@ -67,7 +65,7 @@ export function NovoClienteForm() {
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
-    if (!nome.trim() || !horario || !corretorId) return;
+    if (!nome.trim() || !horario) return;
 
     setErro(null);
     setStatus("enviando");
@@ -148,8 +146,6 @@ export function NovoClienteForm() {
 
   return (
     <form className="card" style={{ padding: 20 }} onSubmit={enviar}>
-      <CorretorIdFetcher onId={setCorretorId} />
-
       <div className="grid grid-2" style={{ gap: 12 }}>
         <div className="field">
           <label htmlFor="cliente-nome">Nome do cliente</label>
@@ -283,19 +279,4 @@ export function NovoClienteForm() {
       </button>
     </form>
   );
-}
-
-// Pega o id do corretor logado uma vez, sem puxar o client do Supabase
-// pro componente inteiro — mantém o resto do form simples de ler.
-function CorretorIdFetcher({ onId }: { onId: (id: string) => void }) {
-  useEffect(() => {
-    import("@/lib/supabase/client").then(({ createClient }) => {
-      const supabase = createClient();
-      supabase.auth.getUser().then(({ data }) => {
-        if (data.user) onId(data.user.id);
-      });
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  return null;
 }

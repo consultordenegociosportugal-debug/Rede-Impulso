@@ -43,18 +43,25 @@ function chaveDoDia(data: Date) {
 // (acima) continua existindo pra quem prefere ver tudo em sequência.
 export function QuadroSemanal({
   visitas,
+  corretorId,
   googleConfigurado,
 }: {
   visitas: VisitaRow[];
+  corretorId: string;
   googleConfigurado: boolean;
 }) {
   const hojeChave = chaveDoDia(new Date());
 
-  const dias = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date();
-    d.setDate(d.getDate() + i);
-    return d;
-  });
+  // Ancorado ao meio-dia UTC (não ao "agora" do navegador): se o corretor
+  // estiver num fuso diferente de Brasília, `new Date(); d.setDate(...)`
+  // soma dias no calendário LOCAL do navegador, não no de Brasília — a
+  // coluna "hoje" e a janela de 7 dias podiam ficar um dia deslocadas.
+  // `Date.UTC` normaliza o estouro de dia/mês sozinho, e meio-dia UTC
+  // nunca cruza a meia-noite quando formatado 3h atrás, em Brasília.
+  const [anoBase, mesBase, diaBase] = hojeChave.split("-").map(Number);
+  const dias = Array.from({ length: 7 }, (_, i) =>
+    new Date(Date.UTC(anoBase, mesBase - 1, diaBase + i, 12, 0, 0)),
+  );
 
   const porDia = new Map<string, VisitaRow[]>();
   for (const v of visitas) {
@@ -104,6 +111,7 @@ export function QuadroSemanal({
                         visitaId={v.id}
                         status={v.status}
                         dataHora={v.data_hora}
+                        corretorId={corretorId}
                         googleEventId={v.google_event_id}
                         googleConfigurado={googleConfigurado}
                       />

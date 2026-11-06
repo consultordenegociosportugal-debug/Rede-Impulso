@@ -298,6 +298,7 @@ export default async function PainelNegociosPage({
                             visitaId={visita.id}
                             status={visita.status}
                             dataHora={visita.data_hora}
+                            corretorId={user.id}
                             googleEventId={visita.google_event_id}
                             googleConfigurado={googleConfigurado}
                           />
@@ -307,7 +308,13 @@ export default async function PainelNegociosPage({
                   })}
                 </div>
               }
-              semana={<QuadroSemanal visitas={visitas} googleConfigurado={googleConfigurado} />}
+              semana={
+                <QuadroSemanal
+                  visitas={visitas}
+                  corretorId={user.id}
+                  googleConfigurado={googleConfigurado}
+                />
+              }
             />
           )}
         </div>

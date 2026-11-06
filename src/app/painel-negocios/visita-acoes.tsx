@@ -12,12 +12,14 @@ export function VisitaAcoes({
   visitaId,
   status,
   dataHora,
+  corretorId,
   googleEventId,
   googleConfigurado,
 }: {
   visitaId: string;
   status: string;
   dataHora: string;
+  corretorId: string;
   googleEventId?: string | null;
   googleConfigurado?: boolean;
 }) {
@@ -36,18 +38,9 @@ export function VisitaAcoes({
   const [horarioNovo, setHorarioNovo] = useState<string | null>(null);
   const [horariosLivres, setHorariosLivres] = useState<string[]>([]);
   const [buscandoHorarios, setBuscandoHorarios] = useState(false);
-  const [corretorId, setCorretorId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!reagendando || corretorId) return;
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) setCorretorId(data.user.id);
-    });
-  }, [reagendando, corretorId]);
-
-  useEffect(() => {
-    if (!reagendando || !corretorId) return;
+    if (!reagendando) return;
     let cancelado = false;
     setBuscandoHorarios(true);
     setHorarioNovo(null);

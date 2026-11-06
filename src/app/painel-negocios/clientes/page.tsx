@@ -105,7 +105,7 @@ export default async function ClientesPage() {
           saia com o horário marcado.
         </p>
 
-        <NovoClienteForm />
+        <NovoClienteForm corretorId={user.id} />
 
         <h2 style={{ fontSize: 18, margin: "32px 0 12px" }}>
           Clientes cadastrados{clientes.length > 0 ? ` (${clientes.length})` : ""}

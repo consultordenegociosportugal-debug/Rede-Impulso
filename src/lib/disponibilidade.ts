@@ -57,7 +57,12 @@ export async function horariosDisponiveis(
   profileId: string,
   data: string,
 ): Promise<{ configurado: boolean; horarios: string[] }> {
-  const diaSemana = new Date(`${data}T12:00:00`).getDay();
+  // -03:00 explícito aqui também: sem ele, `new Date(...).getDay()` usa o
+  // fuso do PROCESSO (não o de Brasília) pra extrair o dia da semana. Hoje
+  // isso "funciona por acidente" porque o processo roda em UTC e meio-dia
+  // ±3h nunca cruza a meia-noite — mas é exatamente o tipo de suposição
+  // implícita que este arquivo existe pra evitar (ver nota de fuso acima).
+  const diaSemana = new Date(`${data}T12:00:00-03:00`).getUTCDay();
 
   const { data: janelas } = await supabase
     .from("disponibilidade_semanal")
