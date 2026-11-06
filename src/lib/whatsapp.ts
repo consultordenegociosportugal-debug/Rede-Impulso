@@ -43,25 +43,39 @@ export function whatsappConfigurado(): boolean {
 }
 
 /**
- * Converte um telefone brasileiro em qualquer formatação comum (com DDD,
- * com ou sem máscara, com ou sem "+55"/"55" na frente) pro E.164 que a API
- * do WhatsApp exige. Assume Brasil (+55) — não há telefone de outro país
- * coletado em nenhum cadastro hoje.
+ * Converte um telefone em qualquer formatação comum pro E.164 que a API do
+ * WhatsApp exige.
  *
- * Quem digita o telefone no "Cadastrar cliente" costuma copiar o número de
- * dentro do próprio WhatsApp, que mostra o "+55" na frente — sem este
- * corte, esse número vira 12-13 dígitos e caía fora do range aceito,
- * cancelando o envio da confirmação em silêncio (o agendamento e o e-mail
- * continuavam indo normalmente, só o WhatsApp é que nunca saía).
+ * Nenhum cadastro tem campo de país — quem digita o telefone de um cliente
+ * estrangeiro só tem como indicar isso escrevendo o "+" e o código do país
+ * na frente (ex.: "+1 212 555 0100"). Por isso: com "+" explícito, o código
+ * de país é o que a pessoa escreveu, sem mexer; sem "+", assume Brasil
+ * (+55) e aceita DDD+número (10-11 dígitos) ou o mesmo número já com "55"
+ * na frente (12-13 dígitos — comum de quem copia do próprio WhatsApp, que
+ * mostra o "+55" mesmo sem o "+").
+ *
+ * Antes desta função reconhecer o "+", um número estrangeiro de 10-11
+ * dígitos (sem "+") virava um +55 errado em vez de ser rejeitado — pior que
+ * simplesmente falhar, porque tentava mandar pra um número que não existe.
  */
-export function paraE164Brasil(telefone: string): string | null {
-  let digitos = telefone.replace(/\D/g, "");
-  if (digitos.length === 12 || digitos.length === 13) {
-    if (!digitos.startsWith("55")) return null;
-    digitos = digitos.slice(2);
+export function paraE164(telefone: string): string | null {
+  const temPrefixoInternacional = telefone.trim().startsWith("+");
+  const digitos = telefone.replace(/\D/g, "");
+
+  if (temPrefixoInternacional) {
+    // Faixa do próprio padrão E.164: de 8 (país + número bem curto) a 15
+    // dígitos no total — só uma checagem de sanidade, não valida o país.
+    if (digitos.length < 8 || digitos.length > 15) return null;
+    return `+${digitos}`;
   }
-  if (digitos.length < 10 || digitos.length > 11) return null;
-  return `+55${digitos}`;
+
+  let digitosBrasil = digitos;
+  if (digitosBrasil.length === 12 || digitosBrasil.length === 13) {
+    if (!digitosBrasil.startsWith("55")) return null;
+    digitosBrasil = digitosBrasil.slice(2);
+  }
+  if (digitosBrasil.length < 10 || digitosBrasil.length > 11) return null;
+  return `+55${digitosBrasil}`;
 }
 
 // Devolve se a mensagem realmente saiu — não derruba a ação que motivou o
@@ -75,7 +89,7 @@ async function enviarTemplateWhatsapp(
 ): Promise<boolean> {
   if (!whatsappConfigurado()) return false;
 
-  const numero = paraE164Brasil(telefone);
+  const numero = paraE164(telefone);
   if (!numero) return false;
 
   try {
