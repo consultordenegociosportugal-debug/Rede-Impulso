@@ -64,34 +64,22 @@ export function DisponibilidadeForm({ janelasExistentes }: { janelasExistentes: 
       return;
     }
 
-    // Substitui tudo: mais simples e seguro que tentar casar upsert com
-    // remoção seletiva de dias desmarcados.
-    const { error: erroDelete } = await supabase
-      .from("disponibilidade_semanal")
-      .delete()
-      .eq("profile_id", user.id);
+    // Substitui tudo numa chamada só (function salvar_disponibilidade_semanal,
+    // migração 0067) — apagar e inserir como duas chamadas separadas deixava
+    // a disponibilidade inteira zerada se a segunda falhasse depois da
+    // primeira já ter ido (sessão expirada, internet caindo no meio).
+    const { error: erroSalvar } = await supabase.rpc("salvar_disponibilidade_semanal", {
+      p_janelas: ativos.map((dia) => ({
+        dia_semana: dia.valor,
+        hora_inicio: dias[dia.valor].inicio,
+        hora_fim: dias[dia.valor].fim,
+      })),
+    });
 
-    if (erroDelete) {
-      setErro(erroDelete.message);
+    if (erroSalvar) {
+      setErro(erroSalvar.message);
       setSalvando(false);
       return;
-    }
-
-    if (ativos.length > 0) {
-      const { error: erroInsert } = await supabase.from("disponibilidade_semanal").insert(
-        ativos.map((dia) => ({
-          profile_id: user.id,
-          dia_semana: dia.valor,
-          hora_inicio: dias[dia.valor].inicio,
-          hora_fim: dias[dia.valor].fim,
-        })),
-      );
-
-      if (erroInsert) {
-        setErro(erroInsert.message);
-        setSalvando(false);
-        return;
-      }
     }
 
     setSalvando(false);

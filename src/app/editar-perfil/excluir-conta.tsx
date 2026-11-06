@@ -45,7 +45,8 @@ export function ExcluirConta() {
       <h2 style={{ fontSize: 16, margin: "0 0 4px", color: "var(--coral)" }}>Excluir conta</h2>
       <p className="hint" style={{ marginTop: 0 }}>
         Apaga sua conta e todos os seus dados da Rede Impulso — cadastro, agenda, clientes e
-        histórico de visitas. Não tem como desfazer.
+        histórico de visitas. Visitas futuras ainda confirmadas são canceladas e a outra parte é
+        avisada por e-mail/WhatsApp antes da exclusão. Não tem como desfazer.
       </p>
 
       {!aberto ? (

@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { getResend, resendConfigurado, EMAIL_REMETENTE } from "@/lib/resend";
-import { rodapeTransacionalHtml } from "@/lib/email-rodape";
-import { enviarCancelamentoWhatsapp } from "@/lib/whatsapp";
-
-const formatoData = new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "full",
-  timeZone: "America/Sao_Paulo",
-});
-const formatoHora = new Intl.DateTimeFormat("pt-BR", {
-  timeStyle: "short",
-  timeZone: "America/Sao_Paulo",
-});
+import { avisarCancelamento } from "@/lib/avisar-cancelamento";
 
 type VisitaCancelamento = {
   id: string;
@@ -74,38 +63,15 @@ export async function POST(request: NextRequest) {
   // Dali pra baixo nada pode derrubar a resposta — a visita já está
   // cancelada no banco antes de qualquer tentativa de aviso.
   const interessado = visita.comprador ?? visita.cliente_avulso;
-  const quandoIso = new Date(visita.data_hora);
-  const dataFormatada = formatoData.format(quandoIso);
-  const horaFormatada = formatoHora.format(quandoIso);
-
-  if (interessado?.email && resendConfigurado()) {
-    try {
-      await getResend()!.emails.send({
-        from: EMAIL_REMETENTE,
-        to: interessado.email,
-        subject: `Visita com ${visita.corretor?.nome ?? "o corretor"} cancelada`,
-        html: `
-          <p>Olá, ${interessado.nome}.</p>
-          <p>Sua visita com <strong>${visita.corretor?.nome ?? "o corretor"}</strong>, marcada para
-          <strong>${dataFormatada} às ${horaFormatada}</strong>, foi cancelada.</p>
-          ${rodapeTransacionalHtml()}
-        `,
-      });
-    } catch {
-      // Best-effort — a visita já está cancelada no banco.
-    }
-  }
-
   let precisaAvisarClienteManualmente = false;
-  if (interessado?.telefone) {
-    const enviado = await enviarCancelamentoWhatsapp({
-      telefone: interessado.telefone,
-      nomeDestinatario: interessado.nome,
+  if (interessado) {
+    ({ precisaAvisarManualmente: precisaAvisarClienteManualmente } = await avisarCancelamento({
+      destinatarioNome: interessado.nome,
+      destinatarioEmail: interessado.email,
+      destinatarioTelefone: interessado.telefone,
       nomeContraparte: visita.corretor?.nome ?? "o corretor",
-      dataFormatada,
-      horaFormatada,
-    });
-    precisaAvisarClienteManualmente = !enviado;
+      dataHoraIso: visita.data_hora,
+    }));
   }
 
   return NextResponse.json({ ok: true, precisaAvisarClienteManualmente });
