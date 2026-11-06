@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { horariosDisponiveis } from "@/lib/disponibilidade";
 import { avisarAgendamento } from "@/lib/avisar-agendamento";
+import { paraE164 } from "@/lib/telefone";
 
 // Agenda uma visita num horário realmente livre — nasce `confirmada`
 // direto, sem precisar de confirmação manual depois (esse é o ganho de
@@ -90,30 +91,66 @@ export async function POST(request: NextRequest) {
   }
 
   let clienteAvulsoId: string | null = null;
+  let compradorExistenteId: string | null = null;
+  // Contato usado no aviso de confirmação — começa com o que o corretor
+  // digitou, mas vira o da CONTA se achar uma (mais confiável que o que
+  // foi digitado de memória, e é a mesma pessoa de qualquer forma).
+  let contatoAviso = {
+    nome: clienteAvulso?.nome?.trim() ?? "",
+    email: clienteAvulso?.email?.trim() || null,
+    telefone: clienteAvulso?.telefone?.trim() || null,
+  };
+  let vinculadoAContaExistente = false;
+
   if (clienteAvulso) {
     const nome = clienteAvulso.nome?.trim();
     if (!nome) {
       return NextResponse.json({ erro: "Nome do cliente é obrigatório." }, { status: 400 });
     }
-    const { data: novoCliente, error: erroCliente } = await supabase
-      .from("clientes_avulsos")
-      .insert({
-        corretor_id: user.id,
-        nome,
-        telefone: clienteAvulso.telefone?.trim() || null,
-        email: clienteAvulso.email?.trim() || null,
-        cidade: clienteAvulso.cidade?.trim() || null,
-        imovel_interesse: clienteAvulso.imovel_interesse?.trim() || null,
-      })
-      .select("id")
-      .single();
-    if (erroCliente || !novoCliente) {
-      return NextResponse.json(
-        { erro: erroCliente?.message ?? "Não foi possível cadastrar o cliente." },
-        { status: 500 },
-      );
+
+    // Sem isto, um cliente que o corretor cadastra de memória mas que JÁ
+    // tem conta própria virava um registro duplicado — a visita nunca
+    // aparecia em "Meus agendamentos" daquela pessoa. Comparação exata
+    // por telefone normalizado (ver migração 0070): não pega contas com
+    // telefone salvo num formato antigo, mas isso é só "não encontrou",
+    // nunca um falso positivo.
+    const telefoneNormalizado = clienteAvulso.telefone?.trim()
+      ? paraE164(clienteAvulso.telefone.trim())
+      : null;
+    if (telefoneNormalizado) {
+      const { data: existente } = (await supabase
+        .rpc("buscar_comprador_por_telefone_e164", { p_telefone: telefoneNormalizado })
+        .maybeSingle()) as unknown as {
+        data: { id: string; nome: string; email: string | null; telefone: string | null } | null;
+      };
+      if (existente) {
+        compradorExistenteId = existente.id;
+        contatoAviso = { nome: existente.nome, email: existente.email, telefone: existente.telefone };
+        vinculadoAContaExistente = true;
+      }
     }
-    clienteAvulsoId = novoCliente.id;
+
+    if (!compradorExistenteId) {
+      const { data: novoCliente, error: erroCliente } = await supabase
+        .from("clientes_avulsos")
+        .insert({
+          corretor_id: user.id,
+          nome,
+          telefone: clienteAvulso.telefone?.trim() || null,
+          email: clienteAvulso.email?.trim() || null,
+          cidade: clienteAvulso.cidade?.trim() || null,
+          imovel_interesse: clienteAvulso.imovel_interesse?.trim() || null,
+        })
+        .select("id")
+        .single();
+      if (erroCliente || !novoCliente) {
+        return NextResponse.json(
+          { erro: erroCliente?.message ?? "Não foi possível cadastrar o cliente." },
+          { status: 500 },
+        );
+      }
+      clienteAvulsoId = novoCliente.id;
+    }
   }
 
   // Horário de Brasília explícito — sem isso, o Postgres grava o
@@ -123,7 +160,7 @@ export async function POST(request: NextRequest) {
     .from("visitas")
     .insert({
       corretor_id: corretorId,
-      comprador_id: clienteAvulsoId ? null : user.id,
+      comprador_id: clienteAvulso ? compradorExistenteId : user.id,
       cliente_avulso_id: clienteAvulsoId,
       data_hora: `${data}T${horario}:00-03:00`,
       status: "confirmada",
@@ -151,9 +188,9 @@ export async function POST(request: NextRequest) {
   let precisaAvisarClienteManualmente = false;
   if (clienteAvulso) {
     ({ precisaAvisarClienteManualmente } = await avisarAgendamento(supabase, {
-      clienteNome: clienteAvulso.nome!.trim(),
-      clienteEmail: clienteAvulso.email?.trim() || null,
-      clienteTelefone: clienteAvulso.telefone?.trim() || null,
+      clienteNome: contatoAviso.nome || clienteAvulso.nome!.trim(),
+      clienteEmail: contatoAviso.email,
+      clienteTelefone: contatoAviso.telefone,
       corretorId: corretorId as string,
       dataHoraIso: visita.data_hora,
     }));
@@ -177,5 +214,6 @@ export async function POST(request: NextRequest) {
     visitaId: visita.id,
     dataHora: visita.data_hora,
     precisaAvisarClienteManualmente,
+    vinculadoAContaExistente,
   });
 }

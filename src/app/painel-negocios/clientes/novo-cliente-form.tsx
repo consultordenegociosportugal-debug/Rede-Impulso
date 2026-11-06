@@ -34,6 +34,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
   const [status, setStatus] = useState<Status>("preenchendo");
   const [erro, setErro] = useState<string | null>(null);
   const [avisoWhatsapp, setAvisoWhatsapp] = useState(false);
+  const [vinculadoAContaExistente, setVinculadoAContaExistente] = useState(false);
   // Força o TelefoneComPaisInput a remontar (e esquecer país/número
   // escolhidos) quando o corretor cadastra outro cliente — ele guarda
   // esse estado por dentro, não controlado por "telefone" aqui.
@@ -91,6 +92,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
       const dados = (await resposta.json()) as {
         erro?: string;
         precisaAvisarClienteManualmente?: boolean;
+        vinculadoAContaExistente?: boolean;
       };
 
       if (!resposta.ok) {
@@ -100,6 +102,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
       }
 
       setAvisoWhatsapp(Boolean(dados.precisaAvisarClienteManualmente));
+      setVinculadoAContaExistente(Boolean(dados.vinculadoAContaExistente));
       setStatus("sucesso");
       router.refresh();
     } catch {
@@ -111,9 +114,13 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
   if (status === "sucesso") {
     return (
       <div className="card" style={{ textAlign: "center", padding: "32px 20px" }}>
-        <span className="badge badge-primary">Cliente cadastrado e visita confirmada</span>
+        <span className="badge badge-primary">
+          {vinculadoAContaExistente ? "Visita confirmada" : "Cliente cadastrado e visita confirmada"}
+        </span>
         <p className="hint" style={{ marginBottom: 12 }}>
-          {nome} agora está na sua lista de clientes, com a visita marcada para{" "}
+          {vinculadoAContaExistente
+            ? `Esse telefone já é de uma conta cadastrada na Rede Impulso — a visita foi ligada a ela e já aparece em "Meus agendamentos" de ${nome}, marcada para`
+            : `${nome} agora está na sua lista de clientes, com a visita marcada para`}{" "}
           {horario ? `${formatoDataLonga.format(new Date(`${data}T${horario}`))}, ${horario}` : ""}
           .
         </p>
@@ -134,6 +141,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
             setHorario(null);
             setObservacoes("");
             setAvisoWhatsapp(false);
+            setVinculadoAContaExistente(false);
             setChaveTelefone((c) => c + 1);
             setStatus("preenchendo");
           }}
