@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { DURACAO_SLOT_MINUTOS } from "@/lib/disponibilidade";
 
 export type JanelaExistente = { dia_semana: number; hora_inicio: string; hora_fim: string };
 
@@ -16,6 +17,11 @@ const DIAS = [
 ];
 
 type LinhaDia = { ativo: boolean; inicio: string; fim: string };
+
+function paraMinutos(horaHHmm: string) {
+  const [h, m] = horaHHmm.split(":").map(Number);
+  return h * 60 + m;
+}
 
 function estadoInicial(janelas: JanelaExistente[]): Record<number, LinhaDia> {
   const porDia: Record<number, LinhaDia> = {};
@@ -46,8 +52,19 @@ export function DisponibilidadeForm({ janelasExistentes }: { janelasExistentes: 
 
     const ativos = DIAS.filter((d) => dias[d.valor].ativo);
     for (const dia of ativos) {
-      if (dias[dia.valor].fim <= dias[dia.valor].inicio) {
+      const { inicio, fim } = dias[dia.valor];
+      if (fim <= inicio) {
         setErro(`Em ${dia.label}, o horário final precisa ser depois do inicial.`);
+        setSalvando(false);
+        return;
+      }
+      // Sem isto, dava pra salvar uma janela menor que a duração de uma
+      // visita e achar que configurou disponibilidade — nenhum horário
+      // apareceria pra quem fosse agendar, sem nenhum aviso do motivo.
+      if (paraMinutos(fim) - paraMinutos(inicio) < DURACAO_SLOT_MINUTOS) {
+        setErro(
+          `Em ${dia.label}, a janela precisa ter pelo menos ${DURACAO_SLOT_MINUTOS} minutos — é a duração de uma visita, senão nenhum horário aparece pra quem for agendar.`,
+        );
         setSalvando(false);
         return;
       }
