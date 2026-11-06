@@ -18,3 +18,14 @@ export function hojeISO(): string {
   const pegar = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? "00";
   return `${pegar("year")}-${pegar("month")}-${pegar("day")}`;
 }
+
+// Soma (ou subtrai, com n negativo) dias a uma data yyyy-mm-dd — opera só
+// no calendário, nunca num instante real, então o estouro de mês/ano que
+// o Date.UTC normaliza sozinho não introduz nenhuma ambiguidade de fuso.
+export function somarDias(dataISO: string, n: number): string {
+  const [ano, mes, dia] = dataISO.split("-").map(Number);
+  const d = new Date(Date.UTC(ano, mes - 1, dia + n));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    d.getUTCDate(),
+  ).padStart(2, "0")}`;
+}

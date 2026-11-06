@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarResumoSemanalWhatsapp } from "@/lib/whatsapp";
+import { somarDias } from "@/lib/data";
 
 // Resumo semanal pro corretor via WhatsApp — toda segunda de manhã (ver
 // vercel.json), reaproveitando a mesma integração dos avisos de visita.
@@ -27,17 +28,6 @@ function diaDaSemanaNoFuso(instante: Date): number {
 
 function hojeNoFuso(instante: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: FUSO }).format(instante);
-}
-
-// Soma (ou subtrai, com n negativo) dias a uma data yyyy-mm-dd — opera só
-// no calendário (nunca num instante real), então Date.UTC normalizar o
-// estouro de mês/ano sozinho não introduz nenhuma ambiguidade de fuso.
-function somarDias(dataISO: string, n: number): string {
-  const [ano, mes, dia] = dataISO.split("-").map(Number);
-  const d = new Date(Date.UTC(ano, mes - 1, dia + n));
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
-    d.getUTCDate(),
-  ).padStart(2, "0")}`;
 }
 
 function segundaAnteriorIso(agora: Date): string {

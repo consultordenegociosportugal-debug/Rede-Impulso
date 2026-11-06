@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
+import { hojeISO, somarDias } from "@/lib/data";
 
 type VisitaRow = {
   id: string;
@@ -34,29 +35,38 @@ const PERIODO_LABEL: Record<Periodo, string> = {
   tudo: "Tudo",
 };
 
-function dataISO(d: Date) {
-  return d.toISOString().slice(0, 10);
+// Último dia de um mês (1-indexado) — dia 0 do mês seguinte, deixando o
+// Date.UTC normalizar o estouro de ano sozinho. Opera só no calendário,
+// nunca num instante real.
+function ultimoDiaDoMes(ano: number, mes: number): string {
+  const d = new Date(Date.UTC(ano, mes, 0));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(
+    d.getUTCDate(),
+  ).padStart(2, "0")}`;
 }
 
 // Calcula o intervalo [inicio, fim] (ou null em "tudo") a partir do
-// preset escolhido — tudo em horário local, não UTC, pra "este mês" não
-// cortar o dia 1 por causa do fuso.
+// preset escolhido — ancorado no dia de HOJE em Brasília (hojeISO), não
+// no fuso do processo: perto da virada do mês, `new Date().getMonth()`
+// na Vercel (UTC) já podia estar um mês inteiro adiantado do mês real em
+// Brasília, fazendo "este mês" mostrar o mês errado.
 function intervaloDoPeriodo(periodo: Periodo): { inicio: string; fim: string } | null {
-  const hoje = new Date();
+  const hoje = hojeISO();
+  const [ano, mes] = hoje.split("-").map(Number);
+
   if (periodo === "mes_atual") {
-    const inicio = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth() + 1, 0);
-    return { inicio: dataISO(inicio), fim: dataISO(fim) };
+    return { inicio: `${ano}-${String(mes).padStart(2, "0")}-01`, fim: ultimoDiaDoMes(ano, mes) };
   }
   if (periodo === "mes_passado") {
-    const inicio = new Date(hoje.getFullYear(), hoje.getMonth() - 1, 1);
-    const fim = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
-    return { inicio: dataISO(inicio), fim: dataISO(fim) };
+    const mesAnterior = mes === 1 ? 12 : mes - 1;
+    const anoDoMesAnterior = mes === 1 ? ano - 1 : ano;
+    return {
+      inicio: `${anoDoMesAnterior}-${String(mesAnterior).padStart(2, "0")}-01`,
+      fim: ultimoDiaDoMes(anoDoMesAnterior, mesAnterior),
+    };
   }
   if (periodo === "ultimos_30") {
-    const inicio = new Date(hoje);
-    inicio.setDate(inicio.getDate() - 30);
-    return { inicio: dataISO(inicio), fim: dataISO(hoje) };
+    return { inicio: somarDias(hoje, -30), fim: hoje };
   }
   return null;
 }
@@ -123,8 +133,8 @@ export default async function PainelGestorPage({
       .order("data_hora", { ascending: false });
     if (intervalo) {
       queryVisitas = queryVisitas
-        .gte("data_hora", `${intervalo.inicio}T00:00:00`)
-        .lte("data_hora", `${intervalo.fim}T23:59:59`);
+        .gte("data_hora", `${intervalo.inicio}T00:00:00-03:00`)
+        .lte("data_hora", `${intervalo.fim}T23:59:59-03:00`);
     }
     const { data: visitasData } = await queryVisitas;
     visitas = (visitasData ?? []) as unknown as VisitaRow[];
@@ -135,8 +145,8 @@ export default async function PainelGestorPage({
       .in("visitas.corretor_id", idsCorretores);
     if (intervalo) {
       queryNps = queryNps
-        .gte("visitas.data_hora", `${intervalo.inicio}T00:00:00`)
-        .lte("visitas.data_hora", `${intervalo.fim}T23:59:59`);
+        .gte("visitas.data_hora", `${intervalo.inicio}T00:00:00-03:00`)
+        .lte("visitas.data_hora", `${intervalo.fim}T23:59:59-03:00`);
     }
     const { data: npsData } = await queryNps;
     npsRespostas = (npsData ?? []) as unknown as NpsRow[];

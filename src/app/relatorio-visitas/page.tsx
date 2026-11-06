@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
+import { hojeISO, somarDias } from "@/lib/data";
 
 const PAPEIS_COM_RELATORIO = ["corretor"];
 
@@ -26,10 +27,6 @@ const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
   timeStyle: "short",
   timeZone: "America/Sao_Paulo",
 });
-
-function dataISO(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
 
 type VisitaRow = {
   id: string;
@@ -81,26 +78,28 @@ export default async function RelatorioVisitasPage({
 
   const scopeIds = [user.id];
 
-  const hoje = new Date();
-  const trintaDiasAtras = new Date();
-  trintaDiasAtras.setDate(trintaDiasAtras.getDate() - 30);
+  const hoje = hojeISO();
 
-  const inicio = params.inicio || dataISO(trintaDiasAtras);
-  const fim = params.fim || dataISO(hoje);
+  const inicio = params.inicio || somarDias(hoje, -30);
+  const fim = params.fim || hoje;
   const statusFiltro = params.status || "";
   const profissionalFiltro = params.profissional || "";
 
   const idsFiltrados =
     profissionalFiltro && scopeIds.includes(profissionalFiltro) ? [profissionalFiltro] : scopeIds;
 
+  // -03:00 explícito nos dois limites: sem ele, o Postgres interpreta
+  // esses horários em UTC, não em Brasília — o filtro ficava deslocado 3h
+  // (incluía visitas de ontem à noite por engano e cortava as de hoje à
+  // noite antes da hora). Ver a mesma causa-raiz em disponibilidade.ts.
   let query = supabase
     .from("visitas")
     .select(
       "id, data_hora, status, comprador:comprador_id(nome, telefone), cliente_avulso:cliente_avulso_id(nome, telefone)",
     )
     .in("corretor_id", idsFiltrados)
-    .gte("data_hora", `${inicio}T00:00:00`)
-    .lte("data_hora", `${fim}T23:59:59`)
+    .gte("data_hora", `${inicio}T00:00:00-03:00`)
+    .lte("data_hora", `${fim}T23:59:59-03:00`)
     .order("data_hora", { ascending: false });
 
   if (statusFiltro) query = query.eq("status", statusFiltro);
