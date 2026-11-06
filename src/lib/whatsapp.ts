@@ -44,24 +44,39 @@ export function whatsappConfigurado(): boolean {
 
 /**
  * Converte um telefone brasileiro em qualquer formatação comum (com DDD,
- * com ou sem máscara) pro E.164 que a API do WhatsApp exige. Assume Brasil
- * (+55) — não há telefone de outro país coletado em nenhum cadastro hoje.
+ * com ou sem máscara, com ou sem "+55"/"55" na frente) pro E.164 que a API
+ * do WhatsApp exige. Assume Brasil (+55) — não há telefone de outro país
+ * coletado em nenhum cadastro hoje.
+ *
+ * Quem digita o telefone no "Cadastrar cliente" costuma copiar o número de
+ * dentro do próprio WhatsApp, que mostra o "+55" na frente — sem este
+ * corte, esse número vira 12-13 dígitos e caía fora do range aceito,
+ * cancelando o envio da confirmação em silêncio (o agendamento e o e-mail
+ * continuavam indo normalmente, só o WhatsApp é que nunca saía).
  */
 export function paraE164Brasil(telefone: string): string | null {
-  const digitos = telefone.replace(/\D/g, "");
+  let digitos = telefone.replace(/\D/g, "");
+  if (digitos.length === 12 || digitos.length === 13) {
+    if (!digitos.startsWith("55")) return null;
+    digitos = digitos.slice(2);
+  }
   if (digitos.length < 10 || digitos.length > 11) return null;
   return `+55${digitos}`;
 }
 
+// Devolve se a mensagem realmente saiu — não derruba a ação que motivou o
+// aviso (agendar, cancelar, pedir nota), que já está gravada no banco antes
+// disto rodar, mas quem chamou pode usar o retorno pra avisar o corretor
+// "liga pro cliente, o WhatsApp não saiu" em vez de deixar a falha muda.
 async function enviarTemplateWhatsapp(
   telefone: string,
   nomeTemplate: string,
   parametros: string[],
-): Promise<void> {
-  if (!whatsappConfigurado()) return;
+): Promise<boolean> {
+  if (!whatsappConfigurado()) return false;
 
   const numero = paraE164Brasil(telefone);
-  if (!numero) return;
+  if (!numero) return false;
 
   try {
     const resposta = await fetch(
@@ -96,13 +111,12 @@ async function enviarTemplateWhatsapp(
         resposta.status,
         await resposta.text(),
       );
+      return false;
     }
+    return true;
   } catch (erro) {
-    // A ação que motivou o aviso (agendar, cancelar, pedir nota) já está
-    // gravada no banco antes desse envio rodar — uma falha aqui (template
-    // não aprovado, número inválido, Meta fora do ar) nunca pode derrubar
-    // a ação em si.
     console.error(`Erro ao enviar WhatsApp (${nomeTemplate}):`, erro);
+    return false;
   }
 }
 
@@ -114,9 +128,9 @@ type EnvioConfirmacao = {
   horaFormatada: string;
 };
 
-export async function enviarConfirmacaoWhatsapp(params: EnvioConfirmacao): Promise<void> {
+export async function enviarConfirmacaoWhatsapp(params: EnvioConfirmacao): Promise<boolean> {
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_CONFIRMACAO || "confirmacao_visita";
-  await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
     params.nomeDestinatario,
     params.nomeContraparte,
     params.dataFormatada,
@@ -131,9 +145,9 @@ type EnvioLembrete = {
   horaFormatada: string;
 };
 
-export async function enviarLembreteWhatsapp(params: EnvioLembrete): Promise<void> {
+export async function enviarLembreteWhatsapp(params: EnvioLembrete): Promise<boolean> {
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_LEMBRETE || "lembrete_visita";
-  await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
     params.nomeDestinatario,
     params.nomeContraparte,
     params.horaFormatada,
@@ -148,9 +162,9 @@ type EnvioCancelamento = {
   horaFormatada: string;
 };
 
-export async function enviarCancelamentoWhatsapp(params: EnvioCancelamento): Promise<void> {
+export async function enviarCancelamentoWhatsapp(params: EnvioCancelamento): Promise<boolean> {
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_CANCELAMENTO || "cancelamento_visita";
-  await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
     params.nomeDestinatario,
     params.nomeContraparte,
     params.dataFormatada,
@@ -165,9 +179,9 @@ type EnvioPedidoAvaliacao = {
   link: string;
 };
 
-export async function enviarPedidoAvaliacaoWhatsapp(params: EnvioPedidoAvaliacao): Promise<void> {
+export async function enviarPedidoAvaliacaoWhatsapp(params: EnvioPedidoAvaliacao): Promise<boolean> {
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_AVALIACAO || "pedido_avaliacao";
-  await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
     params.nomeDestinatario,
     params.nomeCorretor,
     params.link,
@@ -181,9 +195,9 @@ type EnvioResumoSemanal = {
   confirmadas: number;
 };
 
-export async function enviarResumoSemanalWhatsapp(params: EnvioResumoSemanal): Promise<void> {
+export async function enviarResumoSemanalWhatsapp(params: EnvioResumoSemanal): Promise<boolean> {
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_RESUMO_SEMANAL || "resumo_semanal_corretor";
-  await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
     params.nomeCorretor,
     String(params.totalVisitas),
     String(params.confirmadas),

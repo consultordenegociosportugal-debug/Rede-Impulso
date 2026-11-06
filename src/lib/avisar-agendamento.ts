@@ -33,7 +33,7 @@ export async function avisarAgendamento(
     corretorId: string;
     dataHoraIso: string;
   },
-) {
+): Promise<{ precisaAvisarClienteManualmente: boolean }> {
   const [{ data: corretor }, { data: corretorPerfil }] = await Promise.all([
     supabase.from("profiles").select("nome, email, telefone").eq("id", dados.corretorId).single(),
     supabase
@@ -84,28 +84,32 @@ export async function avisarAgendamento(
     }
   }
 
-  const avisos: Promise<void>[] = [];
-  if (dados.clienteTelefone) {
-    avisos.push(
-      enviarConfirmacaoWhatsapp({
-        telefone: dados.clienteTelefone,
-        nomeDestinatario: dados.clienteNome,
-        nomeContraparte: corretor?.nome ?? "o corretor",
-        dataFormatada,
-        horaFormatada,
-      }),
-    );
-  }
-  if (corretor?.telefone) {
-    avisos.push(
-      enviarConfirmacaoWhatsapp({
-        telefone: corretor.telefone,
-        nomeDestinatario: corretor.nome ?? "Corretor",
-        nomeContraparte: dados.clienteNome,
-        dataFormatada,
-        horaFormatada,
-      }),
-    );
-  }
-  await Promise.all(avisos);
+  // Resultado do envio pro CLIENTE é o que importa pra quem chamou: se
+  // falhar, é o corretor que precisa ligar/mandar mensagem por conta
+  // própria. Sem telefone cadastrado não é falha — não tinha pra onde
+  // mandar, então não vira aviso. A confirmação pro corretor é sempre
+  // best-effort: ele já vê a visita no próprio painel, então uma falha
+  // nela não precisa de aviso adicional na tela.
+  const [whatsappCliente] = await Promise.all([
+    dados.clienteTelefone
+      ? enviarConfirmacaoWhatsapp({
+          telefone: dados.clienteTelefone,
+          nomeDestinatario: dados.clienteNome,
+          nomeContraparte: corretor?.nome ?? "o corretor",
+          dataFormatada,
+          horaFormatada,
+        })
+      : Promise.resolve(true),
+    corretor?.telefone
+      ? enviarConfirmacaoWhatsapp({
+          telefone: corretor.telefone,
+          nomeDestinatario: corretor.nome ?? "Corretor",
+          nomeContraparte: dados.clienteNome,
+          dataFormatada,
+          horaFormatada,
+        })
+      : Promise.resolve(true),
+  ]);
+
+  return { precisaAvisarClienteManualmente: Boolean(dados.clienteTelefone) && !whatsappCliente };
 }

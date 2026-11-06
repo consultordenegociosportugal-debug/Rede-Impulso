@@ -37,6 +37,7 @@ export function AgendarComCorretorButton({
   const [observacoes, setObservacoes] = useState("");
   const [erro, setErro] = useState<string | null>(null);
   const [confirmacao, setConfirmacao] = useState<string | null>(null);
+  const [avisoWhatsapp, setAvisoWhatsapp] = useState(false);
 
   useEffect(() => {
     if (status !== "abrindo") return;
@@ -82,7 +83,10 @@ export function AgendarComCorretorButton({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ corretor_id: corretorId, data, horario, observacoes }),
       });
-      const dados = await resposta.json();
+      const dados = (await resposta.json()) as {
+        erro?: string;
+        precisaAvisarClienteManualmente?: boolean;
+      };
 
       if (!resposta.ok) {
         setErro(dados.erro ?? "Não foi possível agendar.");
@@ -93,6 +97,7 @@ export function AgendarComCorretorButton({
       setConfirmacao(
         `${formatoDataLonga.format(new Date(`${data}T${horario}`))}, ${horario}`,
       );
+      setAvisoWhatsapp(Boolean(dados.precisaAvisarClienteManualmente));
       setStatus("sucesso");
     } catch {
       setErro("Sem conexão no momento. Tente de novo.");
@@ -104,9 +109,14 @@ export function AgendarComCorretorButton({
     return (
       <div className="card-flat" style={{ textAlign: "center" }}>
         <span className="badge badge-primary">Visita confirmada</span>
-        <p className="hint" style={{ marginBottom: 0 }}>
+        <p className="hint" style={{ marginBottom: avisoWhatsapp ? 8 : 0 }}>
           Combinado! Sua visita com {corretorNome} está confirmada para {confirmacao}.
         </p>
+        {avisoWhatsapp && (
+          <p className="hint" style={{ color: "var(--coral)", marginBottom: 0 }}>
+            ⚠️ Não conseguimos te avisar por WhatsApp — guarde esta confirmação.
+          </p>
+        )}
       </div>
     );
   }

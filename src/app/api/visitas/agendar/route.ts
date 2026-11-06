@@ -148,28 +148,34 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  let precisaAvisarClienteManualmente = false;
   if (clienteAvulso) {
-    await avisarAgendamento(supabase, {
+    ({ precisaAvisarClienteManualmente } = await avisarAgendamento(supabase, {
       clienteNome: clienteAvulso.nome!.trim(),
       clienteEmail: clienteAvulso.email?.trim() || null,
       clienteTelefone: clienteAvulso.telefone?.trim() || null,
       corretorId: corretorId as string,
       dataHoraIso: visita.data_hora,
-    });
+    }));
   } else {
     const { data: comprador } = await supabase
       .from("profiles")
       .select("nome, email, telefone")
       .eq("id", user.id)
       .single();
-    await avisarAgendamento(supabase, {
+    ({ precisaAvisarClienteManualmente } = await avisarAgendamento(supabase, {
       clienteNome: comprador?.nome ?? "Cliente",
       clienteEmail: comprador?.email ?? user.email ?? null,
       clienteTelefone: comprador?.telefone ?? null,
       corretorId: corretorId as string,
       dataHoraIso: visita.data_hora,
-    });
+    }));
   }
 
-  return NextResponse.json({ ok: true, visitaId: visita.id, dataHora: visita.data_hora });
+  return NextResponse.json({
+    ok: true,
+    visitaId: visita.id,
+    dataHora: visita.data_hora,
+    precisaAvisarClienteManualmente,
+  });
 }

@@ -96,15 +96,17 @@ export async function POST(request: NextRequest) {
     }
   }
 
+  let precisaAvisarClienteManualmente = false;
   if (interessado?.telefone) {
-    await enviarCancelamentoWhatsapp({
+    const enviado = await enviarCancelamentoWhatsapp({
       telefone: interessado.telefone,
       nomeDestinatario: interessado.nome,
       nomeContraparte: visita.corretor?.nome ?? "o corretor",
       dataFormatada,
       horaFormatada,
     });
+    precisaAvisarClienteManualmente = !enviado;
   }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, precisaAvisarClienteManualmente });
 }

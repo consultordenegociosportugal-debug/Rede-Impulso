@@ -98,15 +98,21 @@ export async function POST(request: NextRequest) {
   }
 
   const interessado = visita.comprador ?? visita.cliente_avulso;
+  let precisaAvisarClienteManualmente = false;
   if (interessado) {
-    await avisarAgendamento(supabase, {
+    ({ precisaAvisarClienteManualmente } = await avisarAgendamento(supabase, {
       clienteNome: interessado.nome,
       clienteEmail: interessado.email,
       clienteTelefone: interessado.telefone,
       corretorId: visita.corretor_id,
       dataHoraIso: novaVisita.data_hora,
-    });
+    }));
   }
 
-  return NextResponse.json({ ok: true, visitaId: novaVisita.id, dataHora: novaVisita.data_hora });
+  return NextResponse.json({
+    ok: true,
+    visitaId: novaVisita.id,
+    dataHora: novaVisita.data_hora,
+    precisaAvisarClienteManualmente,
+  });
 }

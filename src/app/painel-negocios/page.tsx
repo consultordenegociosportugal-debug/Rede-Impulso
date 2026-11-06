@@ -7,6 +7,7 @@ import { Footer } from "@/components/footer";
 import { VisitaAcoes } from "./visita-acoes";
 import { QuadroSemanal } from "./quadro-semanal";
 import { ViewToggle } from "./view-toggle";
+import { LinkPerfilPublico } from "./link-perfil-publico";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
 
 const PAPEIS_COM_PAINEL = ["corretor"];
@@ -189,6 +190,8 @@ export default async function PainelNegociosPage({
           ))}
         </div>
 
+        <LinkPerfilPublico link={linkPerfilPublico} />
+
         <div className="mb-24">
           <div
             className="flex between items-center mb-12"
@@ -242,12 +245,8 @@ export default async function PainelNegociosPage({
                 </p>
               ) : (
                 <p className="hint" style={{ marginTop: 8 }}>
-                  Seu perfil está pronto — compartilhe o link abaixo direto com seus
-                  clientes pra eles agendarem com você:
-                  <br />
-                  <a href={linkPerfilPublico} style={{ wordBreak: "break-all" }}>
-                    {linkPerfilPublico}
-                  </a>
+                  Seu perfil está pronto — compartilhe o link acima direto com seus
+                  clientes pra eles agendarem com você.
                 </p>
               )}
               <p className="hint" style={{ marginTop: 8 }}>

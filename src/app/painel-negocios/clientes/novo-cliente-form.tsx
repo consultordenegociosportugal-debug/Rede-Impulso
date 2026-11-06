@@ -36,6 +36,7 @@ export function NovoClienteForm() {
   const [status, setStatus] = useState<Status>("preenchendo");
   const [erro, setErro] = useState<string | null>(null);
   const [corretorId, setCorretorId] = useState<string | null>(null);
+  const [avisoWhatsapp, setAvisoWhatsapp] = useState(false);
 
   useEffect(() => {
     if (!corretorId) return;
@@ -87,7 +88,10 @@ export function NovoClienteForm() {
           },
         }),
       });
-      const dados = await resposta.json();
+      const dados = (await resposta.json()) as {
+        erro?: string;
+        precisaAvisarClienteManualmente?: boolean;
+      };
 
       if (!resposta.ok) {
         setErro(dados.erro ?? "Não foi possível agendar.");
@@ -95,6 +99,7 @@ export function NovoClienteForm() {
         return;
       }
 
+      setAvisoWhatsapp(Boolean(dados.precisaAvisarClienteManualmente));
       setStatus("sucesso");
       router.refresh();
     } catch {
@@ -112,6 +117,11 @@ export function NovoClienteForm() {
           {horario ? `${formatoDataLonga.format(new Date(`${data}T${horario}`))}, ${horario}` : ""}
           .
         </p>
+        {avisoWhatsapp && (
+          <p className="hint" style={{ color: "var(--coral)", marginBottom: 12 }}>
+            ⚠️ Não conseguimos confirmar por WhatsApp — avise {nome} manualmente.
+          </p>
+        )}
         <button
           type="button"
           className="btn btn-outline btn-sm"
@@ -123,6 +133,7 @@ export function NovoClienteForm() {
             setImovelInteresse("");
             setHorario(null);
             setObservacoes("");
+            setAvisoWhatsapp(false);
             setStatus("preenchendo");
           }}
         >

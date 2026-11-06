@@ -28,6 +28,12 @@ export function VisitaAcoes({
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
+  // Mostrado ANTES do router.refresh() — depois do refresh esta visita
+  // pode virar outra linha (reagendar cria uma visita nova) ou sumir da
+  // lista (cancelar), então um aviso que esperasse o refresh pra aparecer
+  // nunca seria visto. Fica parado na tela até o corretor confirmar que
+  // leu, só então atualiza a lista.
+  const [avisoPendente, setAvisoPendente] = useState<string | null>(null);
   const [reagendando, setReagendando] = useState(false);
   const [dataNova, setDataNova] = useState(hojeISO());
   const [horarioNovo, setHorarioNovo] = useState<string | null>(null);
@@ -75,20 +81,28 @@ export function VisitaAcoes({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ visita_id: visitaId, data: dataNova, horario: horarioNovo }),
       });
+      const dados = (await resposta.json().catch(() => ({}))) as {
+        erro?: string;
+        precisaAvisarClienteManualmente?: boolean;
+      };
       if (!resposta.ok) {
-        const dados = (await resposta.json().catch(() => ({}))) as { erro?: string };
         setErro(dados.erro ?? "Não foi possível reagendar.");
         setSalvando(false);
         return;
       }
+      setSalvando(false);
+      setReagendando(false);
+      if (dados.precisaAvisarClienteManualmente) {
+        setAvisoPendente(
+          "⚠️ Visita reagendada, mas não conseguimos confirmar por WhatsApp — avise o cliente manualmente.",
+        );
+      } else {
+        router.refresh();
+      }
     } catch {
       setErro("Sem conexão no momento. Tente de novo.");
       setSalvando(false);
-      return;
     }
-    setSalvando(false);
-    setReagendando(false);
-    router.refresh();
   }
 
   async function sincronizarGoogle() {
@@ -123,6 +137,7 @@ export function VisitaAcoes({
     setSalvando(true);
     setErro(null);
     setAviso(null);
+    let precisaAvisarClienteManualmente = false;
 
     // Cancelar passa pela API em vez de um update direto — não é só
     // mudar o status, também avisa o cliente por e-mail/WhatsApp, o que
@@ -134,12 +149,16 @@ export function VisitaAcoes({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ visita_id: visitaId }),
         });
+        const dados = (await resposta.json().catch(() => ({}))) as {
+          erro?: string;
+          precisaAvisarClienteManualmente?: boolean;
+        };
         if (!resposta.ok) {
-          const dados = (await resposta.json().catch(() => ({}))) as { erro?: string };
           setErro(dados.erro ?? "Não foi possível cancelar a visita.");
           setSalvando(false);
           return;
         }
+        precisaAvisarClienteManualmente = Boolean(dados.precisaAvisarClienteManualmente);
       } catch {
         setErro("Sem conexão no momento. Tente de novo.");
         setSalvando(false);
@@ -190,7 +209,33 @@ export function VisitaAcoes({
     }
 
     setSalvando(false);
-    router.refresh();
+    if (precisaAvisarClienteManualmente) {
+      setAvisoPendente(
+        "⚠️ Visita cancelada, mas não conseguimos avisar por WhatsApp — avise o cliente manualmente.",
+      );
+    } else {
+      router.refresh();
+    }
+  }
+
+  if (avisoPendente) {
+    return (
+      <div className="card-flat" style={{ padding: 12 }}>
+        <p className="hint" style={{ color: "var(--coral)", marginBottom: 8 }}>
+          {avisoPendente}
+        </p>
+        <button
+          type="button"
+          className="btn btn-outline btn-sm"
+          onClick={() => {
+            setAvisoPendente(null);
+            router.refresh();
+          }}
+        >
+          OK, entendi
+        </button>
+      </div>
+    );
   }
 
   if (status === "realizada" || status === "nao_compareceu") return null;
