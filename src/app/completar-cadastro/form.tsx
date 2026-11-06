@@ -9,6 +9,8 @@ import { formatarTelefone, formatarCreci, formatarCpf } from "@/lib/mascaras";
 import { cpfValido } from "@/lib/validacoes";
 import { BairrosInput } from "@/components/bairros-input";
 import { CidadeInput } from "@/components/cidade-input";
+import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
+import { paraE164 } from "@/lib/telefone";
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 
@@ -68,10 +70,16 @@ export function CompletarCadastroForm({
   depois: string | null;
 }) {
   const router = useRouter();
+  const papelInicialValor = papelInicial(papelSugerido, roleAtual);
   const [nome, setNome] = useState(nomeAtual);
-  const [telefone, setTelefone] = useState(formatarTelefone(telefoneAtual));
+  // Corretor sempre digita telefone no formato nacional (sem seletor de
+  // país) — pré-formata só nesse caso. Comprador usa o TelefoneComPaisInput,
+  // que já sabe reconhecer e formatar o valor inicial sozinho.
+  const [telefone, setTelefone] = useState(
+    papelInicialValor === "corretor" ? formatarTelefone(telefoneAtual) : telefoneAtual,
+  );
   const [dataNascimento, setDataNascimento] = useState("");
-  const [papel, setPapel] = useState<Papel>(papelInicial(papelSugerido, roleAtual));
+  const [papel, setPapel] = useState<Papel>(papelInicialValor);
   const [cpf, setCpf] = useState("");
   const [creci, setCreci] = useState("");
   const [bairros, setBairros] = useState<string[]>([]);
@@ -95,9 +103,17 @@ export function CompletarCadastroForm({
     if (!nome.trim()) problemas.nome = "Digite seu nome completo.";
     else if (!nome.trim().includes(" ")) problemas.nome = "Informe nome e sobrenome.";
 
-    if (!telefone) problemas.telefone = "Informe seu WhatsApp com DDD.";
-    else if (!TELEFONE_OK.test(telefone))
-      problemas.telefone = "Número incompleto — ex: (98) 9 9999-9999.";
+    // Corretor sempre tem CPF/CRECI brasileiro por trás — continua exigindo
+    // WhatsApp nacional. Cliente pode ser estrangeiro (ver TelefoneComPaisInput).
+    if (papel === "corretor") {
+      if (!telefone) problemas.telefone = "Informe seu WhatsApp com DDD.";
+      else if (!TELEFONE_OK.test(telefone))
+        problemas.telefone = "Número incompleto — ex: (98) 9 9999-9999.";
+    } else {
+      if (!telefone) problemas.telefone = "Informe seu WhatsApp.";
+      else if (!paraE164(telefone))
+        problemas.telefone = "Número incompleto — confira o DDD ou o código do país.";
+    }
 
     if (!dataNascimento) problemas.dataNascimento = "Informe sua data de nascimento.";
     else if (!ehMaiorDeIdade(dataNascimento))
@@ -224,22 +240,38 @@ export function CompletarCadastroForm({
 
       <div className="field">
         <label htmlFor="tel">WhatsApp</label>
-        <input
-          type="tel"
-          id="tel"
-          placeholder="(98) 9 9999-9999"
-          value={telefone}
-          onChange={(e) => {
-            setTelefone(formatarTelefone(e.target.value));
-            limparErroDe("telefone");
-          }}
-          pattern="\(\d{2}\)\s?9\s?\d{4}-?\d{4}"
-          title="Celular com DDD, ex: (98) 9 9999-9999"
-          className={errosCampo.telefone ? styles.campoInvalido : undefined}
-          aria-invalid={errosCampo.telefone ? true : undefined}
-          aria-describedby={errosCampo.telefone ? "erro-tel" : undefined}
-          required
-        />
+        {papel === "corretor" ? (
+          <input
+            type="tel"
+            id="tel"
+            placeholder="(98) 9 9999-9999"
+            value={telefone}
+            onChange={(e) => {
+              setTelefone(formatarTelefone(e.target.value));
+              limparErroDe("telefone");
+            }}
+            pattern="\(\d{2}\)\s?9\s?\d{4}-?\d{4}"
+            title="Celular com DDD, ex: (98) 9 9999-9999"
+            className={errosCampo.telefone ? styles.campoInvalido : undefined}
+            aria-invalid={errosCampo.telefone ? true : undefined}
+            aria-describedby={errosCampo.telefone ? "erro-tel" : undefined}
+            required
+          />
+        ) : (
+          <TelefoneComPaisInput
+            id="tel"
+            valorInicial={telefone}
+            placeholder="9 9999-9999"
+            onChange={(valor) => {
+              setTelefone(valor);
+              limparErroDe("telefone");
+            }}
+            className={errosCampo.telefone ? styles.campoInvalido : undefined}
+            ariaInvalid={errosCampo.telefone ? true : undefined}
+            ariaDescribedby={errosCampo.telefone ? "erro-tel" : undefined}
+            required
+          />
+        )}
         {errosCampo.telefone ? (
           <p className={styles.erroCampo} id="erro-tel">
             {errosCampo.telefone}

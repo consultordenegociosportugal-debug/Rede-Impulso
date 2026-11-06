@@ -5,7 +5,9 @@ import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
 import { BotoesSocial } from "@/components/botoes-social";
-import { formatarTelefone, formatarInstagram } from "@/lib/mascaras";
+import { formatarInstagram } from "@/lib/mascaras";
+import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
+import { paraE164 } from "@/lib/telefone";
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
@@ -16,7 +18,6 @@ type ErrosCampo = Partial<Record<Campo, string>>;
 
 const TOTAL_PASSOS = 2;
 
-const TELEFONE_OK = /^\(\d{2}\)\s?9\s?\d{4}-?\d{4}$/;
 const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 const TITULO_PASSO = ["Quem é você", "Acesso à sua conta"];
@@ -91,9 +92,9 @@ export default function CadastroClientePage() {
     if (alvo === 1) {
       if (!nome.trim()) problemas.nome = "Digite seu nome completo.";
       else if (!nome.trim().includes(" ")) problemas.nome = "Informe nome e sobrenome.";
-      if (!telefone) problemas.telefone = "Informe seu WhatsApp com DDD.";
-      else if (!TELEFONE_OK.test(telefone))
-        problemas.telefone = "Número incompleto — ex: (98) 9 9999-9999.";
+      if (!telefone) problemas.telefone = "Informe seu WhatsApp.";
+      else if (!paraE164(telefone))
+        problemas.telefone = "Número incompleto — confira o DDD ou o código do país.";
       if (!dataNascimento) problemas.dataNascimento = "Informe sua data de nascimento.";
       else if (!ehMaiorDeIdade(dataNascimento))
         problemas.dataNascimento = "Você precisa ter 18 anos ou mais para criar uma conta.";
@@ -298,20 +299,16 @@ export default function CadastroClientePage() {
                 </div>
                 <div className="field">
                   <label htmlFor="tel">WhatsApp</label>
-                  <input
-                    type="tel"
+                  <TelefoneComPaisInput
                     id="tel"
-                    placeholder="(98) 9 9999-9999"
-                    value={telefone}
-                    onChange={(e) => {
-                      setTelefone(formatarTelefone(e.target.value));
+                    placeholder="9 9999-9999"
+                    onChange={(valor) => {
+                      setTelefone(valor);
                       limparErroDe("telefone");
                     }}
-                    pattern="\(\d{2}\)\s?9\s?\d{4}-?\d{4}"
-                    title="Celular com DDD, ex: (98) 9 9999-9999"
                     className={errosCampo.telefone ? styles.campoInvalido : undefined}
-                    aria-invalid={errosCampo.telefone ? true : undefined}
-                    aria-describedby={errosCampo.telefone ? "erro-tel" : undefined}
+                    ariaInvalid={errosCampo.telefone ? true : undefined}
+                    ariaDescribedby={errosCampo.telefone ? "erro-tel" : undefined}
                     required
                   />
                   {errosCampo.telefone ? (
