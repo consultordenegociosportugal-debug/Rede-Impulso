@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { hojeISO } from "@/lib/data";
 
 type Status = "idle" | "abrindo" | "enviando" | "sucesso";
-
-function hojeISO() {
-  return new Date().toISOString().slice(0, 10);
-}
 
 const formatoDataLonga = new Intl.DateTimeFormat("pt-BR", {
   weekday: "short",

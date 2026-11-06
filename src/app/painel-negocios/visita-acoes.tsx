@@ -3,10 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-
-function hojeISO() {
-  return new Date().toISOString().slice(0, 10);
-}
+import { hojeISO } from "@/lib/data";
 
 // Confirmar/cancelar uma visita. A gravação no Supabase é o que vale:
 // a chamada de sincronia com o Google Agenda vem depois, é

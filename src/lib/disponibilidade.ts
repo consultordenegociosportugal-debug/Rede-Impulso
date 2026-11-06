@@ -70,13 +70,19 @@ export async function horariosDisponiveis(
     return { configurado: false, horarios: [] };
   }
 
+  // -03:00 explícito é obrigatório aqui: sem ele, o Postgres interpreta
+  // essas strings no fuso da sessão (UTC no projeto), não em Brasília — a
+  // janela ficava deslocada 3h pra trás. Resultado: visitas entre 21h e
+  // 23h59 de HOJE ficavam fora da busca (horário mostrado como livre
+  // mesmo já reservado) e visitas nesse mesmo intervalo de ONTEM entravam
+  // por engano (horário de hoje mostrado como ocupado sem motivo).
   const { data: ocupadas } = await supabase
     .from("visitas")
     .select("data_hora")
     .eq("corretor_id", profileId)
     .in("status", ["solicitada", "confirmada"])
-    .gte("data_hora", `${data}T00:00:00`)
-    .lt("data_hora", `${data}T23:59:59`);
+    .gte("data_hora", `${data}T00:00:00-03:00`)
+    .lt("data_hora", `${data}T23:59:59-03:00`);
 
   const horariosOcupados = new Set(
     (ocupadas ?? []).map((v) => dataHoraNoFuso(new Date(v.data_hora as string)).hora),
