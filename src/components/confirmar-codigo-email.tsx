@@ -72,7 +72,12 @@ export function ConfirmarCodigoEmail({
   async function reenviar() {
     if (cooldown > 0) return;
     const supabase = createClient();
-    await supabase.auth.resend({ type: "signup", email });
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    if (error) {
+      setErro("Não foi possível reenviar o código agora. Tente de novo em instantes.");
+      setStatus("erro");
+      return;
+    }
     setReenviado(true);
     iniciarCooldown();
   }
