@@ -126,15 +126,6 @@ export function AgendarComCorretorButton({
     );
   }
 
-  if (!configurado) {
-    return (
-      <p className="hint">
-        {corretorNome} ainda não configurou horários de atendimento. Tente de novo mais
-        tarde.
-      </p>
-    );
-  }
-
   return (
     <div>
       <div className="field">
@@ -154,7 +145,7 @@ export function AgendarComCorretorButton({
 
       {carregandoHorarios ? (
         <p className="hint">Buscando horários livres…</p>
-      ) : horarios && horarios.length > 0 ? (
+      ) : configurado && horarios && horarios.length > 0 ? (
         <div className="field">
           <label>Horários livres nesse dia</label>
           <div className="flex gap-8" style={{ flexWrap: "wrap" }}>
