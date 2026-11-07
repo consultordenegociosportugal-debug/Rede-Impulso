@@ -53,6 +53,15 @@ function traduzErroAuth(mensagem: string) {
     return "Muitas tentativas seguidas. Espere alguns segundos e tente de novo.";
   if (m.includes("failed to fetch") || m.includes("network"))
     return "Não conseguimos falar com o servidor. Verifique sua conexão e tente de novo.";
+  // CPF/CRECI únicos (migração 0071) — handle_new_user cria o
+  // corretor_perfis dentro do próprio signUp; se a constraint barrar,
+  // o Supabase pode repassar o texto cru do Postgres ou só um erro
+  // genérico de banco. Cobre os dois casos com uma mensagem acionável.
+  if (m.includes("corretor_perfis_cpf_key")) return "Esse CPF já está cadastrado em outra conta.";
+  if (m.includes("corretor_perfis_creci_key"))
+    return "Esse CRECI já está cadastrado em outra conta.";
+  if (m.includes("database error saving new user"))
+    return "Não foi possível concluir o cadastro — confira se o CPF e o CRECI já não estão em uso em outra conta.";
   return mensagem;
 }
 

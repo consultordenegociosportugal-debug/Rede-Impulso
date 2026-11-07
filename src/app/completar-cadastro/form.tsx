@@ -160,6 +160,42 @@ export function CompletarCadastroForm({
       return;
     }
 
+    // A extensão de papel não existe ainda: o trigger só cria quando o
+    // `role` já vem no metadata, e no login social ele nunca vem. Cria a
+    // extensão ANTES de promover o profiles.role — a RLS de insert aqui
+    // só exige auth.uid() = profile_id, não depende do role já estar
+    // como corretor. Sem essa ordem, um CPF duplicado (ou qualquer outro
+    // erro nesta etapa) deixava o perfil com role=corretor mas sem
+    // corretor_perfis nenhum — corretor "pela metade", travado até
+    // reenviar o formulário.
+    if (papel === "corretor") {
+      const { error: erroCorretor } = await supabase.from("corretor_perfis").upsert(
+        {
+          profile_id: user.id,
+          cpf: cpf.replace(/\D/g, ""),
+          creci,
+          bairros_atuacao: bairros,
+          cidade: cidade || null,
+        },
+        { onConflict: "profile_id" },
+      );
+      if (erroCorretor) {
+        // Mensagem específica pras duas constraints de unicidade
+        // (migração 0071) — sem isso, a pessoa via o erro cru do
+        // Postgres ("duplicate key value violates unique constraint
+        // ...") em vez de entender que o CPF/CRECI já está em uso.
+        if (erroCorretor.message.includes("corretor_perfis_cpf_key")) {
+          setErro("Esse CPF já está cadastrado em outra conta.");
+        } else if (erroCorretor.message.includes("corretor_perfis_creci_key")) {
+          setErro("Esse CRECI já está cadastrado em outra conta.");
+        } else {
+          setErro(erroCorretor.message);
+        }
+        setStatus("error");
+        return;
+      }
+    }
+
     const { error: erroPerfil } = await supabase
       .from("profiles")
       .update({
@@ -175,26 +211,6 @@ export function CompletarCadastroForm({
       setErro(erroPerfil.message);
       setStatus("error");
       return;
-    }
-
-    // A extensão de papel não existe ainda: o trigger só cria quando o
-    // `role` já vem no metadata, e no login social ele nunca vem.
-    if (papel === "corretor") {
-      const { error: erroCorretor } = await supabase.from("corretor_perfis").upsert(
-        {
-          profile_id: user.id,
-          cpf: cpf.replace(/\D/g, ""),
-          creci,
-          bairros_atuacao: bairros,
-          cidade: cidade || null,
-        },
-        { onConflict: "profile_id" },
-      );
-      if (erroCorretor) {
-        setErro(erroCorretor.message);
-        setStatus("error");
-        return;
-      }
     }
 
     const destino = await destinoPosLogin(supabase, user.id, { depois });
