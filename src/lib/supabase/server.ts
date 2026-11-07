@@ -8,6 +8,14 @@ export async function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      // Sem isto, o fetch() por baixo do cliente Supabase podia ficar
+      // em cache do Next — depois de uma mutação (ex.: reagendar uma
+      // visita), router.refresh() re-renderiza mas reaproveita o
+      // mesmo resultado em cache, e a tela não mostra o dado novo até
+      // um reload manual da página.
+      global: {
+        fetch: (url, options) => fetch(url, { ...options, cache: "no-store" }),
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll();
