@@ -1,0 +1,31 @@
+-- ============================================================
+-- Rede Impulso — trava colunas sensíveis de visitas por privilégio,
+-- não só por linha
+--
+-- Mesma família das 0072/0073/0074, na tabela mais importante do
+-- produto. "visitas: corretor atualiza as suas" (migração 0057) só
+-- verifica auth.uid() = corretor_id — RLS por LINHA. Isso deixava um
+-- corretor, via chamada direta (bypassando toda API route e toda
+-- notificação), reescrever `data_hora` de uma visita já confirmada pra
+-- qualquer valor (inclusive no passado, inclusive colidindo com outra
+-- visita antes do unique index pegar), ou pior: trocar `comprador_id`/
+-- `cliente_avulso_id` pra apontar pra uma pessoa que nunca agendou nada
+-- — forjando um histórico de visita (e, por tabela, de não-
+-- comparecimento) em nome de alguém que não tem nada a ver com aquilo.
+--
+-- Mapeado todo o código antes de travar: hoje só DUAS colunas são
+-- escritas por update direto de uma sessão comum —
+--   * status: confirmar/realizada/não-compareceu (visita-acoes.tsx) e
+--     a function atualizar_status_visita_com_motivo (migração 0069).
+--   * google_event_id: sincronização com o Google Agenda
+--     (api/google-calendar/sync), que roda com a sessão do próprio
+--     corretor, não com service role.
+-- Todo o resto (corretor_id, comprador_id, cliente_avulso_id,
+-- data_hora, observacoes) só é definido na CRIAÇÃO da visita
+-- (agendar/reagendar sempre fazem INSERT, nunca UPDATE num desses
+-- campos) — reagendar explicitamente cria uma linha nova em vez de
+-- mudar a data da antiga, exatamente pra preservar o histórico.
+-- lembrete_enviado_em/nps_enviado_em só são escritos pelos crons via
+-- service role, que ignora esta trava (e continua ignorando).
+revoke update on visitas from authenticated;
+grant update (status, google_event_id) on visitas to authenticated;

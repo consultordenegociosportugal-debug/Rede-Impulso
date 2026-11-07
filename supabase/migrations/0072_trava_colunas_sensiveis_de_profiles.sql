@@ -1,0 +1,34 @@
+-- ============================================================
+-- Rede Impulso — trava colunas sensíveis de profiles por privilégio,
+-- não só por linha
+--
+-- VULNERABILIDADE REAL: a policy "profiles: edita o proprio cadastro"
+-- (migração 0002) só verifica `auth.uid() = id` — RLS é controle por
+-- LINHA, nunca por COLUNA. Isso deixava QUALQUER usuário autenticado
+-- se autopromover a admin com uma chamada direta
+-- (supabase.from('profiles').update({is_admin: true}).eq('id', meuId)),
+-- sem passar pela UI nem por nenhuma checagem — e dali em diante
+-- enxergar documentos de verificação de QUALQUER pessoa (a policy de
+-- storage de documentos-verificacao também só checa is_admin()),
+-- tickets de suporte de outros, gerenciar o catálogo inteiro. Mesmo
+-- risco em verification_status: dava pra se autodeclarar "aprovado"
+-- sem nunca ter enviado nenhum documento, furando o propósito inteiro
+-- da verificação.
+--
+-- `authenticated` é o MESMO papel do Postgres pra todo mundo logado —
+-- admin ou não — então não dá pra condicionar um GRANT de coluna a
+-- is_admin(); teria que ser sempre liberado ou sempre travado pra esse
+-- papel. A única via legítima que já existe pra mudar
+-- verification_status é a function revisar_perfil() (migração 0011),
+-- que é security definer: roda com o dono da function, não com o papel
+-- de quem chamou, então continua funcionando normalmente mesmo com o
+-- UPDATE direto travado pra `authenticated`. is_admin nunca teve
+-- nenhuma via de escrita pela aplicação — só é alterado manualmente.
+--
+-- Lista de colunas liberadas = exatamente as que o código hoje
+-- atualiza sozinho (editar-perfil, completar-cadastro). Um campo novo
+-- que precise ser auto-editável no futuro tem que entrar aqui numa
+-- migração própria.
+revoke update on profiles from authenticated;
+grant update (nome, telefone, rede_social, foto_url, facebook, data_nascimento, role, termos_aceitos_em)
+  on profiles to authenticated;

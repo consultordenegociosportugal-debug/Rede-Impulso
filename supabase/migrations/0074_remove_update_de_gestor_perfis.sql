@@ -1,0 +1,20 @@
+-- ============================================================
+-- Rede Impulso — gestor não pode trocar a própria organização
+--
+-- Mesma família de vulnerabilidade das 0072/0073, pior aqui:
+-- "gestor_perfis: dono gerencia o proprio" (migração 0056) é FOR ALL
+-- com using/with check só (auth.uid() = profile_id) — sem restrição de
+-- coluna nem de operação. organizacao_catalogo_id é exatamente o
+-- campo que decide TUDO que o gestor enxerga ("visitas: gestor le dos
+-- corretores da sua organizacao" e a policy irmã de clientes_avulsos,
+-- migração 0056, usam esse valor pra filtrar). Sem travar o UPDATE, um
+-- gestor podia se auto-reatribuir pra organização de um concorrente e
+-- ler visitas, clientes e métricas de NPS de uma empresa inteira que
+-- não é a dele — vazamento completo de isolamento entre organizações.
+--
+-- Confirmado: gestor_perfis nunca é atualizado por nenhum código da
+-- aplicação (só INSERT, uma vez, no cadastro) — não existe nenhum
+-- fluxo legítimo de "trocar de organização" depois. Por isso tira o
+-- UPDATE inteiro de `authenticated`, sem repor grant nenhum; insert,
+-- select e delete do próprio continuam como estavam.
+revoke update on gestor_perfis from authenticated;
