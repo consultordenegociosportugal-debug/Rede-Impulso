@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getResend, resendConfigurado, EMAIL_REMETENTE } from "@/lib/resend";
 import { rodapeTransacionalHtml } from "@/lib/email-rodape";
+import { escaparHtml } from "@/lib/escapar-html";
 
 export async function POST(request: NextRequest) {
   const { nome, email, telefone, assunto, mensagem } = (await request.json()) as {
@@ -58,9 +59,9 @@ export async function POST(request: NextRequest) {
         to: process.env.EMAIL_COPIA_REDE_IMPULSO,
         subject: `Novo chamado de suporte: ${assunto.trim()}`,
         html: `
-          <p><strong>De:</strong> ${nome.trim()} (${email.trim()}${telefone ? ` · ${telefone.trim()}` : ""})</p>
-          <p><strong>Assunto:</strong> ${assunto.trim()}</p>
-          <p>${mensagem.trim().replace(/\n/g, "<br>")}</p>
+          <p><strong>De:</strong> ${escaparHtml(nome.trim())} (${escaparHtml(email.trim())}${telefone ? ` · ${escaparHtml(telefone.trim())}` : ""})</p>
+          <p><strong>Assunto:</strong> ${escaparHtml(assunto.trim())}</p>
+          <p>${escaparHtml(mensagem.trim()).replace(/\n/g, "<br>")}</p>
           ${rodapeTransacionalHtml()}
         `,
       });
