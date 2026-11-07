@@ -16,6 +16,15 @@ type ErrosCampo = Partial<Record<Campo, string>>;
 
 const TELEFONE_OK = /^\(\d{2}\)\s?9\s?\d{4}-?\d{4}$/;
 
+// Mesma lista liberada no bucket perfil-fotos (migração 0076) — SVG de
+// propósito fora: casa com accept="image/*" mas pode conter <script>.
+const EXTENSAO_POR_MIME: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+const TAMANHO_MAXIMO_FOTO = 5 * 1024 * 1024;
+
 // Mesmo motivo do completar-cadastro: nome e CRECI não têm regra nativa
 // (pattern/required) pras checagens de "sobrenome" e "3 dígitos", então
 // sem isso "Salvar alterações" parecia não fazer nada.
@@ -107,6 +116,23 @@ export function EditarPerfilForm({
 
   function selecionarFoto(arquivo: File | undefined) {
     if (!arquivo) return;
+    // accept="image/*" no input é só uma dica da interface, trivial de
+    // ignorar — sem checar de verdade o tipo aqui, um SVG (que casa com
+    // "image/*") com <script> embutido virava a "foto de perfil",
+    // hospedada publicamente sob o domínio da Rede Impulso. O caminho
+    // salvo também nunca mais usa a extensão do nome escolhido pela
+    // pessoa (ver handleSubmit) — só o que está validado aqui.
+    if (!EXTENSAO_POR_MIME[arquivo.type]) {
+      setErro("Envie uma foto em JPG, PNG ou WEBP.");
+      setStatus("error");
+      return;
+    }
+    if (arquivo.size > TAMANHO_MAXIMO_FOTO) {
+      setErro("A foto precisa ter no máximo 5 MB.");
+      setStatus("error");
+      return;
+    }
+    setErro(null);
     setFotoArquivo(arquivo);
     setFotoPreview(URL.createObjectURL(arquivo));
   }
@@ -160,11 +186,14 @@ export function EditarPerfilForm({
     let novaFotoUrl = fotoUrl;
 
     if (fotoArquivo) {
-      const extensao = fotoArquivo.name.split(".").pop() ?? "jpg";
+      // Extensão do tipo já validado em selecionarFoto, nunca do nome
+      // do arquivo escolhido pela pessoa — um nome tipo "avatar.html"
+      // não muda o que é salvo.
+      const extensao = EXTENSAO_POR_MIME[fotoArquivo.type] ?? "jpg";
       const caminho = `${userId}/avatar.${extensao}`;
       const { error: uploadError } = await supabase.storage
         .from("perfil-fotos")
-        .upload(caminho, fotoArquivo, { upsert: true });
+        .upload(caminho, fotoArquivo, { upsert: true, contentType: fotoArquivo.type });
 
       if (uploadError) {
         setErro(uploadError.message);
@@ -268,7 +297,7 @@ export function EditarPerfilForm({
         <input
           ref={inputFotoRef}
           type="file"
-          accept="image/*"
+          accept="image/jpeg,image/png,image/webp"
           hidden
           onChange={(e) => selecionarFoto(e.target.files?.[0])}
         />

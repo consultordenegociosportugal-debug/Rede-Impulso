@@ -12,6 +12,12 @@ const LABELS: Record<DocumentoTipo, { titulo: string; hint: string; icone: strin
   creci: { titulo: "Comprovante do CRECI", hint: "Carteira ou certidão do CRECI", icone: "📋" },
 };
 
+// Mesma lista liberada no bucket documentos-verificacao (migração
+// 0076) — SVG de propósito fora da lista de imagens aceitas: casa com
+// accept="image/*" mas pode conter <script>.
+const TIPOS_ACEITOS = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
+const TAMANHO_MAXIMO_DOCUMENTO = 10 * 1024 * 1024;
+
 const STATUS_BADGE: Record<DocumentoStatus, { label: string; className: string }> = {
   pendente: { label: "Em fila de análise", className: "badge-primary" },
   em_analise: { label: "Em análise", className: "badge-amber" },
@@ -41,6 +47,22 @@ export function VerificacaoForm({
   const [erro, setErro] = useState<string | null>(null);
 
   async function handleUpload(tipo: DocumentoTipo, file: File) {
+    // accept="image/*,.pdf" no input é só uma dica da interface,
+    // trivial de ignorar — sem checar de verdade aqui, qualquer
+    // arquivo (inclusive um SVG com <script> embutido, que casa com
+    // "image/*") virava um "documento de verificação", aberto depois
+    // pelo admin na revisão.
+    if (!TIPOS_ACEITOS.has(file.type)) {
+      setErro("Envie uma imagem (JPG, PNG, WEBP) ou um PDF.");
+      setStatus((s) => ({ ...s, [tipo]: "erro" }));
+      return;
+    }
+    if (file.size > TAMANHO_MAXIMO_DOCUMENTO) {
+      setErro("O arquivo precisa ter no máximo 10 MB.");
+      setStatus((s) => ({ ...s, [tipo]: "erro" }));
+      return;
+    }
+
     setStatus((s) => ({ ...s, [tipo]: "enviando" }));
     setErro(null);
 
@@ -49,7 +71,7 @@ export function VerificacaoForm({
     const caminho = `${userId}/${tipo}-${Date.now()}-${file.name}`;
     const { error: uploadError } = await supabase.storage
       .from("documentos-verificacao")
-      .upload(caminho, file);
+      .upload(caminho, file, { contentType: file.type });
 
     if (uploadError) {
       setErro(uploadError.message);
@@ -96,7 +118,7 @@ export function VerificacaoForm({
                     Reenviar
                     <input
                       type="file"
-                      accept="image/*,.pdf"
+                      accept="image/jpeg,image/png,image/webp,.pdf"
                       style={{ display: "none" }}
                       onChange={(e) => {
                         const file = e.target.files?.[0];
@@ -119,7 +141,7 @@ export function VerificacaoForm({
                 </div>
                 <input
                   type="file"
-                  accept="image/*,.pdf"
+                  accept="image/jpeg,image/png,image/webp,.pdf"
                   style={{ display: "none" }}
                   disabled={enviando}
                   onChange={(e) => {
