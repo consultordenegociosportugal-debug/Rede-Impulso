@@ -18,8 +18,19 @@ export function ExcluirCatalogoButton({
     if (!confirm("Excluir este item do catálogo?")) return;
     setExcluindo(true);
     const supabase = createClient();
-    await supabase.from(tabela).delete().eq("id", id);
+    const { error } = await supabase.from(tabela).delete().eq("id", id);
     setExcluindo(false);
+    if (error) {
+      // Sem isto, um delete barrado (ex.: cidade ainda referenciada por
+      // uma organização) não dava nenhum feedback — a tela só atualizava
+      // e o item continuava lá, sem explicação do motivo.
+      alert(
+        error.code === "23503"
+          ? "Não dá para excluir: ainda existe algo vinculado a este item."
+          : "Não foi possível excluir.",
+      );
+      return;
+    }
     router.refresh();
   }
 
