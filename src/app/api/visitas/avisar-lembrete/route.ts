@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getResend, resendConfigurado, EMAIL_REMETENTE } from "@/lib/resend";
 import { rodapeTransacionalHtml } from "@/lib/email-rodape";
 import { enviarLembreteWhatsapp } from "@/lib/whatsapp";
+import { escaparHtml } from "@/lib/escapar-html";
 
 // Lembrete de horário — a funcionalidade mais básica de qualquer
 // sistema de agendamento de verdade (AppBarber chama de "lembrete de
@@ -109,11 +110,11 @@ export async function GET(request: NextRequest) {
           to: dest.email,
           subject: `Lembrete: visita hoje às ${hora}`,
           html: `
-            <p>Olá, ${dest.nome}.</p>
+            <p>Olá, ${escaparHtml(dest.nome)}.</p>
             <p>${
               dest.papel === "interessado"
-                ? `Sua visita com <strong>${nomeContraparte("interessado")}</strong> está confirmada para <strong>${quando}</strong>.`
-                : `Você tem uma visita confirmada com <strong>${nomeContraparte("responsavel")}</strong> às <strong>${quando}</strong>.`
+                ? `Sua visita com <strong>${escaparHtml(nomeContraparte("interessado"))}</strong> está confirmada para <strong>${quando}</strong>.`
+                : `Você tem uma visita confirmada com <strong>${escaparHtml(nomeContraparte("responsavel"))}</strong> às <strong>${quando}</strong>.`
             }</p>
             ${rodapeTransacionalHtml()}
           `,

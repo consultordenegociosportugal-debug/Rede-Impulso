@@ -1,6 +1,7 @@
 import { getResend, resendConfigurado, EMAIL_REMETENTE } from "@/lib/resend";
 import { rodapeTransacionalHtml } from "@/lib/email-rodape";
 import { enviarCancelamentoWhatsapp } from "@/lib/whatsapp";
+import { escaparHtml } from "@/lib/escapar-html";
 
 const formatoData = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "full",
@@ -35,10 +36,10 @@ export async function avisarCancelamento(dados: {
         to: dados.destinatarioEmail,
         subject: `Visita com ${dados.nomeContraparte} cancelada`,
         html: `
-          <p>Olá, ${dados.destinatarioNome}.</p>
-          <p>Sua visita com <strong>${dados.nomeContraparte}</strong>, marcada para
+          <p>Olá, ${escaparHtml(dados.destinatarioNome)}.</p>
+          <p>Sua visita com <strong>${escaparHtml(dados.nomeContraparte)}</strong>, marcada para
           <strong>${dataFormatada} às ${horaFormatada}</strong>, foi cancelada.</p>
-          ${dados.motivoExtra ? `<p>${dados.motivoExtra}</p>` : ""}
+          ${dados.motivoExtra ? `<p>${escaparHtml(dados.motivoExtra)}</p>` : ""}
           ${rodapeTransacionalHtml()}
         `,
       });

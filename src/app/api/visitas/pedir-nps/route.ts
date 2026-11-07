@@ -3,6 +3,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getResend, resendConfigurado, EMAIL_REMETENTE } from "@/lib/resend";
 import { rodapeTransacionalHtml } from "@/lib/email-rodape";
 import { enviarPedidoAvaliacaoWhatsapp } from "@/lib/whatsapp";
+import { escaparHtml } from "@/lib/escapar-html";
 
 // Pesquisa de satisfação (NPS) pós-visita — dispara depois que a visita
 // já aconteceu, uma vez só por visita. Roda diariamente (plano Hobby da
@@ -85,8 +86,8 @@ export async function GET(request: NextRequest) {
           to: destinatario.email,
           subject: `Como foi sua visita com ${visita.corretor?.nome ?? "o corretor"}?`,
           html: `
-            <p>Olá, ${destinatario.nome}.</p>
-            <p>Sua visita com <strong>${visita.corretor?.nome ?? "o corretor"}</strong> já aconteceu.
+            <p>Olá, ${escaparHtml(destinatario.nome)}.</p>
+            <p>Sua visita com <strong>${escaparHtml(visita.corretor?.nome ?? "o corretor")}</strong> já aconteceu.
             Pode avaliar o atendimento? Leva menos de um minuto.</p>
             <p><a href="${link}">Avaliar atendimento →</a></p>
             ${rodapeTransacionalHtml()}

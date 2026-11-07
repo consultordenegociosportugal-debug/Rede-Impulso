@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getResend, resendConfigurado, EMAIL_REMETENTE } from "@/lib/resend";
 import { rodapeTransacionalHtml } from "@/lib/email-rodape";
 import { enviarConfirmacaoWhatsapp } from "@/lib/whatsapp";
+import { escaparHtml } from "@/lib/escapar-html";
 
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "full",
@@ -70,9 +71,9 @@ export async function avisarAgendamento(
           cc: dados.clienteEmail ? copias : copias.slice(1),
           subject: `Agendamento confirmado com ${corretor?.nome ?? "seu corretor"}`,
           html: `
-            <p>Olá, ${dados.clienteNome}.</p>
-            <p>Seu agendamento com <strong>${corretor?.nome ?? "o corretor"}</strong>${
-              organizacao ? ` (${organizacao.nome})` : ""
+            <p>Olá, ${escaparHtml(dados.clienteNome)}.</p>
+            <p>Seu agendamento com <strong>${escaparHtml(corretor?.nome ?? "o corretor")}</strong>${
+              organizacao ? ` (${escaparHtml(organizacao.nome)})` : ""
             } está confirmado para <strong>${quando}</strong>.</p>
             ${rodapeTransacionalHtml()}
           `,
