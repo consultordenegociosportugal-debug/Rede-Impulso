@@ -178,6 +178,34 @@ export function EditarPerfilForm({
       novaFotoUrl = `${publicUrl}?v=${Date.now()}`;
     }
 
+    // Salva corretor_perfis ANTES de profiles — se o CPF/CRECI colidir
+    // com outra conta (constraint da migração 0071) ou qualquer outro
+    // erro acontecer aqui, nada foi salvo ainda: evita o save parcial
+    // de "nome/foto novos, CPF/CRECI antigos" que dava pra acontecer
+    // salvando na ordem inversa.
+    if (role === "corretor") {
+      const { error: erroCorretor } = await supabase
+        .from("corretor_perfis")
+        .update({
+          cpf: cpf.replace(/\D/g, ""),
+          creci,
+          bairros_atuacao: bairros,
+          cidade: cidade || null,
+        })
+        .eq("profile_id", userId);
+      if (erroCorretor) {
+        if (erroCorretor.message.includes("corretor_perfis_cpf_key")) {
+          setErro("Esse CPF já está cadastrado em outra conta.");
+        } else if (erroCorretor.message.includes("corretor_perfis_creci_key")) {
+          setErro("Esse CRECI já está cadastrado em outra conta.");
+        } else {
+          setErro(erroCorretor.message);
+        }
+        setStatus("error");
+        return;
+      }
+    }
+
     const { error: erroPerfil } = await supabase
       .from("profiles")
       .update({
@@ -193,23 +221,6 @@ export function EditarPerfilForm({
       setErro(erroPerfil.message);
       setStatus("error");
       return;
-    }
-
-    if (role === "corretor") {
-      const { error: erroCorretor } = await supabase
-        .from("corretor_perfis")
-        .update({
-          cpf: cpf.replace(/\D/g, ""),
-          creci,
-          bairros_atuacao: bairros,
-          cidade: cidade || null,
-        })
-        .eq("profile_id", userId);
-      if (erroCorretor) {
-        setErro(erroCorretor.message);
-        setStatus("error");
-        return;
-      }
     }
 
     setFotoUrl(novaFotoUrl);
