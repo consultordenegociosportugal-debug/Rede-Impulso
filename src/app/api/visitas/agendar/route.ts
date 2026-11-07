@@ -75,6 +75,19 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // O corretor pode abrir o próprio perfil público (é o link que ele
+  // compartilha com os clientes) e, sem esta checagem, o botão
+  // "Agendar" de lá deixava ele marcar uma visita consigo mesmo
+  // (corretor_id === comprador_id) — visita sem sentido nenhum que
+  // ainda assim entrava nas estatísticas do dashboard e mandava
+  // e-mail/WhatsApp de confirmação pra própria pessoa.
+  if (!clienteAvulso && corretorId === user.id) {
+    return NextResponse.json(
+      { erro: "Você não pode agendar uma visita consigo mesmo." },
+      { status: 400 },
+    );
+  }
+
   // corretorId === user.id já garante que é o próprio usuário, mas não
   // que esse usuário É corretor — sem isto, qualquer comprador logado
   // conseguia se auto-agendar como cliente avulso de si mesmo (o RLS

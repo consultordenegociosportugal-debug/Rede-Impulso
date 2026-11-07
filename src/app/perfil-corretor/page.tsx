@@ -195,13 +195,15 @@ export default async function PerfilCorretorPage({
               ))}
             </div>
 
-            <div className="mt-24">
-              <AgendarComCorretorButton
-                corretorId={perfil.id}
-                corretorNome={perfil.nome}
-                logado={Boolean(user)}
-              />
-            </div>
+            {user?.id !== perfil.id && (
+              <div className="mt-24">
+                <AgendarComCorretorButton
+                  corretorId={perfil.id}
+                  corretorNome={perfil.nome}
+                  logado={Boolean(user)}
+                />
+              </div>
+            )}
 
             <div
               className="mt-24"
