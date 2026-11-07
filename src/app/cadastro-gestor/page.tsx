@@ -47,7 +47,7 @@ export default function CadastroGestorPage() {
   const [organizacoes, setOrganizacoes] = useState<Organizacao[] | null>(null);
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [status, setStatus] = useState<
-    "idle" | "loading" | "error" | "aguardando_confirmacao" | "logado"
+    "idle" | "loading" | "error" | "aguardando_confirmacao" | "vinculando" | "erro_vinculo" | "logado"
   >("idle");
   const [erro, setErro] = useState<string | null>(null);
   const [emailJaUsado, setEmailJaUsado] = useState(false);
@@ -104,21 +104,42 @@ export default function CadastroGestorPage() {
   }
 
   async function vincularOrganizacao() {
+    setStatus("vinculando");
+    setErro(null);
+
     const supabase = createClient();
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setErro("Sua sessão expirou durante a confirmação. Entre de novo para concluir o cadastro.");
+      setStatus("erro_vinculo");
+      return;
+    }
 
-    await supabase.from("gestor_perfis").insert({
+    const { error } = await supabase.from("gestor_perfis").insert({
       profile_id: user.id,
       organizacao_catalogo_id: organizacaoId,
     });
 
+    // 23505 (profile_id duplicado) só acontece se esta chamada já tinha
+    // dado certo antes (ex.: o código de confirmação foi validado duas
+    // vezes) — não é uma falha real, o vínculo já existe.
+    if (error && error.code !== "23505") {
+      setErro("Não foi possível vincular sua conta à organização. Tente de novo.");
+      setStatus("erro_vinculo");
+      return;
+    }
+
     setStatus("logado");
   }
 
-  if (status === "aguardando_confirmacao" || status === "logado") {
+  if (
+    status === "aguardando_confirmacao" ||
+    status === "vinculando" ||
+    status === "erro_vinculo" ||
+    status === "logado"
+  ) {
     return (
       <>
         <Nav active="/cadastro-gestor" />
@@ -128,15 +149,29 @@ export default function CadastroGestorPage() {
               {status === "logado" && <div className="celebra-icone">✓</div>}
               <span className="badge badge-primary">Cadastro de gestor</span>
               <h1 style={{ fontSize: 22, margin: "12px 0 4px" }}>
-                {status === "aguardando_confirmacao" ? "Falta só confirmar seu e-mail" : "Tudo pronto!"}
+                {status === "aguardando_confirmacao" && "Falta só confirmar seu e-mail"}
+                {status === "vinculando" && "Confirmando seu cadastro…"}
+                {status === "erro_vinculo" && "Quase lá"}
+                {status === "logado" && "Tudo pronto!"}
               </h1>
               <p className="muted">
-                {status === "aguardando_confirmacao"
-                  ? `Enviamos um código de confirmação para ${email}.`
-                  : "Sua conta já está ativa."}
+                {status === "aguardando_confirmacao" &&
+                  `Enviamos um código de confirmação para ${email}.`}
+                {status === "vinculando" && "Vinculando sua conta à organização…"}
+                {status === "erro_vinculo" && erro}
+                {status === "logado" && "Sua conta já está ativa."}
               </p>
               {status === "aguardando_confirmacao" && (
                 <ConfirmarCodigoEmail email={email} onVerificado={vincularOrganizacao} />
+              )}
+              {status === "erro_vinculo" && (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm mt-16"
+                  onClick={vincularOrganizacao}
+                >
+                  Tentar de novo
+                </button>
               )}
               {status === "logado" && (
                 <Link href="/painel-gestor" className="btn btn-primary btn-sm mt-16">
