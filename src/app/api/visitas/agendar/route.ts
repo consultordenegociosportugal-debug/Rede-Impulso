@@ -154,13 +154,18 @@ export async function POST(request: NextRequest) {
       // de novo no formulário.
       let clienteExistenteId: string | null = null;
       if (telefoneNormalizado) {
-        const { data: existente } = await supabase
+        // clientes_avulsos.telefone é salvo no formato "bonito" que a
+        // pessoa digitou (com +55, parênteses etc.), não em E.164 — um
+        // .eq() direto contra telefoneNormalizado nunca batia, e todo
+        // reagendamento pro mesmo cliente duplicava a linha em "Meus
+        // clientes". Compara só os dígitos dos dois lados.
+        const { data: candidatos } = await supabase
           .from("clientes_avulsos")
-          .select("id")
+          .select("id, telefone")
           .eq("corretor_id", user.id)
-          .eq("telefone", telefoneNormalizado)
-          .maybeSingle();
-        clienteExistenteId = existente?.id ?? null;
+          .not("telefone", "is", null);
+        clienteExistenteId =
+          candidatos?.find((c) => paraE164(c.telefone!) === telefoneNormalizado)?.id ?? null;
       }
 
       if (clienteExistenteId) {
