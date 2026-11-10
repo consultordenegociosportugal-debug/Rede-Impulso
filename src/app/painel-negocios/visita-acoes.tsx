@@ -33,6 +33,15 @@ export function VisitaAcoes({
   // nunca seria visto. Fica parado na tela até o corretor confirmar que
   // leu, só então atualiza a lista.
   const [avisoPendente, setAvisoPendente] = useState<string | null>(null);
+  // O que fazer quando o corretor confirma que leu o avisoPendente —
+  // depende de qual ação gerou o aviso (cancelar leva pro reagendamento
+  // direto; reagendar só precisa atualizar a lista).
+  const [avisoPendenteContinuacao, setAvisoPendenteContinuacao] = useState<(() => void) | null>(
+    null,
+  );
+  const [statusAtual, setStatusAtual] = useState(status);
+  const [cancelando, setCancelando] = useState(false);
+  const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [reagendando, setReagendando] = useState(false);
   const [dataNova, setDataNova] = useState(hojeISO());
   const [horarioNovo, setHorarioNovo] = useState<string | null>(null);
@@ -123,7 +132,10 @@ export function VisitaAcoes({
     router.refresh();
   }
 
-  async function mudar(novoStatus: "confirmada" | "cancelada" | "realizada" | "nao_compareceu") {
+  async function mudar(
+    novoStatus: "confirmada" | "cancelada" | "realizada" | "nao_compareceu",
+    motivo?: string,
+  ) {
     setSalvando(true);
     setErro(null);
     setAviso(null);
@@ -137,7 +149,7 @@ export function VisitaAcoes({
         const resposta = await fetch("/api/visitas/cancelar", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ visita_id: visitaId }),
+          body: JSON.stringify({ visita_id: visitaId, motivo }),
         });
         const dados = (await resposta.json().catch(() => ({}))) as {
           erro?: string;
@@ -199,7 +211,31 @@ export function VisitaAcoes({
     }
 
     setSalvando(false);
+
+    if (novoStatus === "cancelada") {
+      // Vai direto pro reagendamento com o mesmo cliente — sem isso o
+      // corretor precisava esperar a lista recarregar e achar a visita
+      // cancelada de novo só pra clicar em "Reagendar".
+      setStatusAtual("cancelada");
+      setCancelando(false);
+      setMotivoCancelamento("");
+      if (precisaAvisarClienteManualmente) {
+        setAvisoPendenteContinuacao(() => () => {
+          setReagendando(true);
+          router.refresh();
+        });
+        setAvisoPendente(
+          "⚠️ Visita cancelada, mas não conseguimos avisar por WhatsApp — avise o cliente manualmente.",
+        );
+      } else {
+        setReagendando(true);
+        router.refresh();
+      }
+      return;
+    }
+
     if (precisaAvisarClienteManualmente) {
+      setAvisoPendenteContinuacao(() => () => router.refresh());
       setAvisoPendente(
         "⚠️ Visita cancelada, mas não conseguimos avisar por WhatsApp — avise o cliente manualmente.",
       );
@@ -219,7 +255,10 @@ export function VisitaAcoes({
           className="btn btn-outline btn-sm"
           onClick={() => {
             setAvisoPendente(null);
-            router.refresh();
+            const continuacao = avisoPendenteContinuacao;
+            setAvisoPendenteContinuacao(null);
+            if (continuacao) continuacao();
+            else router.refresh();
           }}
         >
           OK, entendi
@@ -228,9 +267,9 @@ export function VisitaAcoes({
     );
   }
 
-  if (status === "realizada" || status === "nao_compareceu") return null;
+  if (statusAtual === "realizada" || statusAtual === "nao_compareceu") return null;
 
-  if (status === "cancelada") {
+  if (statusAtual === "cancelada") {
     if (!reagendando) {
       return (
         <button
@@ -303,10 +342,59 @@ export function VisitaAcoes({
 
   const jaPassou = new Date(dataHora).getTime() < Date.now();
 
+  if (cancelando) {
+    return (
+      <div className="card" style={{ padding: 12, minWidth: 260 }}>
+        <div className="field" style={{ marginBottom: 8 }}>
+          <label className="hint" style={{ marginBottom: 4 }}>
+            Motivo do cancelamento
+          </label>
+          <textarea
+            rows={2}
+            value={motivoCancelamento}
+            onChange={(e) => setMotivoCancelamento(e.target.value)}
+            placeholder="Ex.: cliente pediu para remarcar, imprevisto do corretor…"
+            autoFocus
+          />
+        </div>
+        <p className="hint" style={{ marginBottom: 8 }}>
+          O cliente será avisado por e-mail/WhatsApp. Depois de cancelar, você já pode reagendar
+          com o mesmo cliente.
+        </p>
+        <div className="flex gap-8">
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={() => mudar("cancelada", motivoCancelamento.trim() || undefined)}
+            disabled={salvando}
+          >
+            {salvando ? "Cancelando…" : "Cancelar visita"}
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              setCancelando(false);
+              setMotivoCancelamento("");
+            }}
+            disabled={salvando}
+          >
+            Voltar
+          </button>
+        </div>
+        {erro && (
+          <p className="hint" style={{ color: "var(--coral)", marginBottom: 0 }}>
+            {erro}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex gap-8 items-center">
-        {status === "solicitada" && (
+        {statusAtual === "solicitada" && (
           <button
             type="button"
             className="btn btn-primary btn-sm"
@@ -316,7 +404,7 @@ export function VisitaAcoes({
             {salvando ? "Salvando…" : "Confirmar"}
           </button>
         )}
-        {status === "confirmada" && !jaPassou && !googleEventId && googleConfigurado && (
+        {statusAtual === "confirmada" && !jaPassou && !googleEventId && googleConfigurado && (
           <button
             type="button"
             className="btn btn-outline btn-sm"
@@ -326,7 +414,7 @@ export function VisitaAcoes({
             {salvando ? "Sincronizando…" : "📅 Sincronizar com Google"}
           </button>
         )}
-        {status === "confirmada" && jaPassou ? (
+        {statusAtual === "confirmada" && jaPassou ? (
           <>
             <button
               type="button"
@@ -349,11 +437,7 @@ export function VisitaAcoes({
           <button
             type="button"
             className="btn btn-ghost btn-sm"
-            onClick={() => {
-              if (window.confirm("Cancelar essa visita? O cliente será avisado por e-mail/WhatsApp.")) {
-                mudar("cancelada");
-              }
-            }}
+            onClick={() => setCancelando(true)}
             disabled={salvando}
           >
             Cancelar

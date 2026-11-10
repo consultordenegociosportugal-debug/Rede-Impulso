@@ -26,7 +26,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
   }
 
-  const { visita_id: visitaId } = (await request.json()) as { visita_id?: string };
+  const { visita_id: visitaId, motivo } = (await request.json()) as {
+    visita_id?: string;
+    motivo?: string;
+  };
   if (!visitaId) {
     return NextResponse.json({ erro: "visita_id é obrigatório." }, { status: 400 });
   }
@@ -54,7 +57,7 @@ export async function POST(request: NextRequest) {
   const { error: erroUpdate } = await supabase.rpc("atualizar_status_visita_com_motivo", {
     p_visita_id: visitaId,
     p_status: "cancelada",
-    p_motivo: "Cancelada pelo corretor",
+    p_motivo: motivo?.trim() || "Cancelada pelo corretor (sem motivo informado)",
   });
 
   if (erroUpdate) {

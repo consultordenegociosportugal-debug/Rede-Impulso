@@ -14,7 +14,16 @@ import { ConfirmarCodigoEmail } from "@/components/confirmar-codigo-email";
 import { BairrosInput } from "@/components/bairros-input";
 import { CidadeInput } from "@/components/cidade-input";
 
-type Campo = "nome" | "cpf" | "creci" | "bairros" | "telefone" | "dataNascimento" | "email" | "senha";
+type Campo =
+  | "nome"
+  | "cpf"
+  | "creci"
+  | "bairros"
+  | "termos"
+  | "telefone"
+  | "dataNascimento"
+  | "email"
+  | "senha";
 type ErrosCampo = Partial<Record<Campo, string>>;
 
 const TOTAL_PASSOS = 2;
@@ -32,6 +41,7 @@ const CAMPO_ID: Record<Campo, string> = {
   cpf: "cpf",
   creci: "creci",
   bairros: "bairro",
+  termos: "termos",
   telefone: "tel",
   dataNascimento: "dataNascimento",
   email: "email",
@@ -83,6 +93,7 @@ export default function CadastroProfissionalPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [emailJaUsado, setEmailJaUsado] = useState(false);
   const [errosCampo, setErrosCampo] = useState<ErrosCampo>({});
+  const [verificandoDuplicidade, setVerificandoDuplicidade] = useState(false);
 
   const primeiroCampo = useRef<HTMLInputElement>(null);
   const jaMontou = useRef(false);
@@ -117,6 +128,9 @@ export default function CadastroProfissionalPage() {
       if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
       else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
       if (bairros.length === 0) problemas.bairros = "Informe ao menos um bairro onde você atua.";
+
+      if (!aceitouTermos)
+        problemas.termos = "Marque o aceite dos Termos de Uso e da Política de Privacidade para continuar.";
     }
     if (alvo === 2) {
       if (!telefone) problemas.telefone = "Informe seu WhatsApp com DDD.";
@@ -134,20 +148,50 @@ export default function CadastroProfissionalPage() {
     return problemas;
   }
 
-  function avancar() {
+  function mostrarErroDeCampo(problemas: ErrosCampo) {
+    setErrosCampo(problemas);
+    setErro("Confira os campos destacados abaixo antes de continuar.");
+    const campoComErro = Object.keys(problemas)[0] as Campo;
+    const elementoId = CAMPO_ID[campoComErro];
+    requestAnimationFrame(() => {
+      const el = document.getElementById(elementoId);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      el?.focus();
+    });
+  }
+
+  async function avancar() {
     const problemas = validarPasso(passo);
     if (Object.keys(problemas).length > 0) {
-      setErrosCampo(problemas);
-      setErro("Confira os campos destacados abaixo antes de continuar.");
-      const campoComErro = Object.keys(problemas)[0] as Campo;
-      const elementoId = CAMPO_ID[campoComErro];
-      requestAnimationFrame(() => {
-        const el = document.getElementById(elementoId);
-        el?.scrollIntoView({ behavior: "smooth", block: "center" });
-        el?.focus();
-      });
+      mostrarErroDeCampo(problemas);
       return;
     }
+
+    // CPF/CRECI são únicos entre corretores (migração 0071). Checar aqui,
+    // antes do signUp, evita depender da mensagem de erro que o Supabase
+    // Auth devolve pra violação de unique constraint — que vem mascarada
+    // como um erro genérico de banco, sem dizer qual campo bateu.
+    if (passo === 1) {
+      setVerificandoDuplicidade(true);
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc("cpf_creci_disponiveis", {
+        p_cpf: cpf.replace(/\D/g, ""),
+        p_creci: creci,
+      });
+      setVerificandoDuplicidade(false);
+
+      if (!error && data) {
+        const duplicidade: ErrosCampo = {};
+        if (!data.cpf_disponivel) duplicidade.cpf = "Esse CPF já está cadastrado em outra conta.";
+        if (!data.creci_disponivel)
+          duplicidade.creci = "Esse CRECI já está cadastrado em outra conta.";
+        if (Object.keys(duplicidade).length > 0) {
+          mostrarErroDeCampo(duplicidade);
+          return;
+        }
+      }
+    }
+
     setErrosCampo({});
     setErro(null);
     setPasso((p) => Math.min(p + 1, TOTAL_PASSOS));
@@ -419,8 +463,14 @@ export default function CadastroProfissionalPage() {
                 <label className={styles.termos} style={{ marginTop: 12 }}>
                   <input
                     type="checkbox"
+                    id="termos"
                     checked={aceitouTermos}
-                    onChange={(e) => setAceitouTermos(e.target.checked)}
+                    onChange={(e) => {
+                      setAceitouTermos(e.target.checked);
+                      limparErroDe("termos");
+                    }}
+                    aria-invalid={errosCampo.termos ? true : undefined}
+                    aria-describedby={errosCampo.termos ? "erro-termos" : undefined}
                     className={styles.termosCheck}
                   />
                   <span>
@@ -445,6 +495,11 @@ export default function CadastroProfissionalPage() {
                     .
                   </span>
                 </label>
+                {errosCampo.termos && (
+                  <p className={styles.erroCampo} id="erro-termos">
+                    {errosCampo.termos}
+                  </p>
+                )}
               </>
             )}
 
@@ -603,8 +658,9 @@ export default function CadastroProfissionalPage() {
                   type="button"
                   className="btn btn-primary btn-block"
                   onClick={avancar}
+                  disabled={verificandoDuplicidade}
                 >
-                  Continuar →
+                  {verificandoDuplicidade ? "Verificando…" : "Continuar →"}
                 </button>
               ) : (
                 <button
