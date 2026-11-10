@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
+import { VisitaClienteAcoes } from "./visita-cliente-acoes";
 
 const STATUS_VISITA: Record<string, { label: string; className: string }> = {
   solicitada: { label: "Aguardando confirmação", className: "badge-amber" },
@@ -22,10 +23,19 @@ type VisitaRow = {
   id: string;
   data_hora: string;
   status: string;
+  corretor_id: string;
   corretor: { nome: string } | null;
 };
 
-function ListaVisitas({ visitas, vazio }: { visitas: VisitaRow[]; vazio: string }) {
+function ListaVisitas({
+  visitas,
+  vazio,
+  comAcoes,
+}: {
+  visitas: VisitaRow[];
+  vazio: string;
+  comAcoes?: boolean;
+}) {
   if (visitas.length === 0) {
     return (
       <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
@@ -48,7 +58,18 @@ function ListaVisitas({ visitas, vazio }: { visitas: VisitaRow[]; vazio: string 
                   Com {v.corretor?.nome ?? "o corretor"}
                 </div>
               </div>
-              <span className={`badge ${badge.className}`}>{badge.label}</span>
+              <div className="flex gap-8 items-center">
+                <span className={`badge ${badge.className}`}>{badge.label}</span>
+                {comAcoes && (
+                  <VisitaClienteAcoes
+                    visitaId={v.id}
+                    status={v.status}
+                    dataHora={v.data_hora}
+                    corretorId={v.corretor_id}
+                    corretorNome={v.corretor?.nome ?? "o corretor"}
+                  />
+                )}
+              </div>
             </div>
           </div>
         );
@@ -71,7 +92,7 @@ export default async function MeusAgendamentosPage() {
 
   const { data: dadosFuturas } = await supabase
     .from("visitas")
-    .select("id, data_hora, status, corretor:corretor_id(nome)")
+    .select("id, data_hora, status, corretor_id, corretor:corretor_id(nome)")
     .eq("comprador_id", user.id)
     .gte("data_hora", agora)
     .order("data_hora", { ascending: true });
@@ -79,7 +100,7 @@ export default async function MeusAgendamentosPage() {
 
   const { data: dadosPassadas } = await supabase
     .from("visitas")
-    .select("id, data_hora, status, corretor:corretor_id(nome)")
+    .select("id, data_hora, status, corretor_id, corretor:corretor_id(nome)")
     .eq("comprador_id", user.id)
     .lt("data_hora", agora)
     .order("data_hora", { ascending: false })
@@ -97,7 +118,7 @@ export default async function MeusAgendamentosPage() {
 
         <section className="mt-24">
           <h2 style={{ fontSize: 18, margin: "0 0 12px" }}>Próximas</h2>
-          <ListaVisitas visitas={futuras} vazio="Você não tem nenhuma visita agendada." />
+          <ListaVisitas visitas={futuras} vazio="Você não tem nenhuma visita agendada." comAcoes />
           {futuras.length === 0 && (
             <div className="flex gap-8 mt-16" style={{ flexWrap: "wrap" }}>
               <Link href="/buscar-profissionais" className="btn btn-primary btn-sm">

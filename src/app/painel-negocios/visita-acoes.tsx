@@ -165,14 +165,14 @@ export function VisitaAcoes({
         });
         const dados = (await resposta.json().catch(() => ({}))) as {
           erro?: string;
-          precisaAvisarClienteManualmente?: boolean;
+          precisaAvisarManualmente?: boolean;
         };
         if (!resposta.ok) {
           setErro(dados.erro ?? "Não foi possível cancelar a visita.");
           setSalvando(false);
           return;
         }
-        precisaAvisarClienteManualmente = Boolean(dados.precisaAvisarClienteManualmente);
+        precisaAvisarClienteManualmente = Boolean(dados.precisaAvisarManualmente);
       } catch {
         setErro("Sem conexão no momento. Tente de novo.");
         setSalvando(false);
