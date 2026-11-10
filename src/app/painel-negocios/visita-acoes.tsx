@@ -43,6 +43,18 @@ export function VisitaAcoes({
   const [cancelando, setCancelando] = useState(false);
   const [motivoCancelamento, setMotivoCancelamento] = useState("");
   const [reagendando, setReagendando] = useState(false);
+
+  // Sem isso, confirmar/marcar-realizada/não-compareceu ficaria com a UI
+  // travada no status antigo depois do router.refresh(): como o `status`
+  // vindo do servidor é só o valor inicial do useState acima, ele nunca
+  // se atualiza de novo sozinho quando o componente não desmonta (mesma
+  // visita, mesma key). O cancelamento já seta statusAtual manualmente
+  // (pra ir direto pro reagendamento, sem esperar o refresh) — este
+  // efeito garante que QUALQUER troca de status vinda do servidor
+  // também reflita aqui, mesmo pros caminhos que não setam na mão.
+  useEffect(() => {
+    setStatusAtual(status);
+  }, [status]);
   const [dataNova, setDataNova] = useState(hojeISO());
   const [horarioNovo, setHorarioNovo] = useState<string | null>(null);
   const [horariosLivres, setHorariosLivres] = useState<string[]>([]);
