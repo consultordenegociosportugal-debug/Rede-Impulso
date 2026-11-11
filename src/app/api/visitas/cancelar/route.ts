@@ -123,6 +123,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ ok: true, jaCancelada: true });
   }
 
+  // Visita já encerrada (realizada / não compareceu) não se cancela. A
+  // UI esconde o botão nesses casos, mas uma tela aberta desde antes do
+  // corretor fechar a visita ainda mostra — e sem esta checagem a rota
+  // seguia em frente: apagava o evento da agenda do corretor e mandava
+  // o aviso de "visita cancelada" de uma visita que já aconteceu.
+  if (visita.status === "realizada" || visita.status === "nao_compareceu") {
+    return NextResponse.json(
+      { erro: "Essa visita já foi encerrada e não pode mais ser cancelada." },
+      { status: 409 },
+    );
+  }
+
   const motivoFinal =
     motivo?.trim() ||
     (souComprador
@@ -137,6 +149,25 @@ export async function POST(request: NextRequest) {
 
   if (erroUpdate) {
     return NextResponse.json({ erro: erroUpdate.message }, { status: 500 });
+  }
+
+  // A function roda com as permissões de quem chamou: se a RLS barrar o
+  // UPDATE (ex.: a visita mudou de estado entre a leitura acima e agora,
+  // ou a policy da 0080 não está aplicada no banco), ela não dá erro —
+  // só não altera nenhuma linha. Sem conferir, a rota respondia "ok",
+  // apagava o evento da agenda e avisava a outra ponta de um
+  // cancelamento que não aconteceu.
+  const { data: depois } = await supabase
+    .from("visitas")
+    .select("status")
+    .eq("id", visitaId)
+    .single();
+
+  if (depois?.status !== "cancelada") {
+    return NextResponse.json(
+      { erro: "Não foi possível cancelar essa visita. Atualize a página e tente de novo." },
+      { status: 409 },
+    );
   }
 
   // Dali pra baixo nada pode derrubar a resposta — a visita já está
