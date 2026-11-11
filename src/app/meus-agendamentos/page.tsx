@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
+import { linkWhatsapp } from "@/lib/telefone";
 import { VisitaClienteAcoes } from "./visita-cliente-acoes";
 
 const STATUS_VISITA: Record<string, { label: string; className: string }> = {
@@ -24,7 +25,7 @@ type VisitaRow = {
   data_hora: string;
   status: string;
   corretor_id: string;
-  corretor: { nome: string } | null;
+  corretor: { nome: string; telefone: string | null } | null;
 };
 
 function ListaVisitas({
@@ -47,6 +48,12 @@ function ListaVisitas({
     <div className="card" style={{ padding: "8px 20px" }}>
       {visitas.map((v) => {
         const badge = STATUS_VISITA[v.status] ?? { label: v.status, className: "badge-outline" };
+        // Só faz sentido oferecer o contato direto enquanto a visita ainda
+        // está de pé — depois de cancelada o cliente já tem o botão de
+        // agendar outro horário, que resolve melhor que uma ligação.
+        const podeFalarDireto =
+          (v.status === "solicitada" || v.status === "confirmada") && v.corretor?.telefone;
+        const link = podeFalarDireto ? linkWhatsapp(v.corretor!.telefone!) : null;
         return (
           <div key={v.id} className="list-row">
             <div className="flex between items-center" style={{ width: "100%", gap: 12, flexWrap: "wrap" }}>
@@ -57,6 +64,17 @@ function ListaVisitas({
                 <div className="hint" style={{ margin: 0 }}>
                   Com {v.corretor?.nome ?? "o corretor"}
                 </div>
+                {link && (
+                  <a
+                    href={link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hint"
+                    style={{ textDecoration: "underline" }}
+                  >
+                    💬 Falar com {v.corretor?.nome ?? "o corretor"} no WhatsApp
+                  </a>
+                )}
               </div>
               <div className="flex gap-8 items-center">
                 <span className={`badge ${badge.className}`}>{badge.label}</span>
@@ -92,7 +110,7 @@ export default async function MeusAgendamentosPage() {
 
   const { data: dadosFuturas } = await supabase
     .from("visitas")
-    .select("id, data_hora, status, corretor_id, corretor:corretor_id(nome)")
+    .select("id, data_hora, status, corretor_id, corretor:corretor_id(nome, telefone)")
     .eq("comprador_id", user.id)
     .gte("data_hora", agora)
     .order("data_hora", { ascending: true });
@@ -100,7 +118,7 @@ export default async function MeusAgendamentosPage() {
 
   const { data: dadosPassadas } = await supabase
     .from("visitas")
-    .select("id, data_hora, status, corretor_id, corretor:corretor_id(nome)")
+    .select("id, data_hora, status, corretor_id, corretor:corretor_id(nome, telefone)")
     .eq("comprador_id", user.id)
     .lt("data_hora", agora)
     .order("data_hora", { ascending: false })

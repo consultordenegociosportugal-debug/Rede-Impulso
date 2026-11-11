@@ -37,3 +37,17 @@ export function paraE164(telefone: string): string | null {
   if (digitosBrasil.length < 10 || digitosBrasil.length > 11) return null;
   return `+55${digitosBrasil}`;
 }
+
+/**
+ * Link "wa.me" pra abrir uma conversa direto com esse número — sem isso,
+ * depois da confirmação da visita o cliente não tinha nenhum jeito de falar
+ * com o corretor além de esperar ele entrar em contato (a mensagem de
+ * confirmação sai do número da PLATAFORMA, não do corretor; responder a ela
+ * cairia no WhatsApp Business da Rede Impulso, não no do corretor).
+ */
+export function linkWhatsapp(telefone: string, mensagem?: string): string | null {
+  const e164 = paraE164(telefone);
+  if (!e164) return null;
+  const numero = e164.slice(1);
+  return mensagem ? `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}` : `https://wa.me/${numero}`;
+}

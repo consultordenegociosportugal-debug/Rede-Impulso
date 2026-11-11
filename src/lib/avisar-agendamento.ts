@@ -3,6 +3,7 @@ import { getResend, resendConfigurado, EMAIL_REMETENTE } from "@/lib/resend";
 import { rodapeTransacionalHtml } from "@/lib/email-rodape";
 import { enviarConfirmacaoWhatsapp } from "@/lib/whatsapp";
 import { escaparHtml } from "@/lib/escapar-html";
+import { linkWhatsapp } from "@/lib/telefone";
 
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "full",
@@ -64,6 +65,10 @@ export async function avisarAgendamento(
     if (dados.clienteEmail || copias.length > 0) {
       const quando = formatoDataHora.format(quandoIso);
       const resend = getResend()!;
+      // A mensagem de confirmação (e-mail e WhatsApp) sai do número/conta da
+      // PLATAFORMA — sem este link, o cliente não tinha nenhum jeito de
+      // falar direto com o corretor além de esperar ele entrar em contato.
+      const linkCorretor = corretor?.telefone ? linkWhatsapp(corretor.telefone) : null;
       try {
         await resend.emails.send({
           from: EMAIL_REMETENTE,
@@ -75,6 +80,11 @@ export async function avisarAgendamento(
             <p>Seu agendamento com <strong>${escaparHtml(corretor?.nome ?? "o corretor")}</strong>${
               organizacao ? ` (${escaparHtml(organizacao.nome)})` : ""
             } está confirmado para <strong>${quando}</strong>.</p>
+            ${
+              linkCorretor
+                ? `<p><a href="${linkCorretor}">Falar com ${escaparHtml(corretor?.nome ?? "o corretor")} no WhatsApp</a></p>`
+                : ""
+            }
             ${rodapeTransacionalHtml()}
           `,
         });

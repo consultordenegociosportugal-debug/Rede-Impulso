@@ -10,6 +10,7 @@ import { ViewToggle } from "./view-toggle";
 import { LinkPerfilPublico } from "./link-perfil-publico";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
 import { hojeISO } from "@/lib/data";
+import { linkWhatsapp } from "@/lib/telefone";
 
 const PAPEIS_COM_PAINEL = ["corretor"];
 
@@ -272,6 +273,7 @@ export default async function PainelNegociosPage({
                     const nomeCliente = visita.comprador?.nome ?? visita.cliente_avulso?.nome;
                     const telefoneCliente =
                       visita.comprador?.telefone ?? visita.cliente_avulso?.telefone;
+                    const linkCliente = telefoneCliente ? linkWhatsapp(telefoneCliente) : null;
                     return (
                       <div key={visita.id} className="list-row">
                         <div
@@ -284,7 +286,22 @@ export default async function PainelNegociosPage({
                             </div>
                             <div className="hint" style={{ margin: 0 }}>
                               Cliente: {nomeCliente ?? "—"}
-                              {telefoneCliente ? ` · ${telefoneCliente}` : ""}
+                              {telefoneCliente &&
+                                (linkCliente ? (
+                                  <>
+                                    {" · "}
+                                    <a
+                                      href={linkCliente}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      style={{ textDecoration: "underline" }}
+                                    >
+                                      💬 {telefoneCliente}
+                                    </a>
+                                  </>
+                                ) : (
+                                  ` · ${telefoneCliente}`
+                                ))}
                             </div>
                             {visita.observacoes && (
                               <div className="hint" style={{ margin: 0 }}>
