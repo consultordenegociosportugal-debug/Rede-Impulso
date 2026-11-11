@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Fraunces, Inter, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 import { HydrationMarker } from "@/components/hydration-marker";
+import { RegistroServiceWorker } from "@/components/registro-service-worker";
 
 // Inline de propósito (não um arquivo .js externo): se um bloqueador de
 // anúncios, antivírus ou extensão de privacidade impedir os chunks do
@@ -52,11 +53,25 @@ export const metadata: Metadata = {
   title: "Rede Impulso — Agendamento direto entre você e seu corretor",
   description:
     "A plataforma que conecta corretores, imobiliárias e construtoras aos seus clientes, com agendamento de visitas e atendimento em um só lugar.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Rede Impulso",
+  },
+  icons: {
+    icon: [
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  themeColor: "#0e1320",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -68,6 +83,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body>
         <script dangerouslySetInnerHTML={{ __html: HYDRATION_WATCHDOG }} />
         <HydrationMarker />
+        <RegistroServiceWorker />
         {children}
       </body>
     </html>
