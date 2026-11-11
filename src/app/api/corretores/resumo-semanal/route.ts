@@ -122,10 +122,17 @@ export async function GET(request: NextRequest) {
   // Resumo é só pra quem é corretor de verdade (tem linha em
   // corretor_perfis) — mesma referência usada em /buscar-profissionais e
   // nas policies de RLS, pra não mandar pra um comprador ou gestor.
-  const { data: corretoresData } = await supabase
+  //
+  // ?corretor_id=... restringe a um único corretor — pra testar manualmente
+  // sem disparar resumo pra toda a base; a corrida semanal de verdade
+  // (vercel.json) nunca passa esse parâmetro.
+  const corretorIdFiltro = new URL(request.url).searchParams.get("corretor_id");
+  let query = supabase
     .from("profiles")
     .select("id, nome, email, telefone, corretor_perfis!inner(profile_id)")
     .eq("role", "corretor");
+  if (corretorIdFiltro) query = query.eq("id", corretorIdFiltro);
+  const { data: corretoresData } = await query;
 
   const corretores = (corretoresData ?? []) as unknown as CorretorRow[];
 
