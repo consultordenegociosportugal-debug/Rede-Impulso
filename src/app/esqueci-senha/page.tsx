@@ -16,6 +16,32 @@ export default function EsqueciSenhaPage() {
     setStatus("loading");
     setErro(null);
 
+    // Caminho principal: o link sai pelo Resend (ver a rota). O
+    // resetPasswordForEmail do Supabase só fica como reserva para uma
+    // instalação sem Resend/service role configurados.
+    try {
+      const resposta = await fetch("/api/auth/esqueci-senha", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const dados = (await resposta.json()) as { erro?: string; usarFluxoSupabase?: boolean };
+
+      if (!resposta.ok) {
+        setErro(dados.erro ?? "Não foi possível enviar o link agora. Tente de novo em instantes.");
+        setStatus("error");
+        return;
+      }
+      if (!dados.usarFluxoSupabase) {
+        setStatus("enviado");
+        return;
+      }
+    } catch {
+      setErro("Não foi possível enviar o link agora. Tente de novo em instantes.");
+      setStatus("error");
+      return;
+    }
+
     const supabase = createClient();
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/auth/callback?depois=%2Fredefinir-senha`,
