@@ -9,6 +9,9 @@ export function Footer() {
           <Link href="/suporte" style={{ textDecoration: "underline" }}>
             Suporte
           </Link>
+          <Link href="/instalar-app" style={{ textDecoration: "underline" }}>
+            Instalar app
+          </Link>
           <Link href="/termos-de-uso" style={{ textDecoration: "underline" }}>
             Termos de Uso
           </Link>

@@ -12,7 +12,12 @@ const FAQ: { pergunta: string; resposta: string }[] = [
   {
     pergunta: "Como cancelo uma visita agendada?",
     resposta:
-      "O corretor pode cancelar em \"Minhas visitas\". Se você é cliente e precisa cancelar, entre em contato com o corretor (o telefone dele aparece no e-mail de confirmação) ou mande um chamado aqui embaixo.",
+      "Tanto o corretor (em \"Minhas visitas\") quanto o cliente (em \"Meus agendamentos\") podem cancelar diretamente pelo app — basta tocar em \"Cancelar\" e, se quiser, informar o motivo. A outra pessoa é avisada automaticamente por e-mail e WhatsApp.",
+  },
+  {
+    pergunta: "Dá pra instalar a Rede Impulso no celular, tipo um app?",
+    resposta:
+      "Sim — veja o passo a passo em \"Instalar app\" aqui embaixo. É um atalho com ícone próprio que abre em tela cheia, sem precisar baixar nada de loja.",
   },
   {
     pergunta: "Sou corretor — como configuro meus horários de atendimento?",
