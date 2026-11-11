@@ -147,13 +147,16 @@ export async function POST(request: NextRequest) {
 
   let precisaAvisarManualmente = false;
   if (souComprador) {
+    // souComprador só é true quando visita.comprador_id bate com quem
+    // chamou — então visita.comprador vem sempre preenchido aqui, nunca
+    // precisa do fallback pra cliente_avulso (esse caso é só pro corretor
+    // cancelando, no outro branch).
     if (visita.corretor) {
-      const interessado = visita.comprador ?? visita.cliente_avulso;
       ({ precisaAvisarManualmente } = await avisarCancelamento({
         destinatarioNome: visita.corretor.nome,
         destinatarioEmail: visita.corretor.email,
         destinatarioTelefone: visita.corretor.telefone,
-        nomeContraparte: interessado?.nome ?? "o cliente",
+        nomeContraparte: visita.comprador?.nome ?? "o cliente",
         dataHoraIso: visita.data_hora,
         motivoExtra: motivo?.trim() || undefined,
       }));

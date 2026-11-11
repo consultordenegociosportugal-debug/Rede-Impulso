@@ -87,7 +87,7 @@ export async function avisarAgendamento(
             } está confirmado para <strong>${quando}</strong>.</p>
             ${
               linkCorretor
-                ? `<p><a href="${linkCorretor}">Falar com ${escaparHtml(corretor?.nome ?? "o corretor")} no WhatsApp</a></p>`
+                ? `<p><a href="${escaparHtml(linkCorretor)}">Falar com ${escaparHtml(corretor?.nome ?? "o corretor")} no WhatsApp</a></p>`
                 : ""
             }
             ${rodapeTransacionalHtml()}

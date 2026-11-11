@@ -37,6 +37,7 @@ export function VisitaClienteAcoes({
   const [horariosLivres, setHorariosLivres] = useState<string[]>([]);
   const [buscandoHorarios, setBuscandoHorarios] = useState(false);
   const [novaConfirmacao, setNovaConfirmacao] = useState<string | null>(null);
+  const [novaConfirmacaoSemWhatsapp, setNovaConfirmacaoSemWhatsapp] = useState(false);
 
   // Mesmo motivo do painel do corretor: o componente não desmonta entre
   // visitas da lista (mesma key), então sem isso o status ficaria preso
@@ -117,7 +118,10 @@ export function VisitaClienteAcoes({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ corretor_id: corretorId, data: dataNova, horario: horarioNovo }),
       });
-      const dados = (await resposta.json().catch(() => ({}))) as { erro?: string };
+      const dados = (await resposta.json().catch(() => ({}))) as {
+        erro?: string;
+        precisaAvisarClienteManualmente?: boolean;
+      };
       if (!resposta.ok) {
         setErro(dados.erro ?? "Não foi possível agendar.");
         setSalvando(false);
@@ -125,6 +129,7 @@ export function VisitaClienteAcoes({
       }
       setSalvando(false);
       setNovaConfirmacao(`${dataNova.split("-").reverse().join("/")}, ${horarioNovo}`);
+      setNovaConfirmacaoSemWhatsapp(Boolean(dados.precisaAvisarClienteManualmente));
       setReagendando(false);
       router.refresh();
     } catch {
@@ -135,9 +140,16 @@ export function VisitaClienteAcoes({
 
   if (novaConfirmacao) {
     return (
-      <p className="hint" style={{ marginBottom: 0, color: "var(--primary-dark)" }}>
-        ✓ Novo horário marcado com {corretorNome}: {novaConfirmacao}.
-      </p>
+      <div>
+        <p className="hint" style={{ marginBottom: 0, color: "var(--primary-dark)" }}>
+          ✓ Novo horário marcado com {corretorNome}: {novaConfirmacao}.
+        </p>
+        {novaConfirmacaoSemWhatsapp && (
+          <p className="hint" style={{ color: "var(--coral)", marginBottom: 0 }}>
+            ⚠️ Não conseguimos confirmar por WhatsApp — guarde esta confirmação.
+          </p>
+        )}
+      </div>
     );
   }
 
