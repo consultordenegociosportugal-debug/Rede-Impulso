@@ -63,18 +63,20 @@ function ListaVisitas({
                 </div>
                 <div className="hint" style={{ margin: 0 }}>
                   Com {v.corretor?.nome ?? "o corretor"}
+                  {link && (
+                    <>
+                      {" · "}
+                      <a
+                        href={link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ textDecoration: "underline" }}
+                      >
+                        💬 {v.corretor!.telefone}
+                      </a>
+                    </>
+                  )}
                 </div>
-                {link && (
-                  <a
-                    href={link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hint"
-                    style={{ textDecoration: "underline" }}
-                  >
-                    💬 Falar com {v.corretor?.nome ?? "o corretor"} no WhatsApp
-                  </a>
-                )}
               </div>
               <div className="flex gap-8 items-center">
                 <span className={`badge ${badge.className}`}>{badge.label}</span>
