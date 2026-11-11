@@ -68,7 +68,12 @@ export async function avisarAgendamento(
       // A mensagem de confirmação (e-mail e WhatsApp) sai do número/conta da
       // PLATAFORMA — sem este link, o cliente não tinha nenhum jeito de
       // falar direto com o corretor além de esperar ele entrar em contato.
-      const linkCorretor = corretor?.telefone ? linkWhatsapp(corretor.telefone) : null;
+      const linkCorretor = corretor?.telefone
+        ? linkWhatsapp(
+            corretor.telefone,
+            `Olá! Sou ${dados.clienteNome} e agendei uma visita com você pela Rede Impulso para ${quando}.`,
+          )
+        : null;
       try {
         await resend.emails.send({
           from: EMAIL_REMETENTE,

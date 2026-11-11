@@ -273,7 +273,12 @@ export default async function PainelNegociosPage({
                     const nomeCliente = visita.comprador?.nome ?? visita.cliente_avulso?.nome;
                     const telefoneCliente =
                       visita.comprador?.telefone ?? visita.cliente_avulso?.telefone;
-                    const linkCliente = telefoneCliente ? linkWhatsapp(telefoneCliente) : null;
+                    const linkCliente = telefoneCliente
+                      ? linkWhatsapp(
+                          telefoneCliente,
+                          `Olá${nomeCliente ? `, ${nomeCliente}` : ""}! Sobre sua visita pela Rede Impulso marcada para ${formatoDataHora.format(new Date(visita.data_hora))}:`,
+                        )
+                      : null;
                     return (
                       <div key={visita.id} className="list-row">
                         <div

@@ -53,7 +53,12 @@ function ListaVisitas({
         // agendar outro horário, que resolve melhor que uma ligação.
         const podeFalarDireto =
           (v.status === "solicitada" || v.status === "confirmada") && v.corretor?.telefone;
-        const link = podeFalarDireto ? linkWhatsapp(v.corretor!.telefone!) : null;
+        const link = podeFalarDireto
+          ? linkWhatsapp(
+              v.corretor!.telefone!,
+              `Olá! Agendei uma visita com você pela Rede Impulso para ${formatoDataHora.format(new Date(v.data_hora))}.`,
+            )
+          : null;
         return (
           <div key={v.id} className="list-row">
             <div className="flex between items-center" style={{ width: "100%", gap: 12, flexWrap: "wrap" }}>
