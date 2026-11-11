@@ -105,6 +105,7 @@ export function AgendarComCorretorButton({
   if (status === "sucesso" && confirmacao) {
     return (
       <div className="card-flat" style={{ textAlign: "center" }}>
+        <div className="celebra-icone">✓</div>
         <span className="badge badge-primary">Visita confirmada</span>
         <p className="hint" style={{ marginBottom: avisoWhatsapp ? 8 : 0 }}>
           Combinado! Sua visita com {corretorNome} está confirmada para {confirmacao}.

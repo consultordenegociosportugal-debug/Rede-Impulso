@@ -3,6 +3,7 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { hojeISO, somarDias } from "@/lib/data";
+import { ICONE_STATUS_VISITA } from "@/lib/status-visita";
 
 const PAPEIS_COM_RELATORIO = ["corretor"];
 
@@ -165,7 +166,7 @@ export default async function RelatorioVisitasPage({
                     </div>
                   </div>
                   <span className={`badge ${STATUS_BADGE[v.status] ?? "badge-outline"}`}>
-                    {STATUS_LABEL[v.status] ?? v.status}
+                    {ICONE_STATUS_VISITA[v.status] ?? ""} {STATUS_LABEL[v.status] ?? v.status}
                   </span>
                 </div>
               </div>

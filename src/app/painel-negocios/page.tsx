@@ -11,6 +11,7 @@ import { LinkPerfilPublico } from "./link-perfil-publico";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
 import { hojeISO } from "@/lib/data";
 import { linkWhatsapp } from "@/lib/telefone";
+import { ICONE_STATUS_VISITA } from "@/lib/status-visita";
 
 const PAPEIS_COM_PAINEL = ["corretor"];
 
@@ -316,7 +317,9 @@ export default async function PainelNegociosPage({
                           </div>
                           <div className="flex gap-8 items-center">
                             {atrasada && <span className="badge badge-amber">Atrasada</span>}
-                            <span className={`badge ${badge.className}`}>{badge.label}</span>
+                            <span className={`badge ${badge.className}`}>
+                              {ICONE_STATUS_VISITA[visita.status] ?? ""} {badge.label}
+                            </span>
                             {visita.google_event_id && (
                               <span className="badge badge-outline">📅 na agenda</span>
                             )}

@@ -4,6 +4,7 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { hojeISO, somarDias } from "@/lib/data";
+import { ICONE_STATUS_VISITA } from "@/lib/status-visita";
 
 type VisitaRow = {
   id: string;
@@ -319,7 +320,9 @@ export default async function PainelGestorPage({
               <div key={v.id} className="list-row">
                 <div className="flex between items-center" style={{ width: "100%", gap: 12 }}>
                   <span style={{ fontSize: 14 }}>{v.corretor?.nome ?? "—"}</span>
-                  <span className="badge badge-outline">{STATUS_LABEL[v.status] ?? v.status}</span>
+                  <span className="badge badge-outline">
+                    {ICONE_STATUS_VISITA[v.status] ?? ""} {STATUS_LABEL[v.status] ?? v.status}
+                  </span>
                 </div>
               </div>
             ))}

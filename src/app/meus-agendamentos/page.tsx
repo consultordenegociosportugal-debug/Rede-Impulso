@@ -4,6 +4,7 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { linkWhatsapp } from "@/lib/telefone";
+import { ICONE_STATUS_VISITA } from "@/lib/status-visita";
 import { VisitaClienteAcoes } from "./visita-cliente-acoes";
 
 const STATUS_VISITA: Record<string, { label: string; className: string }> = {
@@ -84,7 +85,9 @@ function ListaVisitas({
                 </div>
               </div>
               <div className="flex gap-8 items-center">
-                <span className={`badge ${badge.className}`}>{badge.label}</span>
+                <span className={`badge ${badge.className}`}>
+                  {ICONE_STATUS_VISITA[v.status] ?? ""} {badge.label}
+                </span>
                 {comAcoes && (
                   <VisitaClienteAcoes
                     visitaId={v.id}

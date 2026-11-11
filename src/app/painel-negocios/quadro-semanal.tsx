@@ -1,6 +1,7 @@
 "use client";
 
 import { VisitaAcoes } from "./visita-acoes";
+import { ICONE_STATUS_VISITA } from "@/lib/status-visita";
 import styles from "./quadro-semanal.module.css";
 
 type VisitaRow = {
@@ -105,7 +106,9 @@ export function QuadroSemanal({
                     <div className="hint" style={{ margin: "2px 0 6px" }}>
                       {nomeCliente}
                     </div>
-                    <span className={`badge ${badge.className}`}>{badge.label}</span>
+                    <span className={`badge ${badge.className}`}>
+                      {ICONE_STATUS_VISITA[v.status] ?? ""} {badge.label}
+                    </span>
                     <div style={{ marginTop: 8 }}>
                       <VisitaAcoes
                         visitaId={v.id}
