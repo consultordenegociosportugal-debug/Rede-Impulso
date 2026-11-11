@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { avisarCancelamento } from "@/lib/avisar-cancelamento";
+import {
+  lerConfig,
+  tokenExpirado,
+  renovarAccessToken,
+  calcularExpiracao,
+  apagarEvento,
+} from "@/lib/google-calendar";
 
 type VisitaCancelamento = {
   id: string;
@@ -8,10 +16,65 @@ type VisitaCancelamento = {
   comprador_id: string | null;
   status: string;
   data_hora: string;
+  google_event_id: string | null;
   comprador: { nome: string; email: string | null; telefone: string | null } | null;
   cliente_avulso: { nome: string; email: string | null; telefone: string | null } | null;
   corretor: { nome: string; email: string | null; telefone: string | null } | null;
 };
+
+// Tira o evento da Google Agenda do CORRETOR, não importa quem cancelou
+// a visita. Antes, isso só acontecia quando o próprio corretor cancelava
+// (o botão dele chamava /api/google-calendar/sync depois, usando a
+// própria sessão) — quando o cliente cancela, não tem sessão de corretor
+// nenhuma pra fazer essa chamada, e a RLS de google_calendar_conexoes
+// não deixaria o cliente ler o token do corretor mesmo que tentasse.
+// Por isso aqui usa o admin client — é um job de servidor, não uma ação
+// de usuário comum.
+async function removerEventoDoCorretor(visita: VisitaCancelamento) {
+  if (!visita.google_event_id) return;
+
+  const admin = createAdminClient();
+  const config = lerConfig();
+  if (!admin || !config) return;
+
+  try {
+    const { data: conexao } = await admin
+      .from("google_calendar_conexoes")
+      .select("refresh_token, access_token, expira_em, calendar_id")
+      .eq("profile_id", visita.corretor_id)
+      .maybeSingle();
+
+    if (!conexao) return;
+
+    let accessToken = conexao.access_token as string | null;
+
+    if (tokenExpirado(conexao.expira_em as string | null)) {
+      const refreshToken = conexao.refresh_token as string | null;
+      const renovado = refreshToken ? await renovarAccessToken(config, refreshToken) : null;
+      accessToken = renovado?.access_token ?? null;
+      if (accessToken) {
+        await admin
+          .from("google_calendar_conexoes")
+          .update({
+            access_token: accessToken,
+            expira_em: calcularExpiracao(renovado!.expires_in),
+          })
+          .eq("profile_id", visita.corretor_id);
+      }
+    }
+
+    if (!accessToken) return;
+
+    const calendarId = (conexao.calendar_id as string | null) ?? "primary";
+    const apagou = await apagarEvento(accessToken, calendarId, visita.google_event_id);
+    if (apagou) {
+      await admin.from("visitas").update({ google_event_id: null }).eq("id", visita.id);
+    }
+  } catch {
+    // Best-effort — a visita já está cancelada no banco, isso não pode
+    // derrubar a resposta.
+  }
+}
 
 // Cancela uma visita e avisa quem não cancelou — tanto o corretor
 // (avisa o cliente) quanto o próprio cliente logado (avisa o corretor)
@@ -39,7 +102,7 @@ export async function POST(request: NextRequest) {
   const { data: visitaData, error: erroBusca } = await supabase
     .from("visitas")
     .select(
-      "id, corretor_id, comprador_id, status, data_hora, comprador:comprador_id(nome, email, telefone), cliente_avulso:cliente_avulso_id(nome, email, telefone), corretor:corretor_id(nome, email, telefone)",
+      "id, corretor_id, comprador_id, status, data_hora, google_event_id, comprador:comprador_id(nome, email, telefone), cliente_avulso:cliente_avulso_id(nome, email, telefone), corretor:corretor_id(nome, email, telefone)",
     )
     .eq("id", visitaId)
     .single();
@@ -77,8 +140,11 @@ export async function POST(request: NextRequest) {
   }
 
   // Dali pra baixo nada pode derrubar a resposta — a visita já está
-  // cancelada no banco antes de qualquer tentativa de aviso. Quem
-  // cancelou não precisa ser avisado — só a outra ponta.
+  // cancelada no banco antes de qualquer tentativa de aviso ou de
+  // sincronizar a agenda. Quem cancelou não precisa ser avisado — só a
+  // outra ponta.
+  await removerEventoDoCorretor(visita);
+
   let precisaAvisarManualmente = false;
   if (souComprador) {
     if (visita.corretor) {
