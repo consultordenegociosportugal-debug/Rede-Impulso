@@ -12,7 +12,7 @@ import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 import { ConfirmarCodigoEmail } from "@/components/confirmar-codigo-email";
 import { BairrosInput } from "@/components/bairros-input";
-import { CidadeInput } from "@/components/cidade-input";
+import { CidadesEstadosInput } from "@/components/cidades-estados-input";
 
 type Campo =
   | "nome"
@@ -81,7 +81,7 @@ export default function CadastroProfissionalPage() {
   const [cpf, setCpf] = useState("");
   const [creci, setCreci] = useState("");
   const [bairros, setBairros] = useState<string[]>([]);
-  const [cidade, setCidade] = useState("");
+  const [cidadesAtuacao, setCidadesAtuacao] = useState<string[]>([]);
   const [telefone, setTelefone] = useState("");
   const [dataNascimento, setDataNascimento] = useState("");
   const [email, setEmail] = useState("");
@@ -251,7 +251,7 @@ export default function CadastroProfissionalPage() {
           cpf: cpf.replace(/\D/g, ""),
           creci,
           bairros_atuacao: bairros,
-          cidade: cidade || null,
+          cidades_atuacao: cidadesAtuacao,
         },
       },
     });
@@ -440,14 +440,19 @@ export default function CadastroProfissionalPage() {
 
                 <div className="field">
                   <label htmlFor="cidade">
-                    Cidade de atuação{" "}
+                    Cidades ou estados de atuação{" "}
                     <span className="muted" style={{ fontWeight: 400 }}>
                       (opcional)
                     </span>
                   </label>
-                  <CidadeInput id="cidade" value={cidade} onChange={setCidade} />
+                  <CidadesEstadosInput
+                    id="cidade"
+                    value={cidadesAtuacao}
+                    onChange={setCidadesAtuacao}
+                  />
                   <p className="hint">
-                    Ajuda quem está procurando um profissional perto de onde mora.
+                    Ajuda quem está procurando um profissional perto de onde mora. Tem CRECI em
+                    mais de um estado? Pode adicionar vários.
                   </p>
                 </div>
 

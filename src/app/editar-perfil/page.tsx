@@ -28,14 +28,14 @@ export default async function EditarPerfilPage() {
     cpf: string | null;
     creci: string;
     bairros_atuacao: string[];
-    cidade: string | null;
+    cidades_atuacao: string[];
     organizacao_catalogo_id: string | null;
   } | null = null;
 
   if (role === "corretor") {
     const { data } = await supabase
       .from("corretor_perfis")
-      .select("cpf, creci, bairros_atuacao, cidade, organizacao_catalogo_id")
+      .select("cpf, creci, bairros_atuacao, cidades_atuacao, organizacao_catalogo_id")
       .eq("profile_id", user.id)
       .single();
     dadosCorretor = data;

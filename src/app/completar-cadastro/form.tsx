@@ -8,7 +8,7 @@ import { destinoPosLogin } from "@/lib/destino-pos-login";
 import { formatarTelefone, formatarCreci, formatarCpf } from "@/lib/mascaras";
 import { cpfValido } from "@/lib/validacoes";
 import { BairrosInput } from "@/components/bairros-input";
-import { CidadeInput } from "@/components/cidade-input";
+import { CidadesEstadosInput } from "@/components/cidades-estados-input";
 import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
 import { paraE164 } from "@/lib/telefone";
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
@@ -83,7 +83,7 @@ export function CompletarCadastroForm({
   const [cpf, setCpf] = useState("");
   const [creci, setCreci] = useState("");
   const [bairros, setBairros] = useState<string[]>([]);
-  const [cidade, setCidade] = useState("");
+  const [cidadesAtuacao, setCidadesAtuacao] = useState<string[]>([]);
   const [aceitouTermos, setAceitouTermos] = useState(false);
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [erro, setErro] = useState<string | null>(null);
@@ -175,7 +175,7 @@ export function CompletarCadastroForm({
           cpf: cpf.replace(/\D/g, ""),
           creci,
           bairros_atuacao: bairros,
-          cidade: cidade || null,
+          cidades_atuacao: cidadesAtuacao,
         },
         { onConflict: "profile_id" },
       );
@@ -424,12 +424,16 @@ export function CompletarCadastroForm({
           </div>
           <div className="field">
             <label htmlFor="cidadeAtuacao">
-              Cidade de atuação{" "}
+              Cidades ou estados de atuação{" "}
               <span className="muted" style={{ fontWeight: 400 }}>
                 (opcional)
               </span>
             </label>
-            <CidadeInput id="cidadeAtuacao" value={cidade} onChange={setCidade} />
+            <CidadesEstadosInput
+              id="cidadeAtuacao"
+              value={cidadesAtuacao}
+              onChange={setCidadesAtuacao}
+            />
           </div>
         </>
       )}

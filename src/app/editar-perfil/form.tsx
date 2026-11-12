@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { formatarTelefone, formatarCreci, formatarInstagram, formatarCpf } from "@/lib/mascaras";
 import { cpfValido } from "@/lib/validacoes";
 import { BairrosInput } from "@/components/bairros-input";
-import { CidadeInput } from "@/components/cidade-input";
+import { CidadesEstadosInput } from "@/components/cidades-estados-input";
 import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
 import { paraE164 } from "@/lib/telefone";
 import styles from "./page.module.css";
@@ -76,7 +76,7 @@ export function EditarPerfilForm({
     cpf: string | null;
     creci: string;
     bairros_atuacao: string[];
-    cidade: string | null;
+    cidades_atuacao: string[];
   } | null;
 }) {
   const router = useRouter();
@@ -99,7 +99,9 @@ export function EditarPerfilForm({
   const [cpf, setCpf] = useState(formatarCpf(dadosCorretor?.cpf ?? ""));
   const [creci, setCreci] = useState(dadosCorretor?.creci ?? "");
   const [bairros, setBairros] = useState<string[]>(dadosCorretor?.bairros_atuacao ?? []);
-  const [cidade, setCidade] = useState(dadosCorretor?.cidade ?? "");
+  const [cidadesAtuacao, setCidadesAtuacao] = useState<string[]>(
+    dadosCorretor?.cidades_atuacao ?? [],
+  );
 
   const [status, setStatus] = useState<"idle" | "loading" | "sucesso" | "error">("idle");
   const [erro, setErro] = useState<string | null>(null);
@@ -219,7 +221,7 @@ export function EditarPerfilForm({
           cpf: cpf.replace(/\D/g, ""),
           creci,
           bairros_atuacao: bairros,
-          cidade: cidade || null,
+          cidades_atuacao: cidadesAtuacao,
         })
         .eq("profile_id", userId);
       if (erroCorretor) {
@@ -471,13 +473,20 @@ export function EditarPerfilForm({
       {role === "corretor" && (
         <div className="field">
           <label htmlFor="cidadeAtuacao">
-            Cidade de atuação{" "}
+            Cidades ou estados de atuação{" "}
             <span className="muted" style={{ fontWeight: 400 }}>
               (opcional)
             </span>
           </label>
-          <CidadeInput id="cidadeAtuacao" value={cidade} onChange={setCidade} />
-          <p className="hint">Ajuda quem está procurando um profissional perto de onde mora.</p>
+          <CidadesEstadosInput
+            id="cidadeAtuacao"
+            value={cidadesAtuacao}
+            onChange={setCidadesAtuacao}
+          />
+          <p className="hint">
+            Ajuda quem está procurando um profissional perto de onde mora. Tem CRECI em mais de
+            um estado? Pode adicionar vários.
+          </p>
         </div>
       )}
 
