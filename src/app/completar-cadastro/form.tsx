@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { destinoPosLogin } from "@/lib/destino-pos-login";
 import { formatarTelefone, formatarCreci, formatarCpf } from "@/lib/mascaras";
-import { cpfValido } from "@/lib/validacoes";
+import { cpfValido, creciValido } from "@/lib/validacoes";
 import { BairrosInput } from "@/components/bairros-input";
 import { CidadesEstadosInput } from "@/components/cidades-estados-input";
 import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
@@ -125,7 +125,7 @@ export function CompletarCadastroForm({
       if (!cpf.trim()) problemas.cpf = "Informe seu CPF.";
       else if (!cpfValido(cpf)) problemas.cpf = "Esse CPF não é válido — confira os números.";
       if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
-      else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
+      else if (!creciValido(creci)) problemas.creci = "CRECI inválido — ex: 7027-MA.";
       if (bairros.length === 0) problemas.bairros = "Informe ao menos um bairro onde você atua.";
     }
     return problemas;

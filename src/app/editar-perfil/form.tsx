@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { formatarTelefone, formatarCreci, formatarInstagram, formatarCpf } from "@/lib/mascaras";
-import { cpfValido } from "@/lib/validacoes";
+import { cpfValido, creciValido } from "@/lib/validacoes";
 import { BairrosInput } from "@/components/bairros-input";
 import { CidadesEstadosInput } from "@/components/cidades-estados-input";
 import { ConfirmarCodigoTelefone } from "@/components/confirmar-codigo-telefone";
@@ -161,7 +161,12 @@ export function EditarPerfilForm({
       if (!cpf.trim()) problemas.cpf = "Informe seu CPF.";
       else if (!cpfValido(cpf)) problemas.cpf = "Esse CPF não é válido — confira os números.";
       if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
-      else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
+      // Só exige o formato novo (NNNNN-UF) quando a pessoa mexeu no
+      // campo — sem isso, qualquer corretor com CRECI cadastrado antes
+      // dessa validação existir (ex.: sem o "-UF") ficava travado pra
+      // editar QUALQUER outro campo do próprio perfil.
+      else if (creci !== (dadosCorretor?.creci ?? "") && !creciValido(creci))
+        problemas.creci = "CRECI inválido — ex: 7027-MA.";
       if (bairros.length === 0) problemas.bairros = "Informe ao menos um bairro onde você atua.";
     }
     return problemas;

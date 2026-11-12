@@ -6,7 +6,7 @@ import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/client";
 import { BotoesSocial } from "@/components/botoes-social";
 import { formatarTelefone, formatarCreci, formatarInstagram, formatarCpf } from "@/lib/mascaras";
-import { cpfValido } from "@/lib/validacoes";
+import { cpfValido, creciValido } from "@/lib/validacoes";
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
@@ -129,7 +129,7 @@ export default function CadastroProfissionalPage() {
       else if (!cpfValido(cpf)) problemas.cpf = "Esse CPF não é válido — confira os números.";
 
       if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
-      else if (!/\d{3}/.test(creci)) problemas.creci = "CRECI incompleto — ex: 7027-MA.";
+      else if (!creciValido(creci)) problemas.creci = "CRECI inválido — ex: 7027-MA.";
       if (bairros.length === 0) problemas.bairros = "Informe ao menos um bairro onde você atua.";
 
       if (!aceitouTermos)

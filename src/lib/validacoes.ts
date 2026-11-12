@@ -41,3 +41,20 @@ export function cnpjValido(valor: string): boolean {
 
   return true;
 }
+
+const UFS_VALIDAS = new Set([
+  "AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO",
+  "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI",
+  "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO",
+]);
+
+// Formato do CRECI (já normalizado por formatarCreci, em src/lib/mascaras.ts):
+// de 3 a 6 dígitos, hífen, e a sigla de um estado que existe de verdade —
+// sem isso, "123-XX" passava pela checagem antiga (só exigia 3 dígitos
+// em qualquer lugar).
+export function creciValido(valor: string): boolean {
+  const normalizado = valor.toUpperCase().trim();
+  const match = /^(\d{3,6})-([A-Z]{2})$/.exec(normalizado);
+  if (!match) return false;
+  return UFS_VALIDAS.has(match[2]);
+}
