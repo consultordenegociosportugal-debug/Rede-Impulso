@@ -10,6 +10,7 @@ import { cpfValido } from "@/lib/validacoes";
 import { BairrosInput } from "@/components/bairros-input";
 import { CidadesEstadosInput } from "@/components/cidades-estados-input";
 import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
+import { ConfirmarCodigoTelefone } from "@/components/confirmar-codigo-telefone";
 import { paraE164 } from "@/lib/telefone";
 import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
@@ -85,9 +86,10 @@ export function CompletarCadastroForm({
   const [bairros, setBairros] = useState<string[]>([]);
   const [cidadesAtuacao, setCidadesAtuacao] = useState<string[]>([]);
   const [aceitouTermos, setAceitouTermos] = useState(false);
-  const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
+  const [status, setStatus] = useState<"idle" | "loading" | "error" | "confirmando_telefone">("idle");
   const [erro, setErro] = useState<string | null>(null);
   const [errosCampo, setErrosCampo] = useState<ErrosCampo>({});
+  const [destinoFinal, setDestinoFinal] = useState<string | null>(null);
 
   function limparErroDe(campo: Campo) {
     setErrosCampo((atuais) => {
@@ -214,8 +216,29 @@ export function CompletarCadastroForm({
     }
 
     const destino = await destinoPosLogin(supabase, user.id, { depois });
-    router.push(destino);
+    setDestinoFinal(destino);
+    setStatus("confirmando_telefone");
+  }
+
+  function seguirParaDestino() {
+    router.push(destinoFinal ?? "/");
     router.refresh();
+  }
+
+  if (status === "confirmando_telefone") {
+    return (
+      <div className="card mt-24">
+        <p className="muted" style={{ margin: 0 }}>
+          Última coisa: confirme seu WhatsApp pra quem te procurar saber que o número é de
+          verdade.
+        </p>
+        <ConfirmarCodigoTelefone
+          telefone={telefone}
+          onVerificado={seguirParaDestino}
+          onPular={seguirParaDestino}
+        />
+      </div>
+    );
   }
 
   return (

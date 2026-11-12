@@ -11,6 +11,7 @@ import { ehMaiorDeIdade, dataMaximaNascimento } from "@/lib/idade";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 import { ConfirmarCodigoEmail } from "@/components/confirmar-codigo-email";
+import { ConfirmarCodigoTelefone } from "@/components/confirmar-codigo-telefone";
 import { BairrosInput } from "@/components/bairros-input";
 import { CidadesEstadosInput } from "@/components/cidades-estados-input";
 
@@ -89,7 +90,9 @@ export default function CadastroProfissionalPage() {
   const [verSenha, setVerSenha] = useState(false);
   const [redeSocial, setRedeSocial] = useState("");
   const [aceitouTermos, setAceitouTermos] = useState(false);
-  const [status, setStatus] = useState<"idle" | "loading" | "error" | "aguardando_confirmacao" | "logado">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "error" | "aguardando_confirmacao" | "confirmando_telefone" | "logado"
+  >("idle");
   const [erro, setErro] = useState<string | null>(null);
   const [emailJaUsado, setEmailJaUsado] = useState(false);
   const [errosCampo, setErrosCampo] = useState<ErrosCampo>({});
@@ -277,7 +280,7 @@ export default function CadastroProfissionalPage() {
     setStatus(data.session ? "logado" : "aguardando_confirmacao");
   }
 
-  if (status === "aguardando_confirmacao" || status === "logado") {
+  if (status === "aguardando_confirmacao" || status === "confirmando_telefone" || status === "logado") {
     return (
       <>
         <Nav active="/cadastro-profissional" />
@@ -287,15 +290,31 @@ export default function CadastroProfissionalPage() {
               {status === "logado" && <div className="celebra-icone">✓</div>}
               <span className="badge badge-primary">Cadastro criado</span>
               <h1 style={{ fontSize: 22, margin: "12px 0 4px" }}>
-                {status === "aguardando_confirmacao" ? "Falta só confirmar seu e-mail" : "Tudo pronto!"}
+                {status === "aguardando_confirmacao"
+                  ? "Falta só confirmar seu e-mail"
+                  : status === "confirmando_telefone"
+                    ? "Agora confirme seu WhatsApp"
+                    : "Tudo pronto!"}
               </h1>
               <p className="muted">
                 {status === "aguardando_confirmacao"
                   ? `Enviamos um código de confirmação para ${email}.`
-                  : "Sua conta já está ativa — você já pode cadastrar clientes e agendar visitas."}
+                  : status === "confirmando_telefone"
+                    ? "Assim quem te procurar sabe que o número é de verdade."
+                    : "Sua conta já está ativa — você já pode cadastrar clientes e agendar visitas."}
               </p>
               {status === "aguardando_confirmacao" && (
-                <ConfirmarCodigoEmail email={email} onVerificado={() => setStatus("logado")} />
+                <ConfirmarCodigoEmail
+                  email={email}
+                  onVerificado={() => setStatus("confirmando_telefone")}
+                />
+              )}
+              {status === "confirmando_telefone" && (
+                <ConfirmarCodigoTelefone
+                  telefone={telefone}
+                  onVerificado={() => setStatus("logado")}
+                  onPular={() => setStatus("logado")}
+                />
               )}
               {status === "logado" && (
                 <Link href="/painel-negocios" className="btn btn-primary btn-sm mt-16">

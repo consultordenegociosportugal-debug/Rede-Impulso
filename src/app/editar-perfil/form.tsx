@@ -7,6 +7,7 @@ import { formatarTelefone, formatarCreci, formatarInstagram, formatarCpf } from 
 import { cpfValido } from "@/lib/validacoes";
 import { BairrosInput } from "@/components/bairros-input";
 import { CidadesEstadosInput } from "@/components/cidades-estados-input";
+import { ConfirmarCodigoTelefone } from "@/components/confirmar-codigo-telefone";
 import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
 import { paraE164 } from "@/lib/telefone";
 import styles from "./page.module.css";
@@ -103,7 +104,9 @@ export function EditarPerfilForm({
     dadosCorretor?.cidades_atuacao ?? [],
   );
 
-  const [status, setStatus] = useState<"idle" | "loading" | "sucesso" | "error">("idle");
+  const [status, setStatus] = useState<
+    "idle" | "loading" | "sucesso" | "error" | "confirmando_telefone"
+  >("idle");
   const [erro, setErro] = useState<string | null>(null);
   const [errosCampo, setErrosCampo] = useState<ErrosCampo>({});
 
@@ -256,8 +259,17 @@ export function EditarPerfilForm({
 
     setFotoUrl(novaFotoUrl);
     setFotoArquivo(null);
-    setStatus("sucesso");
     router.refresh();
+
+    // Número novo — precisa reconfirmar que é de verdade. Comparando
+    // em E.164 (não a string crua) porque corretor digita formatado
+    // ("(98) 9 9999-9999") e comprador pode vir de um país diferente.
+    const telefoneMudou = paraE164(telefone) !== paraE164(telefoneAtual);
+    if (telefoneMudou) {
+      setStatus("confirmando_telefone");
+    } else {
+      setStatus("sucesso");
+    }
   }
 
   return (
@@ -494,6 +506,20 @@ export function EditarPerfilForm({
         <div className={styles.sucessoBloco} role="status">
           <span aria-hidden="true">✓</span>
           <span>Perfil atualizado.</span>
+        </div>
+      )}
+
+      {status === "confirmando_telefone" && (
+        <div className={styles.sucessoBloco} role="status" style={{ textAlign: "left" }}>
+          <p className="hint" style={{ margin: "0 0 4px" }}>
+            Perfil salvo. Esse número de WhatsApp é novo — confirme pra manter o selo de
+            verificado.
+          </p>
+          <ConfirmarCodigoTelefone
+            telefone={telefone}
+            onVerificado={() => setStatus("sucesso")}
+            onPular={() => setStatus("sucesso")}
+          />
         </div>
       )}
 
