@@ -101,7 +101,8 @@ export function CidadesEstadosInput({
 
   function adicionar(item: string) {
     const limpo = item.trim();
-    if (!limpo || value.includes(limpo)) {
+    const jaExiste = value.some((v) => v.toLowerCase() === limpo.toLowerCase());
+    if (!limpo || jaExiste) {
       setTexto("");
       return;
     }
@@ -116,12 +117,23 @@ export function CidadesEstadosInput({
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" || e.key === ",") {
+    if (e.key === "Enter") {
       // Sem o stopPropagation, o Enter também aciona o avançar de passo
-      // do formulário — mesmo motivo do BairrosInput.
+      // do formulário — mesmo motivo do BairrosInput. Diferente de
+      // bairro, cidade/estado tem fonte oficial (IBGE) — só aceita o
+      // valor se ele vier de uma sugestão real, nunca texto livre, pra
+      // não deixar lixo no perfil público nem furar a busca.
       e.preventDefault();
       e.stopPropagation();
-      adicionar(texto);
+      const primeiraSugestao =
+        sugestoesMunicipio[0] != null
+          ? sugestoesMunicipio[0].uf
+            ? `${sugestoesMunicipio[0].nome}/${sugestoesMunicipio[0].uf}`
+            : sugestoesMunicipio[0].nome
+          : sugestoesEstado[0] != null
+            ? formatarEstado(sugestoesEstado[0])
+            : null;
+      if (primeiraSugestao) adicionar(primeiraSugestao);
     } else if (e.key === "Backspace" && !texto && value.length > 0) {
       remover(value[value.length - 1]);
     }
