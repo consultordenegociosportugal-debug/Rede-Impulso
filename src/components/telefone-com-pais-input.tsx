@@ -66,7 +66,7 @@ export function TelefoneComPaisInput({
   function atualizar(novoPais: string, novoNumeroDigitado: string) {
     const novoNumero = novoPais === "55" ? formatarTelefone(novoNumeroDigitado) : novoNumeroDigitado;
     setEstado({ pais: novoPais, numero: novoNumero });
-    onChange(novoNumero.trim() ? `+${novoPais}${novoNumero}` : "");
+    onChange(novoNumero.trim() ? `+${novoPais} ${novoNumero}` : "");
   }
 
   return (

@@ -121,8 +121,12 @@ export default async function PainelNegociosPage({
   // agendou. Olha disponibilidade configurada + perfil completo (foto,
   // bairros) pra sugerir o próximo passo certo, em vez de só "sem
   // visitas".
-  let diagnosticoAgendaVazia: { temDisponibilidade: boolean; perfilCompleto: boolean } | null =
-    null;
+  let diagnosticoAgendaVazia: {
+    temDisponibilidade: boolean;
+    perfilCompleto: boolean;
+    faltaFoto: boolean;
+    faltaBairros: boolean;
+  } | null = null;
   if (visitas.length === 0) {
     const [{ count: totalDisponibilidade }, { data: perfilCorretor }, { data: fotoPerfil }] =
       await Promise.all([
@@ -133,9 +137,13 @@ export default async function PainelNegociosPage({
         supabase.from("corretor_perfis").select("bairros_atuacao").eq("profile_id", user.id).single(),
         supabase.from("profiles").select("foto_url").eq("id", user.id).single(),
       ]);
+    const faltaFoto = !fotoPerfil?.foto_url;
+    const faltaBairros = (perfilCorretor?.bairros_atuacao?.length ?? 0) === 0;
     diagnosticoAgendaVazia = {
       temDisponibilidade: (totalDisponibilidade ?? 0) > 0,
-      perfilCompleto: Boolean(fotoPerfil?.foto_url) && (perfilCorretor?.bairros_atuacao?.length ?? 0) > 0,
+      perfilCompleto: !faltaFoto && !faltaBairros,
+      faltaFoto,
+      faltaBairros,
     };
   }
   const linkPerfilPublico = `https://www.redeimpulso.com.br/perfil-corretor?id=${user.id}`;
@@ -246,8 +254,13 @@ export default async function PainelNegociosPage({
               ) : !diagnosticoAgendaVazia.perfilCompleto ? (
                 <p className="hint" style={{ marginTop: 8 }}>
                   Sua disponibilidade está configurada, mas seu perfil ainda está
-                  incompleto (falta foto ou bairros de atuação) — isso pode estar
-                  deixando você de fora da busca de clientes.{" "}
+                  incompleto (falta{" "}
+                  {diagnosticoAgendaVazia.faltaFoto && diagnosticoAgendaVazia.faltaBairros
+                    ? "foto e bairros de atuação"
+                    : diagnosticoAgendaVazia.faltaFoto
+                      ? "foto"
+                      : "bairros de atuação"}
+                  ) — isso pode estar deixando você de fora da busca de clientes.{" "}
                   <Link href="/editar-perfil">Completar perfil →</Link>
                 </p>
               ) : (
