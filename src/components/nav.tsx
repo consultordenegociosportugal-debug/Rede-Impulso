@@ -26,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
       { href: "/dashboard", label: "Dashboard" },
       { href: "/painel-negocios", label: "Minhas visitas" },
       { href: "/painel-negocios/clientes", label: "Meus clientes" },
+      { href: "/painel-negocios/leads", label: "Meus leads" },
       { href: "/painel-negocios/disponibilidade", label: "Minha disponibilidade" },
       { href: "/relatorio-visitas", label: "Relatório de visitas" },
     ],
@@ -67,6 +68,7 @@ const NAV_ITEMS_CLIENTE: NavItem[] = [
 // próprios corretores, nunca a agenda operacional (isso é do corretor).
 const NAV_ITEMS_GESTOR: NavItem[] = [
   { type: "link", href: "/painel-gestor", label: "Painel do gestor" },
+  { type: "link", href: "/painel-gestor/leads", label: "Leads" },
   { type: "link", href: "/editar-perfil", label: "Meu perfil" },
 ];
 

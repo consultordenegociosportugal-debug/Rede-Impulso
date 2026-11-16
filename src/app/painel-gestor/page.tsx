@@ -19,6 +19,16 @@ type NpsRow = {
   visitas: { corretor_id: string; corretor: { nome: string } | null } | null;
 };
 
+type LeadRow = {
+  id: string;
+  status: string;
+  valor_venda: number | null;
+  corretor_id: string;
+  created_at: string;
+};
+
+const formatoMoedaGestor = new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" });
+
 const STATUS_LABEL: Record<string, string> = {
   solicitada: "Solicitada",
   confirmada: "Confirmada",
@@ -125,6 +135,7 @@ export default async function PainelGestorPage({
 
   let visitas: VisitaRow[] = [];
   let npsRespostas: NpsRow[] = [];
+  let leads: LeadRow[] = [];
 
   if (idsCorretores.length > 0) {
     let queryVisitas = supabase
@@ -151,6 +162,18 @@ export default async function PainelGestorPage({
     }
     const { data: npsData } = await queryNps;
     npsRespostas = (npsData ?? []) as unknown as NpsRow[];
+
+    let queryLeads = supabase
+      .from("leads")
+      .select("id, status, valor_venda, corretor_id, created_at")
+      .in("corretor_id", idsCorretores);
+    if (intervalo) {
+      queryLeads = queryLeads
+        .gte("created_at", `${intervalo.inicio}T00:00:00-03:00`)
+        .lte("created_at", `${intervalo.fim}T23:59:59-03:00`);
+    }
+    const { data: leadsData } = await queryLeads;
+    leads = (leadsData ?? []) as unknown as LeadRow[];
   }
 
   const porStatus = new Map<string, number>();
@@ -213,15 +236,47 @@ export default async function PainelGestorPage({
       ? npsRespostas.reduce((s, r) => s + r.nota, 0) / npsRespostas.length
       : null;
 
+  // Funil de leads: novo/contatado/agendado contam como "em andamento",
+  // só convertido e perdido fecham o ciclo.
+  const totalLeads = leads.length;
+  const leadsConvertidos = leads.filter((l) => l.status === "convertido");
+  const leadsAgendados = leads.filter((l) => l.status === "agendado" || l.status === "convertido").length;
+  const leadsContatados = leads.filter((l) =>
+    ["contatado", "agendado", "convertido"].includes(l.status),
+  ).length;
+  const leadsPerdidos = leads.filter((l) => l.status === "perdido").length;
+  const valorTotalVendido = leadsConvertidos.reduce((s, l) => s + (l.valor_venda ?? 0), 0);
+
+  const leadsPorCorretor = new Map<string, { total: number; convertidos: number; valor: number }>();
+  for (const corretor of corretores) {
+    leadsPorCorretor.set(corretor.profile_id, { total: 0, convertidos: 0, valor: 0 });
+  }
+  for (const lead of leads) {
+    const entrada = leadsPorCorretor.get(lead.corretor_id);
+    if (!entrada) continue;
+    entrada.total += 1;
+    if (lead.status === "convertido") {
+      entrada.convertidos += 1;
+      entrada.valor += lead.valor_venda ?? 0;
+    }
+  }
+
   return (
     <>
       <Nav active="/painel-gestor" />
       <div className="wrap" style={{ paddingTop: 48, paddingBottom: 80 }}>
         <span className="eyebrow">Painel do gestor</span>
-        <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>{organizacao?.nome ?? "Minha organização"}</h1>
-        <p className="muted mb-16">
-          Métricas dos corretores vinculados a {organizacao?.tipo === "construtora" ? "esta construtora" : "esta imobiliária"}.
-        </p>
+        <div className="flex between items-center" style={{ flexWrap: "wrap", gap: 12 }}>
+          <div>
+            <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>{organizacao?.nome ?? "Minha organização"}</h1>
+            <p className="muted mb-16">
+              Métricas dos corretores vinculados a {organizacao?.tipo === "construtora" ? "esta construtora" : "esta imobiliária"}.
+            </p>
+          </div>
+          <Link href="/painel-gestor/leads" className="btn btn-primary btn-sm">
+            🎯 Entregar e acompanhar leads
+          </Link>
+        </div>
 
         <div className="flex gap-8 mb-24" style={{ flexWrap: "wrap" }}>
           {(Object.keys(PERIODO_LABEL) as Periodo[]).map((p) => (
@@ -265,6 +320,60 @@ export default async function PainelGestorPage({
             ? `Média geral: ${mediaGeral.toFixed(1)} (${npsRespostas.length} avaliações).`
             : "Nenhuma avaliação recebida neste período."}
         </p>
+
+        <h2 style={{ fontSize: 20, margin: "32px 0 4px" }}>Funil de leads</h2>
+        <p className="muted mb-16">
+          Leads entregues pelo gestor e acompanhados pelo próprio corretor.{" "}
+          <Link href="/painel-gestor/leads">Entregar um lead →</Link>
+        </p>
+        <div className="grid grid-3 mb-16">
+          <div className="card" style={{ textAlign: "center", padding: 20 }}>
+            <div style={{ fontSize: 28, fontWeight: 700 }}>{totalLeads}</div>
+            <div className="hint">Leads entregues no período</div>
+          </div>
+          <div className="card" style={{ textAlign: "center", padding: 20 }}>
+            <div style={{ fontSize: 28, fontWeight: 700 }}>{pct(leadsConvertidos.length, totalLeads)}</div>
+            <div className="hint">
+              Taxa de conversão ({leadsConvertidos.length} vendido{leadsConvertidos.length === 1 ? "" : "s"})
+            </div>
+          </div>
+          <div className="card" style={{ textAlign: "center", padding: 20 }}>
+            <div style={{ fontSize: 28, fontWeight: 700 }}>{formatoMoedaGestor.format(valorTotalVendido)}</div>
+            <div className="hint">Total vendido no período</div>
+          </div>
+        </div>
+        <div className="card mb-24" style={{ padding: "8px 20px" }}>
+          <div className="list-row">
+            <div className="flex between items-center" style={{ width: "100%", gap: 12, flexWrap: "wrap" }}>
+              <span className="hint" style={{ margin: 0 }}>{totalLeads} novo(s)</span>
+              <span className="hint" style={{ margin: 0 }}>→ {pct(leadsContatados, totalLeads)} contatado</span>
+              <span className="hint" style={{ margin: 0 }}>→ {pct(leadsAgendados, totalLeads)} agendado</span>
+              <span className="hint" style={{ margin: 0 }}>→ {pct(leadsConvertidos.length, totalLeads)} convertido</span>
+              <span className="hint" style={{ margin: 0, color: "var(--coral)" }}>
+                {pct(leadsPerdidos, totalLeads)} perdido
+              </span>
+            </div>
+          </div>
+        </div>
+        {corretores.length > 0 && (
+          <div className="card mb-24" style={{ padding: "8px 20px" }}>
+            {corretores.map((c) => {
+              const dados = leadsPorCorretor.get(c.profile_id);
+              if (!dados || dados.total === 0) return null;
+              return (
+                <div key={c.profile_id} className="list-row">
+                  <div className="flex between items-center" style={{ width: "100%", gap: 12, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 14, fontWeight: 600 }}>{c.profiles?.nome ?? "—"}</span>
+                    <span className="hint" style={{ margin: 0 }}>
+                      {dados.total} lead{dados.total === 1 ? "" : "s"} · {dados.convertidos} convertido
+                      {dados.convertidos === 1 ? "" : "s"} · {formatoMoedaGestor.format(dados.valor)}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         <h2 style={{ fontSize: 20, margin: "32px 0 12px" }}>Corretores por taxa de sucesso ({corretores.length})</h2>
         {resumoCorretores.length === 0 ? (
