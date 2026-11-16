@@ -173,6 +173,12 @@ export default async function PainelGestorPage({
     .select("profile_id, profiles:profile_id(nome)")
     .eq("organizacao_catalogo_id", gestorPerfil.organizacao_catalogo_id);
 
+  const { count: solicitacoesPendentes } = await supabase
+    .from("solicitacoes_vinculo")
+    .select("id", { count: "exact", head: true })
+    .eq("organizacao_catalogo_id", gestorPerfil.organizacao_catalogo_id)
+    .eq("status", "pendente");
+
   const corretores = (corretoresData ?? []) as unknown as {
     profile_id: string;
     profiles: { nome: string } | null;
@@ -362,10 +368,25 @@ export default async function PainelGestorPage({
                 : `Métricas dos corretores vinculados a ${organizacao?.tipo === "construtora" ? "esta construtora" : "esta imobiliária"}.`}
             </p>
           </div>
-          <Link href="/painel-gestor/leads" className="btn btn-primary btn-sm">
-            🎯 Entregar e acompanhar leads
-          </Link>
+          <div className="flex gap-8">
+            <Link href="/painel-gestor/solicitacoes" className="btn btn-outline btn-sm">
+              Solicitações{solicitacoesPendentes ? ` (${solicitacoesPendentes})` : ""}
+            </Link>
+            <Link href="/painel-gestor/leads" className="btn btn-primary btn-sm">
+              🎯 Entregar e acompanhar leads
+            </Link>
+          </div>
         </div>
+
+        {!!solicitacoesPendentes && (
+          <div className="card mb-16" style={{ padding: "12px 20px", borderColor: "var(--primary)" }}>
+            <p className="hint" style={{ margin: 0 }}>
+              Você tem {solicitacoesPendentes} solicitaç{solicitacoesPendentes === 1 ? "ão" : "ões"} pendente
+              {solicitacoesPendentes === 1 ? "" : "s"} de vínculo.{" "}
+              <Link href="/painel-gestor/solicitacoes">Revisar agora →</Link>
+            </p>
+          </div>
+        )}
 
         <div className="flex gap-8 mb-16" style={{ flexWrap: "wrap" }}>
           {(Object.keys(PERIODO_LABEL) as Periodo[]).map((p) => (

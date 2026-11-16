@@ -66,11 +66,23 @@ const NAV_ITEMS_CLIENTE: NavItem[] = [
 
 // Gestor de uma imobiliária/construtora — só vê as métricas dos seus
 // próprios corretores, nunca a agenda operacional (isso é do corretor).
-const NAV_ITEMS_GESTOR: NavItem[] = [
-  { type: "link", href: "/painel-gestor", label: "Painel do gestor" },
-  { type: "link", href: "/painel-gestor/leads", label: "Leads" },
-  { type: "link", href: "/editar-perfil", label: "Meu perfil" },
-];
+function itensGestor(solicitacoesPendentes: number): NavLink[] {
+  return [
+    { href: "/painel-gestor", label: "Painel do gestor" },
+    { href: "/painel-gestor/leads", label: "Leads" },
+    {
+      href: "/painel-gestor/solicitacoes",
+      label: solicitacoesPendentes > 0 ? `Solicitações (${solicitacoesPendentes})` : "Solicitações",
+    },
+  ];
+}
+
+function navItemsGestor(solicitacoesPendentes: number): NavItem[] {
+  return [
+    ...itensGestor(solicitacoesPendentes).map((item): NavItem => ({ type: "link", ...item })),
+    { type: "link", href: "/editar-perfil", label: "Meu perfil" },
+  ];
+}
 
 function groupIsActive(item: Extract<NavItem, { type: "group" }>, active: string) {
   return item.children.some((c) => c.href === active);
@@ -82,6 +94,11 @@ export function Nav({ active }: { active: string }) {
   const [nome, setNome] = useState<string | null>(null);
   const [role, setRole] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  // Um corretor também pode ter virado gestor (migração 0089, pedido
+  // aprovado por outro gestor) sem o `role` principal mudar — por isso
+  // isso é checado à parte, não só via `role === "gestor"`.
+  const [temPerfilGestor, setTemPerfilGestor] = useState(false);
+  const [solicitacoesPendentes, setSolicitacoesPendentes] = useState(0);
   const [open, setOpen] = useState(false);
   // Até a primeira checagem de sessão resolver, não sabemos se quem
   // está vendo é visitante, cliente ou corretor — sem este guard, o
@@ -98,6 +115,8 @@ export function Nav({ active }: { active: string }) {
         setNome(null);
         setRole(null);
         setIsAdmin(false);
+        setTemPerfilGestor(false);
+        setSolicitacoesPendentes(0);
         setCarregando(false);
         return;
       }
@@ -110,6 +129,24 @@ export function Nav({ active }: { active: string }) {
       setRole(data?.role ?? null);
       setIsAdmin(Boolean(data?.is_admin));
       setCarregando(false);
+
+      const { data: gestorPerfil } = await supabase
+        .from("gestor_perfis")
+        .select("organizacao_catalogo_id")
+        .eq("profile_id", currentUser.id)
+        .maybeSingle();
+      setTemPerfilGestor(Boolean(gestorPerfil));
+
+      if (gestorPerfil) {
+        const { count } = await supabase
+          .from("solicitacoes_vinculo")
+          .select("id", { count: "exact", head: true })
+          .eq("organizacao_catalogo_id", gestorPerfil.organizacao_catalogo_id)
+          .eq("status", "pendente");
+        setSolicitacoesPendentes(count ?? 0);
+      } else {
+        setSolicitacoesPendentes(0);
+      }
     }
 
     supabase.auth.getUser().then(({ data }) => syncUser(data.user ?? null));
@@ -241,8 +278,13 @@ export function Nav({ active }: { active: string }) {
               : role === "comprador"
                 ? NAV_ITEMS_CLIENTE
                 : role === "gestor"
-                  ? NAV_ITEMS_GESTOR
-                  : NAV_ITEMS
+                  ? navItemsGestor(solicitacoesPendentes)
+                  : temPerfilGestor
+                    ? ([
+                        ...NAV_ITEMS,
+                        { type: "group", label: "Gestor", children: itensGestor(solicitacoesPendentes) },
+                      ] as NavItem[])
+                    : NAV_ITEMS
           ).map((item, indice) => {
             if (item.type === "divider") {
               return <div className="nav-divider" key={`divisor-${indice}`} aria-hidden="true" />;
