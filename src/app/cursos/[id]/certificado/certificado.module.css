@@ -1,0 +1,69 @@
+.certificado {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 56px 40px;
+  background: #fdfdfb;
+  color: #1a1a1a;
+  border: 10px solid #0a6e52;
+  border-radius: 4px;
+  text-align: center;
+  font-family: Georgia, "Times New Roman", serif;
+}
+
+.selo {
+  font-size: 40px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-size: 12px;
+  color: #0a6e52;
+  margin: 8px 0 0;
+}
+
+.titulo {
+  font-size: 28px;
+  margin: 8px 0 24px;
+}
+
+.texto {
+  font-size: 14px;
+  color: #444;
+  margin: 4px 0;
+}
+
+.nome {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 8px 0;
+  color: #0a6e52;
+}
+
+.curso {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 8px 0;
+}
+
+.data {
+  font-size: 13px;
+  color: #666;
+  margin-top: 32px;
+}
+
+@media print {
+  .semImpressao {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+  }
+
+  .certificado {
+    border-width: 6px;
+    margin: 0;
+    max-width: 100%;
+  }
+}

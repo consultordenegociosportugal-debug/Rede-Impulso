@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/server";
 import { MatriculaBotao } from "./matricula-botao";
+import { MateriaisLista } from "./materiais-lista";
 import { Footer } from "@/components/footer";
 
 const formatoMoeda = new Intl.NumberFormat("pt-BR", {
@@ -64,14 +65,26 @@ export default async function CursoDetalhePage({
   } = await supabase.auth.getUser();
 
   let matriculaExistente: string | null = null;
+  let matriculaStatus: string | null = null;
+  let materiais: { id: string; titulo: string; arquivo_url: string }[] = [];
   if (user) {
     const { data: matricula } = await supabase
       .from("matriculas")
-      .select("id")
+      .select("id, status")
       .eq("curso_id", curso.id)
       .eq("profile_id", user.id)
       .maybeSingle();
     matriculaExistente = matricula?.id ?? null;
+    matriculaStatus = matricula?.status ?? null;
+
+    if (matriculaExistente && matriculaStatus !== "cancelado") {
+      const { data: materiaisData } = await supabase
+        .from("curso_materiais")
+        .select("id, titulo, arquivo_url")
+        .eq("curso_id", curso.id)
+        .order("ordem", { ascending: true });
+      materiais = materiaisData ?? [];
+    }
   }
 
   return (
@@ -107,6 +120,25 @@ export default async function CursoDetalhePage({
               matriculaExistente={matriculaExistente}
             />
           </div>
+
+          {matriculaExistente && matriculaStatus !== "cancelado" && (
+            <div className="card mt-16">
+              <h2 style={{ fontSize: 16, margin: "0 0 12px" }}>Material do curso</h2>
+              <MateriaisLista materiais={materiais} />
+            </div>
+          )}
+
+          {matriculaStatus === "concluido" && (
+            <div className="card mt-16" style={{ textAlign: "center" }}>
+              <span className="badge badge-primary">Curso concluído</span>
+              <p className="hint" style={{ margin: "8px 0 12px" }}>
+                Parabéns! Seu certificado já está disponível.
+              </p>
+              <Link href={`/cursos/${curso.id}/certificado`} className="btn btn-primary btn-sm">
+                🎓 Ver certificado
+              </Link>
+            </div>
+          )}
         </div>
       </div>
 

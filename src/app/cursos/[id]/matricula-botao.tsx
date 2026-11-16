@@ -46,6 +46,10 @@ export function MatriculaBotao({
 
     setMatriculado(true);
     setStatus("idle");
+    // Sem isso, a seção de material (carregada no servidor a partir de
+    // matriculaExistente) só aparecia depois de recarregar a página na
+    // mão — a matrícula "reservava" sem o aluno ver o material na hora.
+    router.refresh();
   }
 
   if (matriculado) {

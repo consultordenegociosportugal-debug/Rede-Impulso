@@ -21,6 +21,7 @@ type MatriculaRow = {
   status: string;
   valor: number;
   created_at: string;
+  curso_id: string;
   cursos: { id: string; titulo: string; carga_horaria: number | null } | null;
 };
 
@@ -36,7 +37,7 @@ export default async function MeusCursosPage() {
 
   const { data } = await supabase
     .from("matriculas")
-    .select("id, status, valor, created_at, cursos(id, titulo, carga_horaria)")
+    .select("id, status, valor, created_at, curso_id, cursos(id, titulo, carga_horaria)")
     .eq("profile_id", user.id)
     .order("created_at", { ascending: false });
 
@@ -75,7 +76,14 @@ export default async function MeusCursosPage() {
                       {formatoMoeda.format(m.valor)}
                     </div>
                   </div>
-                  <span className={`badge ${badge.className}`}>{badge.label}</span>
+                  <div className="flex items-center gap-8">
+                    <span className={`badge ${badge.className}`}>{badge.label}</span>
+                    {m.status === "concluido" && (
+                      <Link href={`/cursos/${m.curso_id}/certificado`} className="btn btn-outline btn-sm">
+                        🎓 Certificado
+                      </Link>
+                    )}
+                  </div>
                 </div>
               );
             })}
