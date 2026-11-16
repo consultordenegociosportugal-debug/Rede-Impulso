@@ -46,6 +46,38 @@ const PERIODO_LABEL: Record<Periodo, string> = {
   tudo: "Tudo",
 };
 
+type Visao = "mes" | "ano";
+
+// Chave de agrupamento sempre em Brasília, não no fuso do processo —
+// mesma razão de hojeISO()/somarDias(): perto da virada do mês/ano,
+// UTC já estaria um dia (ou mês) adiantado do calendário real daqui.
+const formatoChaveMes = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  month: "2-digit",
+  timeZone: "America/Sao_Paulo",
+});
+const formatoChaveAno = new Intl.DateTimeFormat("en-CA", {
+  year: "numeric",
+  timeZone: "America/Sao_Paulo",
+});
+const formatoLabelMes = new Intl.DateTimeFormat("pt-BR", {
+  month: "long",
+  year: "numeric",
+  timeZone: "America/Sao_Paulo",
+});
+
+function chaveELabelDoPeriodo(dataIso: string, visao: Visao): { chave: string; label: string } {
+  if (visao === "ano") {
+    const chave = formatoChaveAno.format(new Date(dataIso));
+    return { chave, label: chave };
+  }
+  const chave = formatoChaveMes.format(new Date(dataIso));
+  // Meio-dia evita a data cair no dia anterior por causa do fuso ao
+  // reconstruir só com ano-mês (ver mesma técnica em quadro-semanal.tsx).
+  const label = formatoLabelMes.format(new Date(`${chave}-01T12:00:00-03:00`));
+  return { chave, label: label.charAt(0).toUpperCase() + label.slice(1) };
+}
+
 // Último dia de um mês (1-indexado) — dia 0 do mês seguinte, deixando o
 // Date.UTC normalizar o estouro de ano sozinho. Opera só no calendário,
 // nunca num instante real.
@@ -92,14 +124,28 @@ function pct(parte: number, total: number): string {
 export default async function PainelGestorPage({
   searchParams,
 }: {
-  searchParams: Promise<{ periodo?: string }>;
+  searchParams: Promise<{
+    periodo?: string;
+    inicio?: string;
+    fim?: string;
+    corretor?: string;
+    visao?: string;
+  }>;
 }) {
-  const { periodo: periodoParam } = await searchParams;
+  const { periodo: periodoParam, inicio: inicioParam, fim: fimParam, corretor: corretorParam, visao: visaoParam } =
+    await searchParams;
   const periodo: Periodo =
     periodoParam === "mes_passado" || periodoParam === "ultimos_30" || periodoParam === "tudo"
       ? periodoParam
       : "mes_atual";
-  const intervalo = intervaloDoPeriodo(periodo);
+  // Intervalo customizado (de/até, digitado à mão) tem prioridade sobre
+  // o preset — os botões de período continuam ali como atalho rápido,
+  // mas quem quer "de janeiro até março de 2025" usa os campos de data.
+  const intervaloCustomizado =
+    inicioParam && fimParam ? { inicio: inicioParam, fim: fimParam } : null;
+  const intervalo = intervaloCustomizado ?? intervaloDoPeriodo(periodo);
+  const corretorFiltro = corretorParam?.trim() || null;
+  const visao: Visao = visaoParam === "ano" ? "ano" : "mes";
 
   const supabase = await createClient();
   const {
@@ -131,7 +177,12 @@ export default async function PainelGestorPage({
     profile_id: string;
     profiles: { nome: string } | null;
   }[];
-  const idsCorretores = corretores.map((c) => c.profile_id);
+  // Com um corretor escolhido no filtro, toda a página vira o relatório
+  // individual dele — sem precisar de uma tela separada pra isso.
+  const corretoresParaExibir = corretorFiltro
+    ? corretores.filter((c) => c.profile_id === corretorFiltro)
+    : corretores;
+  const idsCorretores = corretoresParaExibir.map((c) => c.profile_id);
 
   let visitas: VisitaRow[] = [];
   let npsRespostas: NpsRow[] = [];
@@ -196,7 +247,7 @@ export default async function PainelGestorPage({
       notas: number[];
     }
   >();
-  for (const corretor of corretores) {
+  for (const corretor of corretoresParaExibir) {
     porCorretor.set(corretor.profile_id, {
       nome: corretor.profiles?.nome ?? "—",
       total: 0,
@@ -248,7 +299,7 @@ export default async function PainelGestorPage({
   const valorTotalVendido = leadsConvertidos.reduce((s, l) => s + (l.valor_venda ?? 0), 0);
 
   const leadsPorCorretor = new Map<string, { total: number; convertidos: number; valor: number }>();
-  for (const corretor of corretores) {
+  for (const corretor of corretoresParaExibir) {
     leadsPorCorretor.set(corretor.profile_id, { total: 0, convertidos: 0, valor: 0 });
   }
   for (const lead of leads) {
@@ -261,6 +312,42 @@ export default async function PainelGestorPage({
     }
   }
 
+  // Histórico por mês/ano — agrupa o que já foi buscado pra tela toda
+  // (mesmo filtro de corretor e intervalo), sem precisar de uma consulta
+  // à parte. "O que foi realizado" junta leads convertidos e visitas
+  // realizadas lado a lado, pra responder "nos meses de tal até tal" ou
+  // "no ano tal" sem trocar de tela.
+  const historicoMap = new Map<
+    string,
+    { label: string; leads: number; convertidos: number; valor: number; visitasTotal: number; realizadas: number }
+  >();
+  function entradaHistorico(chave: string, label: string) {
+    let entrada = historicoMap.get(chave);
+    if (!entrada) {
+      entrada = { label, leads: 0, convertidos: 0, valor: 0, visitasTotal: 0, realizadas: 0 };
+      historicoMap.set(chave, entrada);
+    }
+    return entrada;
+  }
+  for (const lead of leads) {
+    const { chave, label } = chaveELabelDoPeriodo(lead.created_at, visao);
+    const entrada = entradaHistorico(chave, label);
+    entrada.leads += 1;
+    if (lead.status === "convertido") {
+      entrada.convertidos += 1;
+      entrada.valor += lead.valor_venda ?? 0;
+    }
+  }
+  for (const v of visitas) {
+    const { chave, label } = chaveELabelDoPeriodo(v.data_hora, visao);
+    const entrada = entradaHistorico(chave, label);
+    entrada.visitasTotal += 1;
+    if (v.status === "realizada") entrada.realizadas += 1;
+  }
+  const historico = Array.from(historicoMap.entries())
+    .map(([chave, dados]) => ({ chave, ...dados }))
+    .sort((a, b) => b.chave.localeCompare(a.chave));
+
   return (
     <>
       <Nav active="/painel-gestor" />
@@ -270,7 +357,9 @@ export default async function PainelGestorPage({
           <div>
             <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>{organizacao?.nome ?? "Minha organização"}</h1>
             <p className="muted mb-16">
-              Métricas dos corretores vinculados a {organizacao?.tipo === "construtora" ? "esta construtora" : "esta imobiliária"}.
+              {corretorFiltro
+                ? `Relatório de ${corretoresParaExibir[0]?.profiles?.nome ?? "um corretor"}.`
+                : `Métricas dos corretores vinculados a ${organizacao?.tipo === "construtora" ? "esta construtora" : "esta imobiliária"}.`}
             </p>
           </div>
           <Link href="/painel-gestor/leads" className="btn btn-primary btn-sm">
@@ -278,22 +367,63 @@ export default async function PainelGestorPage({
           </Link>
         </div>
 
-        <div className="flex gap-8 mb-24" style={{ flexWrap: "wrap" }}>
+        <div className="flex gap-8 mb-16" style={{ flexWrap: "wrap" }}>
           {(Object.keys(PERIODO_LABEL) as Periodo[]).map((p) => (
             <Link
               key={p}
-              href={`/painel-gestor?periodo=${p}`}
+              href={`/painel-gestor?periodo=${p}${corretorFiltro ? `&corretor=${corretorFiltro}` : ""}`}
               // Sem isso, o Next prefetch de cada botão de período assim
               // que a tela montava, multiplicando requisições concorrentes
               // pra mesma URL sem necessidade (só 4 períodos, trocados
               // raramente) — reduz ruído de rede, não é fix de bug.
               prefetch={false}
-              className={`btn btn-sm ${p === periodo ? "btn-primary" : "btn-outline"}`}
+              className={`btn btn-sm ${!intervaloCustomizado && p === periodo ? "btn-primary" : "btn-outline"}`}
             >
               {PERIODO_LABEL[p]}
             </Link>
           ))}
         </div>
+
+        <form
+          method="get"
+          className="card flex gap-8 items-end mb-24"
+          style={{ flexWrap: "wrap", padding: "16px 20px" }}
+        >
+          <div className="field" style={{ margin: 0 }}>
+            <label htmlFor="corretor">Corretor</label>
+            <select id="corretor" name="corretor" defaultValue={corretorFiltro ?? ""}>
+              <option value="">Todos</option>
+              {corretores.map((c) => (
+                <option key={c.profile_id} value={c.profile_id}>
+                  {c.profiles?.nome ?? "—"}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label htmlFor="inicio">De</label>
+            <input type="date" id="inicio" name="inicio" defaultValue={intervalo?.inicio ?? ""} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label htmlFor="fim">Até</label>
+            <input type="date" id="fim" name="fim" defaultValue={intervalo?.fim ?? ""} />
+          </div>
+          <div className="field" style={{ margin: 0 }}>
+            <label htmlFor="visao">Histórico por</label>
+            <select id="visao" name="visao" defaultValue={visao}>
+              <option value="mes">Mês</option>
+              <option value="ano">Ano</option>
+            </select>
+          </div>
+          <button type="submit" className="btn btn-primary btn-sm">
+            Filtrar
+          </button>
+          {(corretorFiltro || intervaloCustomizado) && (
+            <Link href="/painel-gestor" className="btn btn-ghost btn-sm">
+              Limpar filtro
+            </Link>
+          )}
+        </form>
 
         <div className="grid grid-3 mb-24">
           <div className="card" style={{ textAlign: "center", padding: 20 }}>
@@ -355,9 +485,9 @@ export default async function PainelGestorPage({
             </div>
           </div>
         </div>
-        {corretores.length > 0 && (
+        {corretoresParaExibir.length > 0 && (
           <div className="card mb-24" style={{ padding: "8px 20px" }}>
-            {corretores.map((c) => {
+            {corretoresParaExibir.map((c) => {
               const dados = leadsPorCorretor.get(c.profile_id);
               if (!dados || dados.total === 0) return null;
               return (
@@ -375,7 +505,9 @@ export default async function PainelGestorPage({
           </div>
         )}
 
-        <h2 style={{ fontSize: 20, margin: "32px 0 12px" }}>Corretores por taxa de sucesso ({corretores.length})</h2>
+        <h2 style={{ fontSize: 20, margin: "32px 0 12px" }}>
+          Corretores por taxa de sucesso ({corretoresParaExibir.length})
+        </h2>
         {resumoCorretores.length === 0 ? (
           <div className="card" style={{ textAlign: "center", padding: "40px 20px" }}>
             <p className="muted" style={{ margin: 0 }}>
@@ -413,6 +545,39 @@ export default async function PainelGestorPage({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        <h2 style={{ fontSize: 20, margin: "32px 0 4px" }}>
+          Histórico {visao === "ano" ? "anual" : "mensal"}
+        </h2>
+        <p className="muted mb-16">
+          {corretorFiltro
+            ? `Leads e agendamentos de ${corretoresParaExibir[0]?.profiles?.nome ?? "este corretor"} por ${visao === "ano" ? "ano" : "mês"}.`
+            : `Leads e agendamentos de toda a organização por ${visao === "ano" ? "ano" : "mês"}.`}
+        </p>
+        {historico.length === 0 ? (
+          <div className="card mb-24" style={{ textAlign: "center", padding: "40px 20px" }}>
+            <p className="muted" style={{ margin: 0 }}>
+              Nenhum dado para o período selecionado.
+            </p>
+          </div>
+        ) : (
+          <div className="card mb-24" style={{ padding: "8px 20px" }}>
+            {historico.map((h) => (
+              <div key={h.chave} className="list-row">
+                <div className="flex between items-center" style={{ width: "100%", gap: 12, flexWrap: "wrap" }}>
+                  <span style={{ fontWeight: 600, fontSize: 14, minWidth: 140 }}>{h.label}</span>
+                  <span className="hint" style={{ margin: 0 }}>
+                    {h.leads} lead{h.leads === 1 ? "" : "s"} · {pct(h.convertidos, h.leads)} convertido
+                  </span>
+                  <span className="hint" style={{ margin: 0 }}>
+                    {h.visitasTotal} agendamento{h.visitasTotal === 1 ? "" : "s"} · {pct(h.realizadas, h.visitasTotal)} realizado
+                  </span>
+                  <span style={{ fontWeight: 600, fontSize: 14 }}>{formatoMoedaGestor.format(h.valor)}</span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
