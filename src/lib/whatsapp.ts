@@ -35,6 +35,32 @@
 //    {{2}} visita(s) agendada(s), sendo {{3}} já confirmada(s) com os
 //    clientes. Continue assim!"
 //   {{1}} nome do corretor · {{2}} total de visitas na semana · {{3}} confirmadas
+//
+// Os três abaixo (migração 0089, aprovação de vínculo corretor↔organização
+// — a submeter assim que o billing do WABA for resolvido, hoje travado num
+// caso de suporte aberto com a Meta) ficam prontos no código, mas
+// enviarTemplateWhatsapp() nunca derruba nada: sem o template aprovado a
+// Meta só devolve erro, logado e ignorado — a aprovação/recusa já foi
+// gravada no banco antes de tentar mandar o aviso.
+//
+// solicitacao_vinculo_pendente (a submeter):
+//   "Olá {{1}}! {{2}} pediu {{3}} na {{4}}, pela Rede Impulso. Acesse seu
+//    painel para aprovar ou recusar."
+//   {{1}} nome do gestor · {{2}} nome do corretor ·
+//   {{3}} "para se vincular" ou "para virar gestor também" ·
+//   {{4}} nome da organização
+//
+// resposta_vinculo_organizacao (a submeter):
+//   "Olá {{1}}! Seu pedido de vínculo com a {{2}} foi {{3}} na Rede
+//    Impulso."
+//   {{1}} nome do corretor · {{2}} nome da organização ·
+//   {{3}} "aprovado" ou "recusado"
+//
+// resposta_pedido_gestor (a submeter):
+//   "Olá {{1}}! Seu pedido para virar gestor da {{2}} foi {{3}} na Rede
+//    Impulso."
+//   {{1}} nome do corretor · {{2}} nome da organização ·
+//   {{3}} "aprovado" ou "recusado"
 
 import { paraE164 } from "@/lib/telefone";
 
@@ -182,4 +208,46 @@ export async function enviarResumoSemanalWhatsapp(params: EnvioResumoSemanal): P
     String(params.totalVisitas),
     String(params.confirmadas),
   ]);
+}
+
+type EnvioSolicitacaoVinculoPendente = {
+  telefone: string;
+  nomeGestor: string;
+  nomeCorretor: string;
+  tipo: "corretor" | "gestor";
+  nomeOrganizacao: string;
+};
+
+export async function enviarSolicitacaoVinculoPendenteWhatsapp(
+  params: EnvioSolicitacaoVinculoPendente,
+): Promise<boolean> {
+  const nomeTemplate = process.env.WHATSAPP_TEMPLATE_SOLICITACAO_VINCULO || "solicitacao_vinculo_pendente";
+  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+    params.nomeGestor,
+    params.nomeCorretor,
+    params.tipo === "gestor" ? "para virar gestor também" : "para se vincular",
+    params.nomeOrganizacao,
+  ]);
+}
+
+type EnvioRespostaVinculo = {
+  telefone: string;
+  nomeCorretor: string;
+  nomeOrganizacao: string;
+  tipo: "corretor" | "gestor";
+  aprovado: boolean;
+};
+
+export async function enviarRespostaVinculoWhatsapp(params: EnvioRespostaVinculo): Promise<boolean> {
+  const status = params.aprovado ? "aprovado" : "recusado";
+  if (params.tipo === "gestor") {
+    const nomeTemplate = process.env.WHATSAPP_TEMPLATE_RESPOSTA_GESTOR || "resposta_pedido_gestor";
+    return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+      params.nomeCorretor,
+      params.nomeOrganizacao,
+      status,
+    ]);
+  }
+  const nomeTemplate = process.env.WHATSAPP_TEMPLATE_RESPOSTA_VINCULO || "resposta_vinculo_organizacao";
+  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [params.nomeCorretor, params.nomeOrganizacao, status]);
 }

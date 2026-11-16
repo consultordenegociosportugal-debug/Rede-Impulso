@@ -94,25 +94,21 @@ export function VincularOrganizacao({
     setErro(null);
     setMensagem(null);
 
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setErro("Sua sessão expirou — recarregue a página.");
-      setSalvando(false);
-      return;
-    }
-
-    const { error } = await supabase
-      .from("solicitacoes_vinculo")
-      .insert({ solicitante_id: user.id, organizacao_catalogo_id: novoId, tipo: "corretor" });
+    // Via API, não direto no Supabase — a rota também avisa os
+    // gestores da organização por WhatsApp (telefone deles e o token
+    // da Meta nunca podem ir pro navegador).
+    const resposta = await fetch("/api/solicitacoes-vinculo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ organizacao_catalogo_id: novoId, tipo: "corretor" }),
+    });
+    const corpo = await resposta.json().catch(() => ({}));
 
     setSalvando(false);
     setSelecionada("");
 
-    if (error) {
-      setErro("Não foi possível enviar a solicitação. Tente de novo.");
+    if (!resposta.ok) {
+      setErro(corpo.erro ?? "Não foi possível enviar a solicitação. Tente de novo.");
       return;
     }
 
@@ -164,24 +160,17 @@ export function VincularOrganizacao({
     setErro(null);
     setMensagem(null);
 
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setErro("Sua sessão expirou — recarregue a página.");
-      setSalvando(false);
-      return;
-    }
-
-    const { error } = await supabase
-      .from("solicitacoes_vinculo")
-      .insert({ solicitante_id: user.id, organizacao_catalogo_id: organizacaoId, tipo: "gestor" });
+    const resposta = await fetch("/api/solicitacoes-vinculo", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ organizacao_catalogo_id: organizacaoId, tipo: "gestor" }),
+    });
+    const corpo = await resposta.json().catch(() => ({}));
 
     setSalvando(false);
 
-    if (error) {
-      setErro("Não foi possível enviar o pedido. Tente de novo.");
+    if (!resposta.ok) {
+      setErro(corpo.erro ?? "Não foi possível enviar o pedido. Tente de novo.");
       return;
     }
 

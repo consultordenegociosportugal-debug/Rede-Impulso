@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
 
 export function ResponderSolicitacaoButtons({ solicitacaoId }: { solicitacaoId: string }) {
   const router = useRouter();
@@ -13,15 +12,18 @@ export function ResponderSolicitacaoButtons({ solicitacaoId }: { solicitacaoId: 
     setEnviando(aprovar ? "aprovar" : "recusar");
     setErro(null);
 
-    const supabase = createClient();
-    const { error } = await supabase.rpc("responder_solicitacao_vinculo", {
-      p_solicitacao_id: solicitacaoId,
-      p_aprovar: aprovar,
+    // Via API, não direto no Supabase — a rota também avisa o
+    // solicitante por WhatsApp (telefone dele e o token da Meta nunca
+    // podem ir pro navegador).
+    const resposta = await fetch("/api/solicitacoes-vinculo/responder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ solicitacao_id: solicitacaoId, aprovar }),
     });
 
     setEnviando(null);
 
-    if (error) {
+    if (!resposta.ok) {
       setErro("Não foi possível responder. Atualize a página e tente de novo.");
       return;
     }
