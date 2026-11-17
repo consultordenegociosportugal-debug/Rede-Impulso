@@ -160,12 +160,12 @@ export function EditarPerfilForm({
     if (role === "corretor") {
       if (!cpf.trim()) problemas.cpf = "Informe seu CPF.";
       else if (!cpfValido(cpf)) problemas.cpf = "Esse CPF não é válido — confira os números.";
-      if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
       // Só exige o formato novo (NNNNN-UF) quando a pessoa mexeu no
       // campo — sem isso, qualquer corretor com CRECI cadastrado antes
       // dessa validação existir (ex.: sem o "-UF") ficava travado pra
-      // editar QUALQUER outro campo do próprio perfil.
-      else if (creci !== (dadosCorretor?.creci ?? "") && !creciValido(creci))
+      // editar QUALQUER outro campo do próprio perfil. CRECI em si é
+      // opcional — corretor sem registro ainda pode usar a conta.
+      if (creci.trim() && creci !== (dadosCorretor?.creci ?? "") && !creciValido(creci))
         problemas.creci = "CRECI inválido — ex: 7027-MA.";
       if (bairros.length === 0) problemas.bairros = "Informe ao menos um bairro onde você atua.";
     }
@@ -444,7 +444,12 @@ export function EditarPerfilForm({
       {role === "corretor" && (
         <div className="grid grid-2">
           <div className="field">
-            <label htmlFor="creci">Número do CRECI</label>
+            <label htmlFor="creci">
+              Número do CRECI{" "}
+              <span className="muted" style={{ fontWeight: 400 }}>
+                (opcional)
+              </span>
+            </label>
             <input
               type="text"
               id="creci"
@@ -457,7 +462,6 @@ export function EditarPerfilForm({
               className={errosCampo.creci ? styles.campoInvalido : undefined}
               aria-invalid={errosCampo.creci ? true : undefined}
               aria-describedby={errosCampo.creci ? "erro-creci" : undefined}
-              required
             />
             {errosCampo.creci && (
               <p className={styles.erroCampo} id="erro-creci">

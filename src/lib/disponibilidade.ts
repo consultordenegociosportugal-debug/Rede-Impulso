@@ -97,16 +97,20 @@ export async function horariosDisponiveis(
   const ehHoje = data === agoraNoFuso.data;
   const minutoAgora = paraMinutos(agoraNoFuso.hora);
 
-  const horarios: string[] = [];
+  // Set, não array: corretor pode ter mais de um intervalo no mesmo dia
+  // (migração 0092, ex. manhã + tarde) — se dois intervalos se tocarem
+  // ou sobrepuserem, o mesmo horário não deve aparecer duplicado pra
+  // quem for agendar.
+  const horarios = new Set<string>();
   for (const janela of janelasDia) {
     const inicio = paraMinutos(janela.hora_inicio.slice(0, 5));
     const fim = paraMinutos(janela.hora_fim.slice(0, 5));
     for (let m = inicio; m + DURACAO_SLOT_MINUTOS <= fim; m += DURACAO_SLOT_MINUTOS) {
       if (ehHoje && m <= minutoAgora) continue;
       const hhmm = paraHHmm(m);
-      if (!horariosOcupados.has(hhmm)) horarios.push(hhmm);
+      if (!horariosOcupados.has(hhmm)) horarios.add(hhmm);
     }
   }
 
-  return { configurado: true, horarios };
+  return { configurado: true, horarios: Array.from(horarios).sort() };
 }

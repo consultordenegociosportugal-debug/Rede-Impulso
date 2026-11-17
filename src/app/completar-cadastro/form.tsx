@@ -124,8 +124,7 @@ export function CompletarCadastroForm({
     if (papel === "corretor") {
       if (!cpf.trim()) problemas.cpf = "Informe seu CPF.";
       else if (!cpfValido(cpf)) problemas.cpf = "Esse CPF não é válido — confira os números.";
-      if (!creci.trim()) problemas.creci = "Informe o número do seu CRECI.";
-      else if (!creciValido(creci)) problemas.creci = "CRECI inválido — ex: 7027-MA.";
+      if (creci.trim() && !creciValido(creci)) problemas.creci = "CRECI inválido — ex: 7027-MA.";
       if (bairros.length === 0) problemas.bairros = "Informe ao menos um bairro onde você atua.";
     }
     return problemas;
@@ -402,7 +401,12 @@ export function CompletarCadastroForm({
           </div>
           <div className="grid grid-2">
             <div className="field">
-              <label htmlFor="creci">Número do CRECI</label>
+              <label htmlFor="creci">
+                Número do CRECI{" "}
+                <span className="muted" style={{ fontWeight: 400 }}>
+                  (opcional)
+                </span>
+              </label>
               <input
                 type="text"
                 id="creci"
@@ -415,14 +419,16 @@ export function CompletarCadastroForm({
                 className={errosCampo.creci ? styles.campoInvalido : undefined}
                 aria-invalid={errosCampo.creci ? true : undefined}
                 aria-describedby={errosCampo.creci ? "erro-creci" : undefined}
-                required
               />
               {errosCampo.creci ? (
                 <p className={styles.erroCampo} id="erro-creci">
                   {errosCampo.creci}
                 </p>
               ) : (
-                <p className="hint">Número e sigla do estado, como no seu registro.</p>
+                <p className="hint">
+                  Número e sigla do estado, como no seu registro. Ainda não tem? Pode completar
+                  depois.
+                </p>
               )}
             </div>
             <div className="field">
