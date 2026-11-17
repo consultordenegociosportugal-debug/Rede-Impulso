@@ -168,6 +168,9 @@ function EntrarForm() {
               <Link href="/para-corretores" className="btn btn-ghost btn-sm">
                 Sou corretor
               </Link>
+              <Link href="/cadastro-gestor" className="btn btn-ghost btn-sm">
+                Sou gestor
+              </Link>
             </div>
           </div>
         </div>

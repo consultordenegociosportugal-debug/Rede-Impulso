@@ -6,11 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 
 export function MatriculaBotao({
   cursoId,
-  preco,
   matriculaExistente,
 }: {
   cursoId: string;
-  preco: number;
   matriculaExistente: string | null;
 }) {
   const router = useRouter();
@@ -32,11 +30,7 @@ export function MatriculaBotao({
       return;
     }
 
-    const { error } = await supabase.from("matriculas").insert({
-      curso_id: cursoId,
-      profile_id: user.id,
-      valor: preco,
-    });
+    const { error } = await supabase.rpc("matricular_em_curso", { p_curso_id: cursoId });
 
     if (error) {
       setErro(error.message);

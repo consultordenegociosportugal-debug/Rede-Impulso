@@ -27,7 +27,7 @@ export function MatriculasManager({ matriculas }: { matriculas: Matricula[] }) {
   async function mudarStatus(id: string, status: string) {
     setAlterando(id);
     const supabase = createClient();
-    await supabase.from("matriculas").update({ status }).eq("id", id);
+    await supabase.rpc("definir_status_matricula", { p_matricula_id: id, p_novo_status: status });
     setAlterando(null);
     router.refresh();
   }

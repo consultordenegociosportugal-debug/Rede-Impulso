@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 const MAX_TENTATIVAS = 5;
 
@@ -48,10 +49,16 @@ export async function POST(request: NextRequest) {
   // Grava o telefone verificado em profiles (pode diferir do que já
   // estava lá, se a verificação começou a partir de uma edição de
   // perfil que ainda não tinha sido salva) e some com o código usado.
-  const { error: erroProfile } = await supabase
-    .from("profiles")
-    .update({ telefone: pendente.telefone, telefone_verificado_em: new Date().toISOString() })
-    .eq("id", user.id);
+  // Via service role: telefone_verificado_em não tem mais grant pra
+  // `authenticated` (migração 0091) — o próprio código certo já
+  // confirmado acima É a autorização, não precisa de RLS aqui.
+  const admin = createAdminClient();
+  const { error: erroProfile } = admin
+    ? await admin
+        .from("profiles")
+        .update({ telefone: pendente.telefone, telefone_verificado_em: new Date().toISOString() })
+        .eq("id", user.id)
+    : { error: new Error("SUPABASE_SERVICE_ROLE_KEY ausente") };
 
   if (erroProfile) {
     return NextResponse.json({ erro: "Código certo, mas não deu pra salvar. Tente de novo." }, { status: 500 });

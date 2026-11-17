@@ -116,7 +116,6 @@ export default async function CursoDetalhePage({
             </div>
             <MatriculaBotao
               cursoId={curso.id}
-              preco={curso.preco}
               matriculaExistente={matriculaExistente}
             />
           </div>

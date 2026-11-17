@@ -9,7 +9,7 @@ import { QuadroSemanal } from "./quadro-semanal";
 import { ViewToggle } from "./view-toggle";
 import { LinkPerfilPublico } from "./link-perfil-publico";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
-import { hojeISO } from "@/lib/data";
+import { hojeISO, diaBrasilia } from "@/lib/data";
 import { linkWhatsapp } from "@/lib/telefone";
 import { ICONE_STATUS_VISITA } from "@/lib/status-visita";
 
@@ -165,9 +165,7 @@ export default async function PainelNegociosPage({
         .maybeSingle()
     : { data: null };
 
-  const hoje = futuras.filter(
-    (v) => new Date(v.data_hora).toDateString() === new Date().toDateString(),
-  ).length;
+  const hoje = futuras.filter((v) => diaBrasilia(v.data_hora) === hojeISO()).length;
   const confirmadas = futuras.filter((v) => v.status === "confirmada").length;
 
   const STATS = [

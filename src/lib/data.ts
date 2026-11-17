@@ -9,12 +9,19 @@
 // uma visita pra ainda hoje, bem na janela em que mais gente agenda pro
 // fim do dia.
 export function hojeISO(): string {
+  return diaBrasilia(new Date());
+}
+
+// Mesma lógica de hojeISO(), mas pra uma data qualquer — usada pra
+// comparar "essa visita é hoje?" sem cair no mesmo bug de fuso
+// (`.toDateString()` compara no fuso do PROCESSO, UTC na Vercel).
+export function diaBrasilia(data: Date | string): string {
   const partes = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).formatToParts(new Date());
+  }).formatToParts(new Date(data));
   const pegar = (tipo: string) => partes.find((p) => p.type === tipo)?.value ?? "00";
   return `${pegar("year")}-${pegar("month")}-${pegar("day")}`;
 }

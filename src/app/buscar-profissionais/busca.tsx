@@ -13,6 +13,8 @@ type Resultado = {
   cidade: string | null;
   detalhe: string | null;
   fotoUrl: string | null;
+  estrelas: number;
+  verificado: boolean;
 };
 
 const ICONE_PAPEL: Record<Papel, string> = {
@@ -188,7 +190,23 @@ export function BuscaProfissionais() {
                     <span style={{ fontSize: 20 }} aria-hidden="true">{ICONE_PAPEL[r.papel]}</span>
                   )}
                   <strong style={{ fontSize: 15 }}>{r.nome}</strong>
+                  {r.verificado && (
+                    <span
+                      className="badge badge-primary"
+                      style={{ fontSize: 10 }}
+                      title="Identidade verificada pela Rede Impulso"
+                    >
+                      ✓ Verificado
+                    </span>
+                  )}
                 </div>
+                {r.estrelas > 0 && (
+                  <p className="hint" style={{ margin: "4px 0 0" }}>
+                    {"★".repeat(Math.round(r.estrelas))}
+                    {"☆".repeat(5 - Math.round(r.estrelas))}{" "}
+                    <span className="mono">{r.estrelas.toFixed(1)}</span>
+                  </p>
+                )}
                 <p className="hint" style={{ marginBottom: 0 }}>
                   {LABEL_PAPEL[r.papel]}
                   {r.detalhe && r.detalhe !== LABEL_PAPEL[r.papel] ? ` · ${r.detalhe}` : ""}

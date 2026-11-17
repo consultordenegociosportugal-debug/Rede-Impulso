@@ -8,13 +8,16 @@ type Resultado = {
   cidade: string | null;
   detalhe: string | null;
   fotoUrl: string | null;
+  estrelas: number;
+  verificado: boolean;
 };
 
 type CorretorRowNome = {
   profile_id: string;
   creci: string | null;
   cidades_atuacao: string[] | null;
-  profiles: { nome: string; foto_url: string | null } | null;
+  estrelas: number;
+  profiles: { nome: string; foto_url: string | null; verification_status: string } | null;
 };
 
 type CorretorRowCidade = {
@@ -23,6 +26,8 @@ type CorretorRowCidade = {
   cidades_atuacao: string[] | null;
   nome: string;
   foto_url: string | null;
+  estrelas: number;
+  verificado: boolean;
 };
 
 // Busca de corretor para o cliente — mesma ideia das 3 abas do AppBarber
@@ -54,12 +59,14 @@ export async function GET(request: NextRequest) {
       cidade: r.cidades_atuacao?.join(", ") ?? null,
       detalhe: r.creci ? `CRECI ${r.creci}` : null,
       fotoUrl: r.foto_url ?? null,
+      estrelas: r.estrelas ?? 0,
+      verificado: r.verificado ?? false,
     }));
   } else {
     const { data } = await supabase
       .from("corretor_perfis")
       .select(
-        "profile_id, creci, cidades_atuacao, profiles!corretor_perfis_profile_id_fkey!inner(nome, foto_url)",
+        "profile_id, creci, cidades_atuacao, estrelas, profiles!corretor_perfis_profile_id_fkey!inner(nome, foto_url, verification_status)",
       )
       .ilike("profiles.nome", `%${q}%`)
       .limit(12);
@@ -71,6 +78,8 @@ export async function GET(request: NextRequest) {
       cidade: r.cidades_atuacao?.join(", ") ?? null,
       detalhe: r.creci ? `CRECI ${r.creci}` : null,
       fotoUrl: r.profiles?.foto_url ?? null,
+      estrelas: r.estrelas ?? 0,
+      verificado: r.profiles?.verification_status === "aprovado",
     }));
   }
 
