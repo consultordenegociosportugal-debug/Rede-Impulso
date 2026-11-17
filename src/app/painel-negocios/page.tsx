@@ -72,7 +72,7 @@ export default async function PainelNegociosPage({
   // corretor). Mesmo padrão de /relatorio-visitas.
   const { data: perfilUsuario } = await supabase
     .from("profiles")
-    .select("role")
+    .select("role, verification_status")
     .eq("id", user.id)
     .single();
 
@@ -206,6 +206,26 @@ export default async function PainelNegociosPage({
         </div>
 
         <LinkPerfilPublico link={linkPerfilPublico} />
+
+        {perfilUsuario?.verification_status !== "aprovado" && (
+          <div className="card mb-24" style={{ padding: "12px 20px" }}>
+            <p className="hint" style={{ margin: 0 }}>
+              {perfilUsuario?.verification_status === "em_analise" ? (
+                "Seu documento está em análise — assim que for aprovado, o selo ✓ Verificado aparece no seu perfil público."
+              ) : perfilUsuario?.verification_status === "rejeitado" ? (
+                <>
+                  Seu documento não foi aprovado.{" "}
+                  <Link href="/verificacao">Reenviar documento →</Link>
+                </>
+              ) : (
+                <>
+                  Ganhe o selo ✓ Verificado no seu perfil público enviando um documento de
+                  identidade. <Link href="/verificacao">Enviar documento →</Link>
+                </>
+              )}
+            </p>
+          </div>
+        )}
 
         <div className="mb-24">
           <div

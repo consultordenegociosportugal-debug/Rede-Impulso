@@ -12,6 +12,7 @@ type PerfilRow = {
   rede_social: string | null;
   facebook: string | null;
   foto_url: string | null;
+  verification_status: string;
   corretor_perfis: {
     estrelas: number;
     total_negocios: number;
@@ -74,7 +75,7 @@ export default async function PerfilCorretorPage({
     supabase
       .from("profiles")
       .select(
-        "id, nome, role, rede_social, facebook, foto_url, corretor_perfis!profile_id(estrelas, total_negocios, created_at, organizacao:organizacao_catalogo_id(nome))",
+        "id, nome, role, rede_social, facebook, foto_url, verification_status, corretor_perfis!profile_id(estrelas, total_negocios, created_at, organizacao:organizacao_catalogo_id(nome))",
       )
       .eq("id", id)
       .single(),
@@ -149,6 +150,15 @@ export default async function PerfilCorretorPage({
               <div>
                 <div style={{ fontWeight: 600, fontSize: 17 }}>
                   {perfil.nome}
+                  {perfil.verification_status === "aprovado" && (
+                    <span
+                      className="badge badge-primary"
+                      style={{ marginLeft: 8, fontSize: 11, verticalAlign: "middle" }}
+                      title="Identidade verificada pela Rede Impulso"
+                    >
+                      ✓ Verificado
+                    </span>
+                  )}
                 </div>
                 <div className="muted" style={{ fontSize: 13.5 }}>
                   Corretor · {orgLabel}
