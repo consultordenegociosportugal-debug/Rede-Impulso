@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CidadeInput } from "@/components/cidade-input";
 import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
-import { hojeISO } from "@/lib/data";
+import { hojeISO, diasEntre } from "@/lib/data";
+
+type Modalidade = "presencial" | "video";
 
 type Status = "preenchendo" | "buscando-horarios" | "enviando" | "sucesso";
 
@@ -36,6 +38,9 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
   const [avisoWhatsapp, setAvisoWhatsapp] = useState(false);
   const [vinculadoAContaExistente, setVinculadoAContaExistente] = useState(false);
   const [endereco, setEndereco] = useState<string | null>(null);
+  const [modalidade, setModalidade] = useState<Modalidade>("presencial");
+  const [modalidadeConfirmada, setModalidadeConfirmada] = useState<Modalidade>("presencial");
+  const podeSerVideo = diasEntre(hojeISO(), data) > 1;
   // Força o TelefoneComPaisInput a remontar (e esquecer país/número
   // escolhidos) quando o corretor cadastra outro cliente — ele guarda
   // esse estado por dentro, não controlado por "telefone" aqui.
@@ -81,6 +86,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
           data,
           horario,
           observacoes,
+          modalidade: podeSerVideo ? modalidade : "presencial",
           cliente_avulso: {
             nome: nome.trim(),
             telefone: telefone.trim() || undefined,
@@ -95,6 +101,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
         precisaAvisarClienteManualmente?: boolean;
         vinculadoAContaExistente?: boolean;
         endereco?: string | null;
+        modalidade?: Modalidade;
       };
 
       if (!resposta.ok) {
@@ -106,6 +113,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
       setAvisoWhatsapp(Boolean(dados.precisaAvisarClienteManualmente));
       setVinculadoAContaExistente(Boolean(dados.vinculadoAContaExistente));
       setEndereco(dados.endereco ?? null);
+      setModalidadeConfirmada(dados.modalidade ?? "presencial");
       setStatus("sucesso");
       router.refresh();
     } catch {
@@ -127,10 +135,14 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
           {horario ? `${formatoDataLonga.format(new Date(`${data}T${horario}`))}, ${horario}` : ""}
           .
         </p>
-        {endereco && (
-          <p className="hint" style={{ marginBottom: 12 }}>
-            📍 Local: {endereco}
-          </p>
+        {modalidadeConfirmada === "video" ? (
+          <p className="hint" style={{ marginBottom: 12 }}>📹 Por vídeo</p>
+        ) : (
+          endereco && (
+            <p className="hint" style={{ marginBottom: 12 }}>
+              📍 Local: {endereco}
+            </p>
+          )
         )}
         {avisoWhatsapp && (
           <p className="hint" style={{ color: "var(--coral)", marginBottom: 12 }}>
@@ -150,6 +162,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
             setObservacoes("");
             setAvisoWhatsapp(false);
             setEndereco(null);
+            setModalidade("presencial");
             setVinculadoAContaExistente(false);
             setChaveTelefone((c) => c + 1);
             setStatus("preenchendo");
@@ -239,6 +252,30 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
           }}
         />
       </div>
+
+      {podeSerVideo && (
+        <div className="field">
+          <label>Como vai ser a visita?</label>
+          <div className="flex gap-8">
+            <button
+              type="button"
+              className={modalidade === "presencial" ? "badge badge-primary" : "badge badge-outline"}
+              style={{ cursor: "pointer", border: "none" }}
+              onClick={() => setModalidade("presencial")}
+            >
+              Presencial
+            </button>
+            <button
+              type="button"
+              className={modalidade === "video" ? "badge badge-primary" : "badge badge-outline"}
+              style={{ cursor: "pointer", border: "none" }}
+              onClick={() => setModalidade("video")}
+            >
+              📹 Por vídeo
+            </button>
+          </div>
+        </div>
+      )}
 
       {!configurado ? (
         <p className="hint">

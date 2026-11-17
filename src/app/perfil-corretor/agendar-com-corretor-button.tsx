@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { hojeISO } from "@/lib/data";
+import { hojeISO, diasEntre } from "@/lib/data";
+
+type Modalidade = "presencial" | "video";
 
 type Status = "idle" | "abrindo" | "enviando" | "sucesso";
 
@@ -36,6 +38,9 @@ export function AgendarComCorretorButton({
   const [confirmacao, setConfirmacao] = useState<string | null>(null);
   const [avisoWhatsapp, setAvisoWhatsapp] = useState(false);
   const [endereco, setEndereco] = useState<string | null>(null);
+  const [modalidade, setModalidade] = useState<Modalidade>("presencial");
+  const podeSerVideo = diasEntre(hojeISO(), data) > 1;
+  const [modalidadeConfirmada, setModalidadeConfirmada] = useState<Modalidade>("presencial");
 
   useEffect(() => {
     if (status !== "abrindo") return;
@@ -79,12 +84,19 @@ export function AgendarComCorretorButton({
       const resposta = await fetch("/api/visitas/agendar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ corretor_id: corretorId, data, horario, observacoes }),
+        body: JSON.stringify({
+          corretor_id: corretorId,
+          data,
+          horario,
+          observacoes,
+          modalidade: podeSerVideo ? modalidade : "presencial",
+        }),
       });
       const dados = (await resposta.json()) as {
         erro?: string;
         precisaAvisarClienteManualmente?: boolean;
         endereco?: string | null;
+        modalidade?: Modalidade;
       };
 
       if (!resposta.ok) {
@@ -98,6 +110,7 @@ export function AgendarComCorretorButton({
       );
       setAvisoWhatsapp(Boolean(dados.precisaAvisarClienteManualmente));
       setEndereco(dados.endereco ?? null);
+      setModalidadeConfirmada(dados.modalidade ?? "presencial");
       setStatus("sucesso");
     } catch {
       setErro("Sem conexão no momento. Tente de novo.");
@@ -113,10 +126,16 @@ export function AgendarComCorretorButton({
         <p className="hint" style={{ marginBottom: endereco || avisoWhatsapp ? 8 : 0 }}>
           Combinado! Sua visita com {corretorNome} está confirmada para {confirmacao}.
         </p>
-        {endereco && (
+        {modalidadeConfirmada === "video" ? (
           <p className="hint" style={{ marginBottom: avisoWhatsapp ? 8 : 0 }}>
-            📍 Local: {endereco}
+            📹 Por vídeo — combine o link da chamada com {corretorNome}.
           </p>
+        ) : (
+          endereco && (
+            <p className="hint" style={{ marginBottom: avisoWhatsapp ? 8 : 0 }}>
+              📍 Local: {endereco}
+            </p>
+          )
         )}
         {avisoWhatsapp && (
           <p className="hint" style={{ color: "var(--coral)", marginBottom: 0 }}>
@@ -151,6 +170,30 @@ export function AgendarComCorretorButton({
           }}
         />
       </div>
+
+      {podeSerVideo && (
+        <div className="field">
+          <label>Como vai ser a visita?</label>
+          <div className="flex gap-8">
+            <button
+              type="button"
+              className={modalidade === "presencial" ? "badge badge-primary" : "badge badge-outline"}
+              style={{ cursor: "pointer", border: "none" }}
+              onClick={() => setModalidade("presencial")}
+            >
+              Presencial
+            </button>
+            <button
+              type="button"
+              className={modalidade === "video" ? "badge badge-primary" : "badge badge-outline"}
+              style={{ cursor: "pointer", border: "none" }}
+              onClick={() => setModalidade("video")}
+            >
+              📹 Por vídeo
+            </button>
+          </div>
+        </div>
+      )}
 
       {carregandoHorarios ? (
         <p className="hint">Buscando horários livres…</p>

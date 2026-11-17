@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { horariosDisponiveis } from "@/lib/disponibilidade";
 import { avisarAgendamento } from "@/lib/avisar-agendamento";
 import { paraE164 } from "@/lib/telefone";
-import { hojeISO } from "@/lib/data";
+import { hojeISO, diasEntre } from "@/lib/data";
+
+type Modalidade = "presencial" | "video";
 
 // Agenda uma visita num horário realmente livre — nasce `confirmada`
 // direto, sem precisar de confirmação manual depois (esse é o ganho de
@@ -34,6 +36,7 @@ export async function POST(request: NextRequest) {
     data,
     horario,
     observacoes,
+    modalidade: modalidadePedida,
   } = (await request.json()) as {
     corretor_id?: string;
     cliente_avulso?: {
@@ -46,7 +49,14 @@ export async function POST(request: NextRequest) {
     data?: string;
     horario?: string;
     observacoes?: string;
+    modalidade?: Modalidade;
   };
+
+  // Vídeo só é oferecido no front quando a visita está a mais de 1 dia de
+  // distância — reconfere aqui pra um POST direto não conseguir marcar
+  // "vídeo" numa visita de amanhã só porque o campo existe no corpo.
+  const modalidade: Modalidade =
+    modalidadePedida === "video" && data && diasEntre(hojeISO(), data) > 1 ? "video" : "presencial";
 
   if (
     !corretorId ||
@@ -228,6 +238,7 @@ export async function POST(request: NextRequest) {
       data_hora: `${data}T${horario}:00-03:00`,
       status: "confirmada",
       observacoes: observacoes?.trim() || null,
+      modalidade,
     })
     .select("id, data_hora")
     .single();
@@ -257,6 +268,7 @@ export async function POST(request: NextRequest) {
       clienteTelefone: contatoAviso.telefone,
       corretorId: corretorId as string,
       dataHoraIso: visita.data_hora,
+      modalidade,
     }));
   } else {
     const { data: comprador } = await supabase
@@ -270,6 +282,7 @@ export async function POST(request: NextRequest) {
       clienteTelefone: comprador?.telefone ?? null,
       corretorId: corretorId as string,
       dataHoraIso: visita.data_hora,
+      modalidade,
     }));
   }
 
@@ -280,5 +293,6 @@ export async function POST(request: NextRequest) {
     precisaAvisarClienteManualmente,
     vinculadoAContaExistente,
     endereco,
+    modalidade,
   });
 }

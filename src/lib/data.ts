@@ -36,3 +36,11 @@ export function somarDias(dataISO: string, n: number): string {
     d.getUTCDate(),
   ).padStart(2, "0")}`;
 }
+
+// Diferença em dias de calendário entre duas datas yyyy-mm-dd (sempre UTC
+// meia-noite nos dois lados — nunca cai em fração de dia por causa de
+// fuso). Usada pra só oferecer "visita por vídeo" quando a visita está a
+// mais de 1 dia de distância.
+export function diasEntre(dataA: string, dataB: string): number {
+  return Math.round((new Date(dataB).getTime() - new Date(dataA).getTime()) / 86_400_000);
+}

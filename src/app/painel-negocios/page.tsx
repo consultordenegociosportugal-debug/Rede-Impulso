@@ -45,6 +45,7 @@ type VisitaRow = {
   status: string;
   observacoes: string | null;
   google_event_id: string | null;
+  modalidade: "presencial" | "video";
   comprador: { nome: string; telefone: string | null } | null;
   cliente_avulso: { nome: string; telefone: string | null } | null;
 };
@@ -109,7 +110,7 @@ export default async function PainelNegociosPage({
   const { data: dadosVisitas } = await supabase
     .from("visitas")
     .select(
-      "id, data_hora, status, observacoes, google_event_id, comprador:comprador_id(nome, telefone), cliente_avulso:cliente_avulso_id(nome, telefone)",
+      "id, data_hora, status, observacoes, google_event_id, modalidade, comprador:comprador_id(nome, telefone), cliente_avulso:cliente_avulso_id(nome, telefone)",
     )
     .eq("corretor_id", user.id)
     .or(`data_hora.gte.${inicioDeHojeIso},status.eq.confirmada`)
@@ -353,6 +354,9 @@ export default async function PainelNegociosPage({
                             </span>
                             {visita.google_event_id && (
                               <span className="badge badge-outline">📅 na agenda</span>
+                            )}
+                            {visita.modalidade === "video" && (
+                              <span className="badge badge-outline">📹 vídeo</span>
                             )}
                           </div>
                           <VisitaAcoes

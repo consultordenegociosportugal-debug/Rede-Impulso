@@ -35,6 +35,7 @@ export async function avisarAgendamento(
     clienteTelefone: string | null;
     corretorId: string;
     dataHoraIso: string;
+    modalidade?: "presencial" | "video";
   },
 ): Promise<{ precisaAvisarClienteManualmente: boolean; endereco: string | null; organizacaoNome: string | null }> {
   const [{ data: corretor }, { data: corretorPerfil }] = await Promise.all([
@@ -87,9 +88,11 @@ export async function avisarAgendamento(
               organizacao ? ` (${escaparHtml(organizacao.nome)})` : ""
             } está confirmado para <strong>${quando}</strong>.</p>
             ${
-              organizacao?.endereco
-                ? `<p>📍 Local: ${escaparHtml(organizacao.endereco)}</p>`
-                : ""
+              dados.modalidade === "video"
+                ? `<p>📹 Essa visita será por vídeo — combine o link da chamada direto com ${escaparHtml(corretor?.nome ?? "o corretor")}.</p>`
+                : organizacao?.endereco
+                  ? `<p>📍 Local: ${escaparHtml(organizacao.endereco)}</p>`
+                  : ""
             }
             ${
               linkCorretor

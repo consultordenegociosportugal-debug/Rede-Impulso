@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
-import { hojeISO } from "@/lib/data";
+import { hojeISO, diasEntre } from "@/lib/data";
 
 type Status = "preenchendo" | "enviando" | "sucesso";
+type Modalidade = "presencial" | "video";
 
 const formatoDataLonga = new Intl.DateTimeFormat("pt-BR", {
   weekday: "short",
@@ -30,6 +31,9 @@ export function AgendarPublicoForm({
   const [erro, setErro] = useState<string | null>(null);
   const [confirmacao, setConfirmacao] = useState<string | null>(null);
   const [endereco, setEndereco] = useState<string | null>(null);
+  const [modalidade, setModalidade] = useState<Modalidade>("presencial");
+  const [modalidadeConfirmada, setModalidadeConfirmada] = useState<Modalidade>("presencial");
+  const podeSerVideo = diasEntre(hojeISO(), data) > 1;
 
   useEffect(() => {
     let ativo = true;
@@ -70,9 +74,14 @@ export function AgendarPublicoForm({
           telefone,
           data,
           horario,
+          modalidade: podeSerVideo ? modalidade : "presencial",
         }),
       });
-      const dados = (await resposta.json()) as { erro?: string; endereco?: string | null };
+      const dados = (await resposta.json()) as {
+        erro?: string;
+        endereco?: string | null;
+        modalidade?: Modalidade;
+      };
 
       if (!resposta.ok) {
         setErro(dados.erro ?? "Não foi possível agendar.");
@@ -82,6 +91,7 @@ export function AgendarPublicoForm({
 
       setConfirmacao(`${formatoDataLonga.format(new Date(`${data}T${horario}`))}, ${horario}`);
       setEndereco(dados.endereco ?? null);
+      setModalidadeConfirmada(dados.modalidade ?? "presencial");
       setStatus("sucesso");
     } catch {
       setErro("Sem conexão no momento. Tente de novo.");
@@ -94,10 +104,14 @@ export function AgendarPublicoForm({
       <div style={{ textAlign: "center" }}>
         <div className="celebra-icone">✓</div>
         <span className="badge badge-primary">Visita confirmada</span>
-        <p className="hint" style={{ marginTop: 12, marginBottom: endereco ? 8 : 0 }}>
+        <p className="hint" style={{ marginTop: 12, marginBottom: endereco || modalidadeConfirmada === "video" ? 8 : 0 }}>
           Combinado! Sua visita com {corretorNome} está confirmada para {confirmacao}.
         </p>
-        {endereco && <p className="hint">📍 Local: {endereco}</p>}
+        {modalidadeConfirmada === "video" ? (
+          <p className="hint">📹 Por vídeo — combine o link da chamada com {corretorNome}.</p>
+        ) : (
+          endereco && <p className="hint">📍 Local: {endereco}</p>
+        )}
       </div>
     );
   }
@@ -129,6 +143,30 @@ export function AgendarPublicoForm({
           onChange={(e) => setData(e.target.value)}
         />
       </div>
+
+      {podeSerVideo && (
+        <div className="field">
+          <label>Como vai ser a visita?</label>
+          <div className="flex gap-8">
+            <button
+              type="button"
+              className={modalidade === "presencial" ? "badge badge-primary" : "badge badge-outline"}
+              style={{ cursor: "pointer", border: "none" }}
+              onClick={() => setModalidade("presencial")}
+            >
+              Presencial
+            </button>
+            <button
+              type="button"
+              className={modalidade === "video" ? "badge badge-primary" : "badge badge-outline"}
+              style={{ cursor: "pointer", border: "none" }}
+              onClick={() => setModalidade("video")}
+            >
+              📹 Por vídeo
+            </button>
+          </div>
+        </div>
+      )}
 
       {!configurado ? (
         <p className="hint">Esse corretor ainda não configurou disponibilidade.</p>

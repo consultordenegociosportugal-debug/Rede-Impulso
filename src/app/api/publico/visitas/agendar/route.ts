@@ -3,7 +3,9 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { horariosDisponiveis } from "@/lib/disponibilidade";
 import { avisarAgendamento } from "@/lib/avisar-agendamento";
 import { paraE164 } from "@/lib/telefone";
-import { hojeISO } from "@/lib/data";
+import { hojeISO, diasEntre } from "@/lib/data";
+
+type Modalidade = "presencial" | "video";
 
 // Link público do corretor (src/app/agendar/[id]) — cliente agenda sem
 // criar conta, só com nome e WhatsApp, igual pedido no feedback dos
@@ -19,7 +21,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Serviço indisponível no momento." }, { status: 503 });
   }
 
-  const { corretor_id: corretorId, nome, telefone, data, horario, observacoes } =
+  const { corretor_id: corretorId, nome, telefone, data, horario, observacoes, modalidade: modalidadePedida } =
     (await request.json()) as {
       corretor_id?: string;
       nome?: string;
@@ -27,6 +29,7 @@ export async function POST(request: NextRequest) {
       data?: string;
       horario?: string;
       observacoes?: string;
+      modalidade?: Modalidade;
     };
 
   if (
@@ -45,6 +48,9 @@ export async function POST(request: NextRequest) {
       { status: 400 },
     );
   }
+
+  const modalidade: Modalidade =
+    modalidadePedida === "video" && diasEntre(hojeISO(), data) > 1 ? "video" : "presencial";
 
   const nomeLimpo = nome?.trim().slice(0, 120);
   if (!nomeLimpo) {
@@ -110,6 +116,7 @@ export async function POST(request: NextRequest) {
       data_hora: `${data}T${horario}:00-03:00`,
       status: "confirmada",
       observacoes: observacoes?.trim().slice(0, 500) || null,
+      modalidade,
     })
     .select("id, data_hora")
     .single();
@@ -134,7 +141,14 @@ export async function POST(request: NextRequest) {
     clienteTelefone: telefone!.trim(),
     corretorId,
     dataHoraIso: visita.data_hora,
+    modalidade,
   });
 
-  return NextResponse.json({ ok: true, visitaId: visita.id, dataHora: visita.data_hora, endereco });
+  return NextResponse.json({
+    ok: true,
+    visitaId: visita.id,
+    dataHora: visita.data_hora,
+    endereco,
+    modalidade,
+  });
 }
