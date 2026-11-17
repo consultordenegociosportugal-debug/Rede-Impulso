@@ -51,19 +51,39 @@ export default function CadastroGestorPage() {
   >("idle");
   const [erro, setErro] = useState<string | null>(null);
   const [emailJaUsado, setEmailJaUsado] = useState(false);
+  // Convite personalizado (link gerado em /admin/oportunidades-gestor,
+  // ?org=<id>) — em vez do formulário genérico, mostra a organização e
+  // a prova social (corretores que já usam) prontas, sem o gestor
+  // precisar escolher nada na lista.
+  const [organizacaoConvite, setOrganizacaoConvite] = useState<Organizacao | null>(null);
+  const [corretoresDaOrganizacao, setCorretoresDaOrganizacao] = useState<number | null>(null);
 
   const primeiroCampo = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     primeiroCampo.current?.focus();
     const supabase = createClient();
+    const orgConvidadaId = new URLSearchParams(window.location.search).get("org");
+
     supabase
       .from("organizacoes_catalogo")
       .select("id, nome, tipo, cidade:cidade_id(nome, uf)")
       .order("nome", { ascending: true })
       .then(({ data, error }) => {
         if (error) return;
-        setOrganizacoes((data ?? []) as unknown as Organizacao[]);
+        const lista = (data ?? []) as unknown as Organizacao[];
+        setOrganizacoes(lista);
+
+        const convidada = orgConvidadaId ? lista.find((o) => o.id === orgConvidadaId) : null;
+        if (convidada) {
+          setOrganizacaoConvite(convidada);
+          setOrganizacaoId(convidada.id);
+          supabase
+            .from("corretor_perfis")
+            .select("profile_id", { count: "exact", head: true })
+            .eq("organizacao_catalogo_id", convidada.id)
+            .then(({ count }) => setCorretoresDaOrganizacao(count ?? 0));
+        }
       });
   }, []);
 
@@ -196,6 +216,24 @@ export default function CadastroGestorPage() {
           <p className="muted">
             Para gestores de imobiliárias e construtoras já cadastradas na Rede Impulso.
           </p>
+
+          {organizacaoConvite && (
+            <div
+              className="card mt-16"
+              style={{ padding: "16px 20px", borderColor: "var(--primary)" }}
+            >
+              <p style={{ margin: 0, fontWeight: 600 }}>
+                Você foi convidado a assumir o painel de {organizacaoConvite.nome}.
+              </p>
+              <p className="hint" style={{ margin: "4px 0 0" }}>
+                {corretoresDaOrganizacao === null
+                  ? "Carregando…"
+                  : corretoresDaOrganizacao > 0
+                    ? `${corretoresDaOrganizacao} corretor${corretoresDaOrganizacao === 1 ? "" : "es"} da sua equipe já usa${corretoresDaOrganizacao === 1 ? "" : "m"} a Rede Impulso — crie sua conta pra ver os agendamentos e leads deles.`
+                    : "Crie sua conta pra começar a acompanhar os agendamentos e leads da sua equipe."}
+              </p>
+            </div>
+          )}
 
           <form className="card mt-16" onSubmit={handleSubmit}>
             <div className="field">

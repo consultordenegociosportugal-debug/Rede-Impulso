@@ -192,6 +192,12 @@ export default async function AdminPage() {
             <Link href="/admin/catalogo" className="btn btn-outline btn-sm">
               🏢 Catálogo de cidades e organizações
             </Link>
+            <Link href="/admin/oportunidades-gestor" className="btn btn-outline btn-sm">
+              🎯 Oportunidades de gestor
+            </Link>
+            <Link href="/admin/administradores" className="btn btn-outline btn-sm">
+              🔑 Administradores
+            </Link>
             <Link href="/admin/cursos" className="btn btn-outline btn-sm">
               🎓 Cursos e matrículas
             </Link>
