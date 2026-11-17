@@ -7,8 +7,11 @@ import { escaparHtml } from "@/lib/escapar-html";
 
 // Lembrete de horário — a funcionalidade mais básica de qualquer
 // sistema de agendamento de verdade (AppBarber chama de "lembrete de
-// horários"). Roda de hora em hora; manda o aviso pra quem a visita
-// está a até 2h de distância e ainda não recebeu lembrete. Protegido
+// horários"). O plano Hobby da Vercel só permite 1 execução de cron
+// por dia, então isso roda 1x de manhã e avisa quem tem visita nas
+// próximas 24h (lembrete "hoje você tem visita às Xh") em vez do
+// lembrete de 2h-antes original — pra ter frequência maior precisaria
+// do plano Pro ou de um agendador externo chamando esta rota. Protegido
 // por CRON_SECRET, mesmo padrão de /api/assinatura/avisar-renovacao.
 
 function autorizado(request: NextRequest) {
@@ -42,7 +45,7 @@ export async function GET(request: NextRequest) {
   }
 
   const agora = new Date();
-  const limite = new Date(agora.getTime() + 2 * 60 * 60 * 1000);
+  const limite = new Date(agora.getTime() + 24 * 60 * 60 * 1000);
 
   const { data } = await supabase
     .from("visitas")
