@@ -35,6 +35,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
   const [erro, setErro] = useState<string | null>(null);
   const [avisoWhatsapp, setAvisoWhatsapp] = useState(false);
   const [vinculadoAContaExistente, setVinculadoAContaExistente] = useState(false);
+  const [endereco, setEndereco] = useState<string | null>(null);
   // Força o TelefoneComPaisInput a remontar (e esquecer país/número
   // escolhidos) quando o corretor cadastra outro cliente — ele guarda
   // esse estado por dentro, não controlado por "telefone" aqui.
@@ -93,6 +94,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
         erro?: string;
         precisaAvisarClienteManualmente?: boolean;
         vinculadoAContaExistente?: boolean;
+        endereco?: string | null;
       };
 
       if (!resposta.ok) {
@@ -103,6 +105,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
 
       setAvisoWhatsapp(Boolean(dados.precisaAvisarClienteManualmente));
       setVinculadoAContaExistente(Boolean(dados.vinculadoAContaExistente));
+      setEndereco(dados.endereco ?? null);
       setStatus("sucesso");
       router.refresh();
     } catch {
@@ -124,6 +127,11 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
           {horario ? `${formatoDataLonga.format(new Date(`${data}T${horario}`))}, ${horario}` : ""}
           .
         </p>
+        {endereco && (
+          <p className="hint" style={{ marginBottom: 12 }}>
+            📍 Local: {endereco}
+          </p>
+        )}
         {avisoWhatsapp && (
           <p className="hint" style={{ color: "var(--coral)", marginBottom: 12 }}>
             ⚠️ Não conseguimos confirmar por WhatsApp — avise {nome} manualmente.
@@ -141,6 +149,7 @@ export function NovoClienteForm({ corretorId }: { corretorId: string }) {
             setHorario(null);
             setObservacoes("");
             setAvisoWhatsapp(false);
+            setEndereco(null);
             setVinculadoAContaExistente(false);
             setChaveTelefone((c) => c + 1);
             setStatus("preenchendo");

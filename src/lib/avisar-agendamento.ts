@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getResend, resendConfigurado, EMAIL_REMETENTE } from "@/lib/resend";
 import { rodapeTransacionalHtml } from "@/lib/email-rodape";
 import { enviarConfirmacaoWhatsapp } from "@/lib/whatsapp";
@@ -27,7 +27,8 @@ const formatoHora = new Intl.DateTimeFormat("pt-BR", {
 // pro gestor dela) e WhatsApp (cliente e corretor, cada um com seu
 // próprio número) — os dois lados da visita ficam sabendo.
 export async function avisarAgendamento(
-  supabase: Awaited<ReturnType<typeof createClient>>,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- aceita tanto o cliente de sessão (SSR) quanto o admin (service role, rota pública sem login)
+  supabase: SupabaseClient<any>,
   dados: {
     clienteNome: string;
     clienteEmail: string | null;
@@ -35,19 +36,19 @@ export async function avisarAgendamento(
     corretorId: string;
     dataHoraIso: string;
   },
-): Promise<{ precisaAvisarClienteManualmente: boolean }> {
+): Promise<{ precisaAvisarClienteManualmente: boolean; endereco: string | null; organizacaoNome: string | null }> {
   const [{ data: corretor }, { data: corretorPerfil }] = await Promise.all([
     supabase.from("profiles").select("nome, email, telefone").eq("id", dados.corretorId).single(),
     supabase
       .from("corretor_perfis")
-      .select("organizacao:organizacao_catalogo_id(nome, email_gestor)")
+      .select("organizacao:organizacao_catalogo_id(nome, email_gestor, endereco)")
       .eq("profile_id", dados.corretorId)
       .single(),
   ]);
 
   const organizacao = (
     corretorPerfil as unknown as {
-      organizacao: { nome: string; email_gestor: string | null } | null;
+      organizacao: { nome: string; email_gestor: string | null; endereco: string | null } | null;
     } | null
   )?.organizacao;
 
@@ -85,6 +86,11 @@ export async function avisarAgendamento(
             <p>Seu agendamento com <strong>${escaparHtml(corretor?.nome ?? "o corretor")}</strong>${
               organizacao ? ` (${escaparHtml(organizacao.nome)})` : ""
             } está confirmado para <strong>${quando}</strong>.</p>
+            ${
+              organizacao?.endereco
+                ? `<p>📍 Local: ${escaparHtml(organizacao.endereco)}</p>`
+                : ""
+            }
             ${
               linkCorretor
                 ? `<p><a href="${escaparHtml(linkCorretor)}">Falar com ${escaparHtml(corretor?.nome ?? "o corretor")} no WhatsApp</a></p>`
@@ -127,5 +133,9 @@ export async function avisarAgendamento(
       : Promise.resolve(true),
   ]);
 
-  return { precisaAvisarClienteManualmente: Boolean(dados.clienteTelefone) && !whatsappCliente };
+  return {
+    precisaAvisarClienteManualmente: Boolean(dados.clienteTelefone) && !whatsappCliente,
+    endereco: organizacao?.endereco ?? null,
+    organizacaoNome: organizacao?.nome ?? null,
+  };
 }

@@ -146,7 +146,7 @@ export default async function PainelNegociosPage({
       faltaBairros,
     };
   }
-  const linkPerfilPublico = `https://www.redeimpulso.com.br/perfil-corretor?id=${user.id}`;
+  const linkPerfilPublico = `https://www.redeimpulso.com.br/agendar/${user.id}`;
   // Cancelada não conta como "próxima" nem "hoje" — senão os números do
   // topo ficam inflados com visita que não vai mais acontecer.
   const futuras = visitas.filter(

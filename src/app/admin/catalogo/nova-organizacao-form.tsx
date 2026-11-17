@@ -22,6 +22,7 @@ export function NovaOrganizacaoForm({ cidades }: { cidades: Cidade[] }) {
   const [cidadeId, setCidadeId] = useState("");
   const [cnpj, setCnpj] = useState("");
   const [emailGestor, setEmailGestor] = useState("");
+  const [endereco, setEndereco] = useState("");
   const [enviando, setEnviando] = useState(false);
   const [buscandoCnpj, setBuscandoCnpj] = useState(false);
   const [avisoCnpj, setAvisoCnpj] = useState<string | null>(null);
@@ -103,6 +104,7 @@ export function NovaOrganizacaoForm({ cidades }: { cidades: Cidade[] }) {
       cidade_id: cidadeId || null,
       cnpj: cnpj.trim() || null,
       email_gestor: emailGestor.trim() || null,
+      endereco: endereco.trim() || null,
     });
 
     setEnviando(false);
@@ -115,6 +117,7 @@ export function NovaOrganizacaoForm({ cidades }: { cidades: Cidade[] }) {
     setNome("");
     setCnpj("");
     setEmailGestor("");
+    setEndereco("");
     setAvisoCnpj(null);
     router.refresh();
   }
@@ -151,6 +154,13 @@ export function NovaOrganizacaoForm({ cidades }: { cidades: Cidade[] }) {
           value={emailGestor}
           onChange={(e) => setEmailGestor(e.target.value)}
           placeholder="E-mail do gestor de vendas (opcional)"
+        />
+        <input
+          type="text"
+          value={endereco}
+          onChange={(e) => setEndereco(e.target.value)}
+          placeholder="Endereço da loja/escritório (opcional)"
+          style={{ gridColumn: "1 / -1" }}
         />
       </div>
       {avisoCnpj && (

@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { NovaCidadeForm } from "./nova-cidade-form";
 import { NovaOrganizacaoForm } from "./nova-organizacao-form";
 import { ExcluirCatalogoButton } from "./excluir-catalogo-button";
+import { EditarEnderecoOrganizacao } from "./editar-endereco-organizacao";
 
 type CidadeRow = { id: string; nome: string; uf: string };
 type OrganizacaoRow = {
@@ -14,6 +15,7 @@ type OrganizacaoRow = {
   tipo: "imobiliaria" | "construtora";
   cnpj: string | null;
   email_gestor: string | null;
+  endereco: string | null;
   cidade: { nome: string; uf: string } | null;
 };
 
@@ -46,7 +48,7 @@ export default async function AdminCatalogoPage() {
     supabase.from("cidades_catalogo").select("id, nome, uf").order("nome", { ascending: true }),
     supabase
       .from("organizacoes_catalogo")
-      .select("id, nome, tipo, cnpj, email_gestor, cidade:cidade_id(nome, uf)")
+      .select("id, nome, tipo, cnpj, email_gestor, endereco, cidade:cidade_id(nome, uf)")
       .order("nome", { ascending: true }),
   ]);
 
@@ -130,6 +132,7 @@ export default async function AdminCatalogoPage() {
                             Gestor: {org.email_gestor}
                           </div>
                         )}
+                        <EditarEnderecoOrganizacao organizacaoId={org.id} enderecoAtual={org.endereco} />
                       </div>
                       <ExcluirCatalogoButton tabela="organizacoes_catalogo" id={org.id} />
                     </div>
