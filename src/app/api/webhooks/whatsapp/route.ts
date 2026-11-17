@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { enviarTextoLivreWhatsapp } from "@/lib/whatsapp";
 
 // Até agora o app só sabia o que a Meta respondia na hora de mandar
 // (POST /messages) — e essa resposta só confirma que a Meta ACEITOU a
@@ -35,7 +37,51 @@ type StatusEvento = {
 type MensagemRecebida = {
   from: string;
   type: string;
+  context?: { id?: string };
+  button?: { text?: string; payload?: string };
 };
+
+// Resposta ao botão "Confirmar presença"/"Preciso reagendar" do
+// lembrete_visita (ver src/lib/whatsapp.ts) — casada pelo context.id da
+// mensagem recebida, que é o wamid da própria mensagem de lembrete que
+// mandamos (gravado em visitas.lembrete_whatsapp_message_id ao enviar,
+// migração 0095). Não depende do texto exato do botão em nenhum outro
+// lugar do app, só aqui.
+async function processarRespostaLembrete(mensagem: MensagemRecebida) {
+  const idMensagemOriginal = mensagem.context?.id;
+  const textoBotao = mensagem.button?.text ?? mensagem.button?.payload;
+  if (!idMensagemOriginal || !textoBotao) return;
+
+  const admin = createAdminClient();
+  if (!admin) return;
+
+  const { data: visita } = await admin
+    .from("visitas")
+    .select("id, corretor_id, resposta_cliente")
+    .eq("lembrete_whatsapp_message_id", idMensagemOriginal)
+    .maybeSingle();
+
+  // Já respondida — não reprocessa se a Meta reentregar o mesmo evento.
+  if (!visita || visita.resposta_cliente) return;
+
+  if (textoBotao === "Confirmar presença") {
+    await admin
+      .from("visitas")
+      .update({ resposta_cliente: "confirmou", resposta_recebida_em: new Date().toISOString() })
+      .eq("id", visita.id);
+    await enviarTextoLivreWhatsapp(mensagem.from, "Combinado, te esperamos! ✅");
+  } else if (textoBotao === "Preciso reagendar") {
+    await admin
+      .from("visitas")
+      .update({ resposta_cliente: "pediu_reagendamento", resposta_recebida_em: new Date().toISOString() })
+      .eq("id", visita.id);
+    const link = `https://www.redeimpulso.com.br/agendar/${visita.corretor_id}`;
+    await enviarTextoLivreWhatsapp(
+      mensagem.from,
+      `Sem problemas! Escolha um novo horário por aqui: ${link}`,
+    );
+  }
+}
 
 export async function POST(request: NextRequest) {
   const corpoTexto = await request.text();
@@ -83,6 +129,9 @@ export async function POST(request: NextRequest) {
 
       for (const mensagem of valor.messages ?? []) {
         console.log(`[whatsapp webhook] mensagem recebida de ${mensagem.from} (${mensagem.type})`);
+        if (mensagem.type === "button") {
+          await processarRespostaLembrete(mensagem);
+        }
       }
     }
   }

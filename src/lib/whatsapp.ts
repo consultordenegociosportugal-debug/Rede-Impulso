@@ -8,40 +8,50 @@
 // Cada corpo precisa ser criado com EXATAMENTE esse texto e esses nomes de
 // variável — a ordem dos {{N}} é a ordem dos parâmetros que o código manda.
 //
-// confirmacao_visita (já em análise):
-//   "Olá {{1}}! Sua visita com {{2}} ficou confirmada para {{3}} às {{4}}
-//    pela Rede Impulso."
+// confirmacao_visita (aprovado; corrigido 2026-11-17 — faltava espaço
+// antes de cada variável, tipo "OláAna!"; novo texto em reanálise, o
+// antigo continua valendo até aprovar):
+//   "Olá {{1}}! Passamos aqui para confirmar que sua visita com {{2}}
+//    está confirmada para o dia {{3}}, às {{4}}. Qualquer alteração, é
+//    só nos avisar por aqui mesmo. Até breve, equipe Rede Impulso!"
 //   {{1}} nome de quem recebe · {{2}} nome da contraparte · {{3}} data · {{4}} hora
 //
-// lembrete_visita (em análise na Meta):
-//   "Olá {{1}}! Lembrete: sua visita com {{2}} é hoje às {{3}}, pela Rede
-//    Impulso."
+// lembrete_visita (aprovado; mesma correção de espaçamento + ganhou
+// dois botões de resposta rápida — "Confirmar presença" e "Preciso
+// reagendar" — pra base da confirmação interativa, em reanálise):
+//   "Olá {{1}}! Passando aqui para lembrar que sua visita com {{2}} é
+//    hoje às {{3}}. Contamos com você! Equipe Rede Impulso."
 //   {{1}} nome de quem recebe · {{2}} nome da contraparte · {{3}} hora
+//   A resposta a um desses botões chega no webhook (src/app/api/
+//   webhooks/whatsapp/route.ts), casada com a visita via
+//   lembrete_whatsapp_message_id (migração 0095).
 //
-// cancelamento_visita (em análise na Meta):
-//   "Olá {{1}}! Sua visita com {{2}}, marcada para {{3}} às {{4}}, foi
-//    cancelada pela Rede Impulso."
+// cancelamento_visita (aprovado; mesma correção de espaçamento, em
+// reanálise):
+//   "Olá {{1}}! Passando para avisar que sua visita com {{2}}, marcada
+//    para {{3}} às {{4}}, foi cancelada. Qualquer dúvida, é só nos
+//    chamar. Equipe Rede Impulso."
 //   {{1}} nome de quem recebe · {{2}} nome da contraparte · {{3}} data · {{4}} hora
 //
-// pedido_avaliacao (em análise na Meta):
+// pedido_avaliacao (aprovado; mesma correção de espaçamento, em
+// reanálise):
 //   "Olá {{1}}! Sua visita com {{2}} já aconteceu. Pode avaliar o
 //    atendimento? Leva menos de um minuto: {{3}} Obrigado!"
 //   {{1}} nome de quem recebe · {{2}} nome do corretor · {{3}} link da avaliação
 //   (termina com "Obrigado!" porque a Meta não aceita variável como último
 //   caractere do corpo do modelo)
 //
-// resumo_semanal_corretor (a submeter):
+// resumo_semanal_corretor (aprovado):
 //   "Olá {{1}}! Aqui vai o resumo da sua semana na Rede Impulso: você tem
 //    {{2}} visita(s) agendada(s), sendo {{3}} já confirmada(s) com os
 //    clientes. Continue assim!"
 //   {{1}} nome do corretor · {{2}} total de visitas na semana · {{3}} confirmadas
 //
-// Os três abaixo (migração 0089, aprovação de vínculo corretor↔organização
-// — a submeter assim que o billing do WABA for resolvido, hoje travado num
-// caso de suporte aberto com a Meta) ficam prontos no código, mas
-// enviarTemplateWhatsapp() nunca derruba nada: sem o template aprovado a
-// Meta só devolve erro, logado e ignorado — a aprovação/recusa já foi
-// gravada no banco antes de tentar mandar o aviso.
+// Os três abaixo (migração 0089, aprovação de vínculo corretor↔organização)
+// foram submetidos em 2026-11-17 e seguem em análise na Meta — ficam
+// prontos no código, mas enviarTemplateWhatsapp() nunca derruba nada: sem o
+// template aprovado a Meta só devolve erro, logado e ignorado — a
+// aprovação/recusa já foi gravada no banco antes de tentar mandar o aviso.
 //
 // solicitacao_vinculo_pendente (a submeter):
 //   "Olá {{1}}! {{2}} pediu {{3}} na {{4}}, pela Rede Impulso. Acesse seu
@@ -74,15 +84,17 @@ export function whatsappConfigurado(): boolean {
 // aviso (agendar, cancelar, pedir nota), que já está gravada no banco antes
 // disto rodar, mas quem chamou pode usar o retorno pra avisar o corretor
 // "liga pro cliente, o WhatsApp não saiu" em vez de deixar a falha muda.
+type EnvioTemplateResultado = { enviado: boolean; messageId: string | null };
+
 async function enviarTemplateWhatsapp(
   telefone: string,
   nomeTemplate: string,
   parametros: string[],
-): Promise<boolean> {
-  if (!whatsappConfigurado()) return false;
+): Promise<EnvioTemplateResultado> {
+  if (!whatsappConfigurado()) return { enviado: false, messageId: null };
 
   const numero = paraE164(telefone);
-  if (!numero) return false;
+  if (!numero) return { enviado: false, messageId: null };
 
   try {
     const resposta = await fetch(
@@ -117,11 +129,49 @@ async function enviarTemplateWhatsapp(
         resposta.status,
         await resposta.text(),
       );
+      return { enviado: false, messageId: null };
+    }
+    const corpo = (await resposta.json()) as { messages?: { id?: string }[] };
+    return { enviado: true, messageId: corpo.messages?.[0]?.id ?? null };
+  } catch (erro) {
+    console.error(`Erro ao enviar WhatsApp (${nomeTemplate}):`, erro);
+    return { enviado: false, messageId: null };
+  }
+}
+
+// Resposta de SESSÃO (texto livre, sem template) — só é permitida pela
+// Meta dentro de 24h da última mensagem recebida DO cliente, o que é
+// exatamente o caso aqui: isto só roda de dentro do webhook, respondendo
+// a uma mensagem que acabou de chegar.
+export async function enviarTextoLivreWhatsapp(telefone: string, texto: string): Promise<boolean> {
+  if (!whatsappConfigurado()) return false;
+  const numero = paraE164(telefone);
+  if (!numero) return false;
+
+  try {
+    const resposta = await fetch(
+      `https://graph.facebook.com/${VERSAO_GRAPH}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.WHATSAPP_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: numero,
+          type: "text",
+          text: { body: texto },
+        }),
+      },
+    );
+    if (!resposta.ok) {
+      console.error("Falha ao enviar texto livre WhatsApp:", resposta.status, await resposta.text());
       return false;
     }
     return true;
   } catch (erro) {
-    console.error(`Erro ao enviar WhatsApp (${nomeTemplate}):`, erro);
+    console.error("Erro ao enviar texto livre WhatsApp:", erro);
     return false;
   }
 }
@@ -136,12 +186,13 @@ type EnvioConfirmacao = {
 
 export async function enviarConfirmacaoWhatsapp(params: EnvioConfirmacao): Promise<boolean> {
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_CONFIRMACAO || "confirmacao_visita";
-  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+  const { enviado } = await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
     params.nomeDestinatario,
     params.nomeContraparte,
     params.dataFormatada,
     params.horaFormatada,
   ]);
+  return enviado;
 }
 
 type EnvioLembrete = {
@@ -151,7 +202,13 @@ type EnvioLembrete = {
   horaFormatada: string;
 };
 
-export async function enviarLembreteWhatsapp(params: EnvioLembrete): Promise<boolean> {
+// Diferente dos outros envios: quem chama precisa do messageId pra
+// gravar em visitas.lembrete_whatsapp_message_id — é com ele que o
+// webhook (src/app/api/webhooks/whatsapp/route.ts) acha a visita certa
+// quando o cliente aperta "Confirmar presença"/"Preciso reagendar".
+export async function enviarLembreteWhatsapp(
+  params: EnvioLembrete,
+): Promise<{ enviado: boolean; messageId: string | null }> {
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_LEMBRETE || "lembrete_visita";
   return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
     params.nomeDestinatario,
@@ -170,12 +227,13 @@ type EnvioCancelamento = {
 
 export async function enviarCancelamentoWhatsapp(params: EnvioCancelamento): Promise<boolean> {
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_CANCELAMENTO || "cancelamento_visita";
-  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+  const { enviado } = await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
     params.nomeDestinatario,
     params.nomeContraparte,
     params.dataFormatada,
     params.horaFormatada,
   ]);
+  return enviado;
 }
 
 type EnvioPedidoAvaliacao = {
@@ -187,11 +245,12 @@ type EnvioPedidoAvaliacao = {
 
 export async function enviarPedidoAvaliacaoWhatsapp(params: EnvioPedidoAvaliacao): Promise<boolean> {
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_AVALIACAO || "pedido_avaliacao";
-  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+  const { enviado } = await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
     params.nomeDestinatario,
     params.nomeCorretor,
     params.link,
   ]);
+  return enviado;
 }
 
 type EnvioResumoSemanal = {
@@ -203,11 +262,12 @@ type EnvioResumoSemanal = {
 
 export async function enviarResumoSemanalWhatsapp(params: EnvioResumoSemanal): Promise<boolean> {
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_RESUMO_SEMANAL || "resumo_semanal_corretor";
-  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+  const { enviado } = await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
     params.nomeCorretor,
     String(params.totalVisitas),
     String(params.confirmadas),
   ]);
+  return enviado;
 }
 
 type EnvioSolicitacaoVinculoPendente = {
@@ -222,12 +282,13 @@ export async function enviarSolicitacaoVinculoPendenteWhatsapp(
   params: EnvioSolicitacaoVinculoPendente,
 ): Promise<boolean> {
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_SOLICITACAO_VINCULO || "solicitacao_vinculo_pendente";
-  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+  const { enviado } = await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
     params.nomeGestor,
     params.nomeCorretor,
     params.tipo === "gestor" ? "para virar gestor também" : "para se vincular",
     params.nomeOrganizacao,
   ]);
+  return enviado;
 }
 
 type EnvioRespostaVinculo = {
@@ -242,12 +303,18 @@ export async function enviarRespostaVinculoWhatsapp(params: EnvioRespostaVinculo
   const status = params.aprovado ? "aprovado" : "recusado";
   if (params.tipo === "gestor") {
     const nomeTemplate = process.env.WHATSAPP_TEMPLATE_RESPOSTA_GESTOR || "resposta_pedido_gestor";
-    return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+    const { enviado } = await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
       params.nomeCorretor,
       params.nomeOrganizacao,
       status,
     ]);
+    return enviado;
   }
   const nomeTemplate = process.env.WHATSAPP_TEMPLATE_RESPOSTA_VINCULO || "resposta_vinculo_organizacao";
-  return enviarTemplateWhatsapp(params.telefone, nomeTemplate, [params.nomeCorretor, params.nomeOrganizacao, status]);
+  const { enviado } = await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+    params.nomeCorretor,
+    params.nomeOrganizacao,
+    status,
+  ]);
+  return enviado;
 }

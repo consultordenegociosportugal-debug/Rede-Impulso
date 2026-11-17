@@ -105,6 +105,11 @@ export async function GET(request: NextRequest) {
     }[];
 
     let falhouAlguma = false;
+    // Só o lembrete do CLIENTE carrega os botões de confirmação com
+    // sentido — guarda só o id dessa mensagem (não o do corretor, que
+    // recebe o mesmo texto só como aviso) pra ser o que o webhook casa
+    // com a resposta.
+    let idMensagemCliente: string | null = null;
 
     for (const dest of destinatarios) {
       try {
@@ -128,12 +133,13 @@ export async function GET(request: NextRequest) {
       }
 
       if (dest.telefone) {
-        await enviarLembreteWhatsapp({
+        const { messageId } = await enviarLembreteWhatsapp({
           telefone: dest.telefone,
           nomeDestinatario: dest.nome,
           nomeContraparte: nomeContraparte(dest.papel),
           horaFormatada: hora,
         });
+        if (dest.papel === "interessado") idMensagemCliente = messageId;
       }
     }
 
@@ -144,7 +150,10 @@ export async function GET(request: NextRequest) {
 
     await supabase
       .from("visitas")
-      .update({ lembrete_enviado_em: new Date().toISOString() })
+      .update({
+        lembrete_enviado_em: new Date().toISOString(),
+        lembrete_whatsapp_message_id: idMensagemCliente,
+      })
       .eq("id", visita.id);
     enviados += 1;
   }
