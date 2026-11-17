@@ -35,7 +35,7 @@ export default async function AdminCursoDetalhePage({
   const [{ data: curso }, { data: materiaisData }, { data: matriculasData }] = await Promise.all([
     supabase
       .from("cursos")
-      .select("id, titulo, descricao, instrutor, publico, carga_horaria, preco")
+      .select("id, titulo, descricao, instrutor, publico, carga_horaria, preco, liberacao_imediata")
       .eq("id", id)
       .single(),
     supabase

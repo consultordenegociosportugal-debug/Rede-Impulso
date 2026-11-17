@@ -19,6 +19,7 @@ type Curso = {
   publico: string;
   carga_horaria: number | null;
   preco: number;
+  liberacao_imediata: boolean;
 };
 
 export function EditarCursoForm({ curso }: { curso: Curso }) {
@@ -29,6 +30,7 @@ export function EditarCursoForm({ curso }: { curso: Curso }) {
   const [publico, setPublico] = useState(curso.publico);
   const [cargaHoraria, setCargaHoraria] = useState(curso.carga_horaria?.toString() ?? "");
   const [preco, setPreco] = useState(curso.preco.toString());
+  const [liberacaoImediata, setLiberacaoImediata] = useState(curso.liberacao_imediata);
   const [salvando, setSalvando] = useState(false);
   const [salvo, setSalvo] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -54,6 +56,7 @@ export function EditarCursoForm({ curso }: { curso: Curso }) {
         publico,
         carga_horaria: cargaHoraria ? Number(cargaHoraria) : null,
         preco: preco ? Number(preco) : 0,
+        liberacao_imediata: liberacaoImediata,
       })
       .eq("id", curso.id);
 
@@ -128,6 +131,19 @@ export function EditarCursoForm({ curso }: { curso: Curso }) {
           />
         </div>
       </div>
+      <label className="flex items-center gap-8" style={{ cursor: "pointer" }}>
+        <input
+          type="checkbox"
+          checked={liberacaoImediata}
+          onChange={(e) => setLiberacaoImediata(e.target.checked)}
+        />
+        <span>
+          Liberação imediata{" "}
+          <span className="muted" style={{ fontWeight: 400 }}>
+            (infoproduto — matrícula já nasce liberada, sem esperar confirmação de pagamento)
+          </span>
+        </span>
+      </label>
       {erro && (
         <p className="hint" style={{ color: "var(--coral)" }}>
           {erro}

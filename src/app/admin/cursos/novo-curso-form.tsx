@@ -19,6 +19,7 @@ export function NovoCursoForm() {
   const [publico, setPublico] = useState("todos");
   const [cargaHoraria, setCargaHoraria] = useState("");
   const [preco, setPreco] = useState("");
+  const [liberacaoImediata, setLiberacaoImediata] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -40,6 +41,7 @@ export function NovoCursoForm() {
       publico,
       carga_horaria: cargaHoraria ? Number(cargaHoraria) : null,
       preco: preco ? Number(preco) : 0,
+      liberacao_imediata: liberacaoImediata,
     });
 
     setEnviando(false);
@@ -55,6 +57,7 @@ export function NovoCursoForm() {
     setPublico("todos");
     setCargaHoraria("");
     setPreco("");
+    setLiberacaoImediata(false);
     router.refresh();
   }
 
@@ -125,6 +128,19 @@ export function NovoCursoForm() {
           />
         </div>
       </div>
+      <label className="flex items-center gap-8" style={{ cursor: "pointer" }}>
+        <input
+          type="checkbox"
+          checked={liberacaoImediata}
+          onChange={(e) => setLiberacaoImediata(e.target.checked)}
+        />
+        <span>
+          Liberação imediata{" "}
+          <span className="muted" style={{ fontWeight: 400 }}>
+            (infoproduto — matrícula já nasce liberada, sem esperar confirmação de pagamento)
+          </span>
+        </span>
+      </label>
       {erro && (
         <p className="hint" style={{ color: "var(--coral)" }}>
           {erro}

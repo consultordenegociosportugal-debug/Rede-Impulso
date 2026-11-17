@@ -4,6 +4,7 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { NovoClienteForm } from "./novo-cliente-form";
+import { ImportarClientesForm } from "./importar-clientes-form";
 
 const PAPEIS_COM_CLIENTES = ["corretor"];
 
@@ -106,6 +107,7 @@ export default async function ClientesPage() {
         </p>
 
         <NovoClienteForm corretorId={user.id} />
+        <ImportarClientesForm />
 
         <h2 style={{ fontSize: 18, margin: "32px 0 12px" }}>
           Clientes cadastrados{clientes.length > 0 ? ` (${clientes.length})` : ""}
