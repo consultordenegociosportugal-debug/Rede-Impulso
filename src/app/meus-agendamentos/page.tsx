@@ -26,6 +26,7 @@ type VisitaRow = {
   data_hora: string;
   status: string;
   corretor_id: string;
+  modalidade: string;
   corretor: { nome: string; telefone: string | null } | null;
 };
 
@@ -85,6 +86,9 @@ function ListaVisitas({
                 </div>
               </div>
               <div className="flex gap-8 items-center">
+                {v.modalidade === "video" && (
+                  <span className="badge badge-outline">📹 vídeo</span>
+                )}
                 <span className={`badge ${badge.className}`}>
                   {ICONE_STATUS_VISITA[v.status] ?? ""} {badge.label}
                 </span>
@@ -120,7 +124,7 @@ export default async function MeusAgendamentosPage() {
 
   const { data: dadosFuturas } = await supabase
     .from("visitas")
-    .select("id, data_hora, status, corretor_id, corretor:corretor_id(nome, telefone)")
+    .select("id, data_hora, status, corretor_id, modalidade, corretor:corretor_id(nome, telefone)")
     .eq("comprador_id", user.id)
     .gte("data_hora", agora)
     .order("data_hora", { ascending: true });
@@ -128,7 +132,7 @@ export default async function MeusAgendamentosPage() {
 
   const { data: dadosPassadas } = await supabase
     .from("visitas")
-    .select("id, data_hora, status, corretor_id, corretor:corretor_id(nome, telefone)")
+    .select("id, data_hora, status, corretor_id, modalidade, corretor:corretor_id(nome, telefone)")
     .eq("comprador_id", user.id)
     .lt("data_hora", agora)
     .order("data_hora", { ascending: false })
