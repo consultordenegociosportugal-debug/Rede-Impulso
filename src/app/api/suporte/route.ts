@@ -6,13 +6,19 @@ import { rodapeTransacionalHtml } from "@/lib/email-rodape";
 import { escaparHtml } from "@/lib/escapar-html";
 
 export async function POST(request: NextRequest) {
-  const { nome, email, telefone, assunto, mensagem } = (await request.json()) as {
+  let corpo: {
     nome?: string;
     email?: string;
     telefone?: string;
     assunto?: string;
     mensagem?: string;
   };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const { nome, email, telefone, assunto, mensagem } = corpo;
 
   if (!nome?.trim() || !email?.trim() || !assunto?.trim() || !mensagem?.trim()) {
     return NextResponse.json({ erro: "Preencha todos os campos obrigatórios." }, { status: 400 });

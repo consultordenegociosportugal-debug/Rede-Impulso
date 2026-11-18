@@ -91,10 +91,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
   }
 
-  const { visita_id: visitaId, motivo } = (await request.json()) as {
-    visita_id?: string;
-    motivo?: string;
-  };
+  let corpo: { visita_id?: string; motivo?: string };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const { visita_id: visitaId, motivo } = corpo;
   if (!visitaId) {
     return NextResponse.json({ erro: "visita_id é obrigatório." }, { status: 400 });
   }

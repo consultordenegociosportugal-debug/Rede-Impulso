@@ -22,10 +22,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Só administradores podem editar o catálogo." }, { status: 403 });
   }
 
-  const { organizacaoId, endereco } = (await request.json()) as {
-    organizacaoId?: string;
-    endereco?: string;
-  };
+  let corpo: { organizacaoId?: string; endereco?: string };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const { organizacaoId, endereco } = corpo;
   if (!organizacaoId) {
     return NextResponse.json({ erro: "Requisição inválida." }, { status: 400 });
   }

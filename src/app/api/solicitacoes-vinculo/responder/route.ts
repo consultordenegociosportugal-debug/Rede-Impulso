@@ -19,10 +19,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Sessão expirada. Entre de novo." }, { status: 401 });
   }
 
-  const { solicitacao_id, aprovar } = (await request.json()) as {
-    solicitacao_id?: string;
-    aprovar?: boolean;
-  };
+  let corpo: { solicitacao_id?: string; aprovar?: boolean };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const { solicitacao_id, aprovar } = corpo;
 
   if (!solicitacao_id || typeof aprovar !== "boolean") {
     return NextResponse.json({ erro: "Dados inválidos." }, { status: 400 });

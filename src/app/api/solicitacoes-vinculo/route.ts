@@ -21,10 +21,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Sessão expirada. Entre de novo." }, { status: 401 });
   }
 
-  const { organizacao_catalogo_id, tipo } = (await request.json()) as {
-    organizacao_catalogo_id?: string;
-    tipo?: "corretor" | "gestor";
-  };
+  let corpo: { organizacao_catalogo_id?: string; tipo?: "corretor" | "gestor" };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const { organizacao_catalogo_id, tipo } = corpo;
 
   if (!organizacao_catalogo_id || (tipo !== "corretor" && tipo !== "gestor")) {
     return NextResponse.json({ erro: "Dados inválidos." }, { status: 400 });

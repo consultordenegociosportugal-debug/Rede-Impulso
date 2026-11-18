@@ -41,10 +41,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { visita_id: visitaId, acao } = (await request.json()) as {
-    visita_id?: string;
-    acao?: "confirmar" | "cancelar";
-  };
+  let corpo: { visita_id?: string; acao?: "confirmar" | "cancelar" };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const { visita_id: visitaId, acao } = corpo;
 
   if (!visitaId || (acao !== "confirmar" && acao !== "cancelar")) {
     return NextResponse.json({ erro: "Requisição inválida." }, { status: 400 });

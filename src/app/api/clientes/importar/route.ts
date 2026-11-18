@@ -27,7 +27,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Só corretores podem importar clientes." }, { status: 403 });
   }
 
-  const { contatos } = (await request.json()) as { contatos?: ContatoBruto[] };
+  let corpo: { contatos?: ContatoBruto[] };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const { contatos } = corpo;
   if (!Array.isArray(contatos) || contatos.length === 0) {
     return NextResponse.json({ erro: "Nenhum contato pra importar." }, { status: 400 });
   }

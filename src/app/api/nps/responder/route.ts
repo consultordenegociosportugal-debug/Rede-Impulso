@@ -5,11 +5,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // visita (nps_token) é a autorização. Service role porque quem responde
 // nunca tem sessão autenticada nesta rota.
 export async function POST(request: NextRequest) {
-  const { token, nota, comentario } = (await request.json()) as {
-    token?: string;
-    nota?: number;
-    comentario?: string;
-  };
+  let corpo: { token?: string; nota?: number; comentario?: string };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const { token, nota, comentario } = corpo;
 
   if (!token || typeof nota !== "number" || nota < 0 || nota > 10) {
     return NextResponse.json({ erro: "Requisição inválida." }, { status: 400 });

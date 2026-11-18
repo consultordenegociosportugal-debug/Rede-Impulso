@@ -10,7 +10,13 @@ import { escaparHtml } from "@/lib/escapar-html";
 // ir pro navegador). Confia na RLS de tickets_suporte pra garantir que só
 // um chamado já respondido por um admin de verdade chega até aqui.
 export async function POST(request: NextRequest) {
-  const { ticketId } = (await request.json()) as { ticketId?: string };
+  let corpo: { ticketId?: string };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const { ticketId } = corpo;
   if (!ticketId) {
     return NextResponse.json({ erro: "ticketId é obrigatório." }, { status: 400 });
   }

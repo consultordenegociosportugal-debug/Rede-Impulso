@@ -16,7 +16,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Sessão expirada. Entre de novo." }, { status: 401 });
   }
 
-  const { telefone } = (await request.json()) as { telefone?: string };
+  let corpo: { telefone?: string };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const { telefone } = corpo;
   if (!telefone || !paraE164(telefone)) {
     return NextResponse.json({ erro: "Telefone inválido." }, { status: 400 });
   }

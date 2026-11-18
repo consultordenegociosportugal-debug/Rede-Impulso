@@ -14,7 +14,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Sessão expirada. Entre de novo." }, { status: 401 });
   }
 
-  const { codigo } = (await request.json()) as { codigo?: string };
+  let corpo: { codigo?: string };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const { codigo } = corpo;
   const codigoLimpo = (codigo ?? "").trim();
   if (!codigoLimpo) {
     return NextResponse.json({ erro: "Digite o código recebido." }, { status: 400 });
