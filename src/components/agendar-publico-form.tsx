@@ -35,6 +35,7 @@ export function AgendarPublicoForm({
   const [status, setStatus] = useState<Status>("preenchendo");
   const [erro, setErro] = useState<string | null>(null);
   const [confirmacao, setConfirmacao] = useState<string | null>(null);
+  const [avisoWhatsapp, setAvisoWhatsapp] = useState(false);
   const [endereco, setEndereco] = useState<string | null>(null);
   const [coordenadas, setCoordenadas] = useState<{ latitude: number; longitude: number } | null>(null);
   const [modalidade, setModalidade] = useState<Modalidade>("presencial");
@@ -85,6 +86,7 @@ export function AgendarPublicoForm({
       });
       const dados = (await resposta.json()) as {
         erro?: string;
+        precisaAvisarClienteManualmente?: boolean;
         endereco?: string | null;
         latitude?: number | null;
         longitude?: number | null;
@@ -98,6 +100,7 @@ export function AgendarPublicoForm({
       }
 
       setConfirmacao(`${formatoDataLonga.format(new Date(`${data}T${horario}`))}, ${horario}`);
+      setAvisoWhatsapp(Boolean(dados.precisaAvisarClienteManualmente));
       setEndereco(dados.endereco ?? null);
       setCoordenadas(
         dados.latitude != null && dados.longitude != null
@@ -134,6 +137,11 @@ export function AgendarPublicoForm({
               )}
             </>
           )
+        )}
+        {avisoWhatsapp && (
+          <p className="hint" style={{ color: "var(--coral)", marginTop: 8, marginBottom: 0 }}>
+            ⚠️ Não conseguimos te avisar por WhatsApp — guarde esta confirmação.
+          </p>
         )}
       </div>
     );

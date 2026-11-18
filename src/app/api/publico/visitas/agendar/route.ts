@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { endereco, latitude, longitude } = await avisarAgendamento(admin, {
+  const { precisaAvisarClienteManualmente, endereco, latitude, longitude } = await avisarAgendamento(admin, {
     clienteNome: nomeLimpo,
     clienteEmail: null,
     clienteTelefone: telefone!.trim(),
@@ -148,6 +148,7 @@ export async function POST(request: NextRequest) {
     ok: true,
     visitaId: visita.id,
     dataHora: visita.data_hora,
+    precisaAvisarClienteManualmente,
     endereco,
     latitude,
     longitude,
