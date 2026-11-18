@@ -86,24 +86,32 @@ async function processarRespostaLembrete(mensagem: MensagemRecebida) {
 export async function POST(request: NextRequest) {
   const corpoTexto = await request.text();
 
-  // Sem isto, qualquer um que descobrisse essa URL podia forjar um
-  // evento de "delivered" falso. app_secret é opcional só pra não
-  // travar o webhook inteiro antes do dono configurar essa variável —
-  // mas sem ela a verificação de assinatura fica desligada.
-  if (process.env.WHATSAPP_APP_SECRET) {
-    const assinaturaRecebida = request.headers.get("x-hub-signature-256") ?? "";
-    const assinaturaEsperada =
-      "sha256=" +
-      crypto.createHmac("sha256", process.env.WHATSAPP_APP_SECRET).update(corpoTexto).digest("hex");
+  // Sem isto, qualquer um que descobrisse essa URL (e um wamid de
+  // lembrete, que não é segredo — pode vazar por log) podia forjar um
+  // evento de "Confirmar presença"/"Preciso reagendar" de uma visita
+  // real sem autenticação nenhuma. CONFIRMADO ao vivo num QA (2026-11-18):
+  // sem WHATSAPP_APP_SECRET configurado, a versão anterior deste código
+  // pulava a verificação inteira e processava o evento forjado como
+  // válido. Falha FECHADA agora: sem o secret configurado, rejeita tudo
+  // em vez de aceitar tudo — webhook sem assinatura verificável não tem
+  // por que processar nada.
+  if (!process.env.WHATSAPP_APP_SECRET) {
+    console.error("[whatsapp webhook] WHATSAPP_APP_SECRET não configurado — rejeitando evento.");
+    return NextResponse.json({ erro: "Webhook não configurado." }, { status: 403 });
+  }
 
-    const bufRecebido = Buffer.from(assinaturaRecebida);
-    const bufEsperado = Buffer.from(assinaturaEsperada);
-    const valida =
-      bufRecebido.length === bufEsperado.length && crypto.timingSafeEqual(bufRecebido, bufEsperado);
+  const assinaturaRecebida = request.headers.get("x-hub-signature-256") ?? "";
+  const assinaturaEsperada =
+    "sha256=" +
+    crypto.createHmac("sha256", process.env.WHATSAPP_APP_SECRET).update(corpoTexto).digest("hex");
 
-    if (!valida) {
-      return NextResponse.json({ erro: "Assinatura inválida." }, { status: 401 });
-    }
+  const bufRecebido = Buffer.from(assinaturaRecebida);
+  const bufEsperado = Buffer.from(assinaturaEsperada);
+  const valida =
+    bufRecebido.length === bufEsperado.length && crypto.timingSafeEqual(bufRecebido, bufEsperado);
+
+  if (!valida) {
+    return NextResponse.json({ erro: "Assinatura inválida." }, { status: 401 });
   }
 
   const corpo = JSON.parse(corpoTexto) as {
