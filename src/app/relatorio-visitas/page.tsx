@@ -40,7 +40,7 @@ type VisitaRow = {
 export default async function RelatorioVisitasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ inicio?: string; fim?: string; status?: string; profissional?: string }>;
+  searchParams: Promise<{ inicio?: string; fim?: string; status?: string }>;
 }) {
   const params = await searchParams;
 
@@ -77,17 +77,11 @@ export default async function RelatorioVisitasPage({
     );
   }
 
-  const scopeIds = [user.id];
-
   const hoje = hojeISO();
 
   const inicio = params.inicio || somarDias(hoje, -30);
   const fim = params.fim || hoje;
   const statusFiltro = params.status || "";
-  const profissionalFiltro = params.profissional || "";
-
-  const idsFiltrados =
-    profissionalFiltro && scopeIds.includes(profissionalFiltro) ? [profissionalFiltro] : scopeIds;
 
   // -03:00 explícito nos dois limites: sem ele, o Postgres interpreta
   // esses horários em UTC, não em Brasília — o filtro ficava deslocado 3h
@@ -98,7 +92,7 @@ export default async function RelatorioVisitasPage({
     .select(
       "id, data_hora, status, comprador:comprador_id(nome, telefone), cliente_avulso:cliente_avulso_id(nome, telefone)",
     )
-    .in("corretor_id", idsFiltrados)
+    .eq("corretor_id", user.id)
     .gte("data_hora", `${inicio}T00:00:00-03:00`)
     .lte("data_hora", `${fim}T23:59:59-03:00`)
     .order("data_hora", { ascending: false });

@@ -26,6 +26,7 @@ type PerfilRow = {
 type DepoimentoRow = {
   texto: string;
   estrelas: number;
+  autor: { nome: string } | null;
 };
 
 function iniciais(nome: string) {
@@ -83,7 +84,7 @@ export default async function PerfilCorretorPage({
       .single(),
     supabase
       .from("depoimentos")
-      .select("texto, estrelas")
+      .select("texto, estrelas, autor:autor_id(nome)")
       .eq("corretor_id", id)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -246,7 +247,7 @@ export default async function PerfilCorretorPage({
                   depoimentos.map((d, i) => (
                     <div key={i} className={styles.testi}>
                       <p>&ldquo;{d.texto}&rdquo;</p>
-                      <div className={styles.who}>Cliente</div>
+                      <div className={styles.who}>{d.autor?.nome ?? "Cliente"}</div>
                     </div>
                   ))
                 )}
