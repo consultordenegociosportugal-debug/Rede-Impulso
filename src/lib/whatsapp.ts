@@ -8,17 +8,25 @@
 // Cada corpo precisa ser criado com EXATAMENTE esse texto e esses nomes de
 // variável — a ordem dos {{N}} é a ordem dos parâmetros que o código manda.
 //
-// confirmacao_visita (aprovado; corrigido 2026-11-17 — faltava espaço
-// antes de cada variável, tipo "OláAna!"; novo texto em reanálise, o
-// antigo continua valendo até aprovar):
+// confirmacao_visita (PENDENTE DESDE 2026-11-18 — editado em
+// 2026-11-17 pra corrigir espaço faltando antes de cada variável,
+// tipo "OláAna!". A suposição de que "o antigo continua valendo até
+// aprovar" NÃO se confirmou nesta conta: checagem direta na Graph API
+// em 2026-11-18 mostrou os 4 templates abaixo com status PENDING,
+// sem nenhuma versão aprovada em paralelo, e um envio real falhou com
+// 404 (#132001) "Template name does not exist in the translation" —
+// ou seja, zero confirmação/lembrete/cancelamento/pedido de avaliação
+// por WhatsApp sai enquanto a Meta não aprovar. E-mail (resend.ts)
+// continua funcionando normalmente em paralelo.):
 //   "Olá {{1}}! Passamos aqui para confirmar que sua visita com {{2}}
 //    está confirmada para o dia {{3}}, às {{4}}. Qualquer alteração, é
 //    só nos avisar por aqui mesmo. Até breve, equipe Rede Impulso!"
 //   {{1}} nome de quem recebe · {{2}} nome da contraparte · {{3}} data · {{4}} hora
 //
-// lembrete_visita (aprovado; mesma correção de espaçamento + ganhou
-// dois botões de resposta rápida — "Confirmar presença" e "Preciso
-// reagendar" — pra base da confirmação interativa, em reanálise):
+// lembrete_visita (PENDENTE DESDE 2026-11-18, ver nota acima; mesma
+// correção de espaçamento + ganhou dois botões de resposta rápida —
+// "Confirmar presença" e "Preciso reagendar" — pra base da
+// confirmação interativa):
 //   "Olá {{1}}! Passando aqui para lembrar que sua visita com {{2}} é
 //    hoje às {{3}}. Contamos com você! Equipe Rede Impulso."
 //   {{1}} nome de quem recebe · {{2}} nome da contraparte · {{3}} hora
@@ -26,15 +34,15 @@
 //   webhooks/whatsapp/route.ts), casada com a visita via
 //   lembrete_whatsapp_message_id (migração 0095).
 //
-// cancelamento_visita (aprovado; mesma correção de espaçamento, em
-// reanálise):
+// cancelamento_visita (PENDENTE DESDE 2026-11-18, ver nota acima;
+// mesma correção de espaçamento):
 //   "Olá {{1}}! Passando para avisar que sua visita com {{2}}, marcada
 //    para {{3}} às {{4}}, foi cancelada. Qualquer dúvida, é só nos
 //    chamar. Equipe Rede Impulso."
 //   {{1}} nome de quem recebe · {{2}} nome da contraparte · {{3}} data · {{4}} hora
 //
-// pedido_avaliacao (aprovado; mesma correção de espaçamento, em
-// reanálise):
+// pedido_avaliacao (PENDENTE DESDE 2026-11-18, ver nota acima; mesma
+// correção de espaçamento):
 //   "Olá {{1}}! Sua visita com {{2}} já aconteceu. Pode avaliar o
 //    atendimento? Leva menos de um minuto: {{3}} Obrigado!"
 //   {{1}} nome de quem recebe · {{2}} nome do corretor · {{3}} link da avaliação
