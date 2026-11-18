@@ -55,6 +55,7 @@ export async function POST(request: NextRequest) {
   const telefonesNestaImportacao = new Set<string>();
   let semNome = 0;
   let duplicados = 0;
+  let telefoneInvalido = 0;
 
   for (const contato of contatos) {
     const nome = contato.nome?.trim().slice(0, 120);
@@ -71,16 +72,25 @@ export async function POST(request: NextRequest) {
     }
     if (telefoneE164) telefonesNestaImportacao.add(telefoneE164);
 
+    // Parser do front é só heurística (campo sem "@" depois do nome vira
+    // "telefone" — não há coluna de verdade). Sem esta checagem, uma linha
+    // colada com a coluna fora de ordem (ex.: bairro em vez de telefone)
+    // gravava esse texto como se fosse o telefone do cliente, sem avisar
+    // ninguém — e esse telefone nunca seria usado pra WhatsApp, já que
+    // paraE164 também falha ao tentar mandar a mensagem depois.
+    const telefoneReconhecido = telefoneDigitado && !telefoneE164 ? null : telefoneDigitado;
+    if (telefoneDigitado && !telefoneE164) telefoneInvalido += 1;
+
     paraInserir.push({
       corretor_id: user.id,
       nome,
-      telefone: telefoneDigitado,
+      telefone: telefoneReconhecido,
       email: contato.email?.trim().slice(0, 200) || null,
     });
   }
 
   if (paraInserir.length === 0) {
-    return NextResponse.json({ ok: true, importados: 0, duplicados, sem_nome: semNome });
+    return NextResponse.json({ ok: true, importados: 0, duplicados, sem_nome: semNome, telefone_invalido: telefoneInvalido });
   }
 
   const { error } = await supabase.from("clientes_avulsos").insert(paraInserir);
@@ -93,5 +103,6 @@ export async function POST(request: NextRequest) {
     importados: paraInserir.length,
     duplicados,
     sem_nome: semNome,
+    telefone_invalido: telefoneInvalido,
   });
 }

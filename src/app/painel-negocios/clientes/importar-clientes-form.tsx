@@ -41,6 +41,7 @@ export function ImportarClientesForm() {
     importados: number;
     duplicados: number;
     sem_nome: number;
+    telefone_invalido: number;
   } | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
@@ -120,11 +121,19 @@ export function ImportarClientesForm() {
         </p>
       )}
       {resultado && (
-        <p className="hint" style={{ color: "var(--primary)" }}>
-          {resultado.importados} importado(s)
-          {resultado.duplicados > 0 ? `, ${resultado.duplicados} já cadastrado(s) ignorado(s)` : ""}
-          {resultado.sem_nome > 0 ? `, ${resultado.sem_nome} linha(s) sem nome ignorada(s)` : ""}.
-        </p>
+        <>
+          <p className="hint" style={{ color: "var(--primary)" }}>
+            {resultado.importados} importado(s)
+            {resultado.duplicados > 0 ? `, ${resultado.duplicados} já cadastrado(s) ignorado(s)` : ""}
+            {resultado.sem_nome > 0 ? `, ${resultado.sem_nome} linha(s) sem nome ignorada(s)` : ""}.
+          </p>
+          {resultado.telefone_invalido > 0 && (
+            <p className="hint" style={{ color: "var(--amber)" }}>
+              ⚠️ {resultado.telefone_invalido} contato(s) importado(s) sem telefone — o texto nessa posição
+              não parecia um número válido (confira se a ordem das colunas coladas está certa).
+            </p>
+          )}
+        </>
       )}
       <button
         type="button"
