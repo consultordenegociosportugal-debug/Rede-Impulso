@@ -21,16 +21,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Serviço indisponível no momento." }, { status: 503 });
   }
 
+  let corpo: {
+    corretor_id?: string;
+    nome?: string;
+    telefone?: string;
+    data?: string;
+    horario?: string;
+    observacoes?: string;
+    modalidade?: Modalidade;
+  };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
   const { corretor_id: corretorId, nome, telefone, data, horario, observacoes, modalidade: modalidadePedida } =
-    (await request.json()) as {
-      corretor_id?: string;
-      nome?: string;
-      telefone?: string;
-      data?: string;
-      horario?: string;
-      observacoes?: string;
-      modalidade?: Modalidade;
-    };
+    corpo;
 
   if (
     !corretorId ||
@@ -45,6 +51,18 @@ export async function POST(request: NextRequest) {
   if (data < hojeISO()) {
     return NextResponse.json(
       { erro: "Não é possível agendar uma visita no passado." },
+      { status: 400 },
+    );
+  }
+
+  // Sem isto, nada impedia marcar uma visita pro ano 9999 — sem CAPTCHA
+  // nem rate limit neste link público (de propósito, ver comentário
+  // acima), isso virava um jeito fácil de lotar a agenda de um corretor
+  // com reservas falsas em qualquer data futura. 90 dias é generoso pra
+  // uma visita de imóvel real.
+  if (diasEntre(hojeISO(), data) > 90) {
+    return NextResponse.json(
+      { erro: "Só é possível agendar com até 90 dias de antecedência." },
       { status: 400 },
     );
   }

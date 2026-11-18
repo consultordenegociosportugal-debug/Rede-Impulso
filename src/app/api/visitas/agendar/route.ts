@@ -30,14 +30,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
   }
 
-  const {
-    corretor_id: corretorId,
-    cliente_avulso: clienteAvulso,
-    data,
-    horario,
-    observacoes,
-    modalidade: modalidadePedida,
-  } = (await request.json()) as {
+  let corpo: {
     corretor_id?: string;
     cliente_avulso?: {
       nome?: string;
@@ -51,6 +44,19 @@ export async function POST(request: NextRequest) {
     observacoes?: string;
     modalidade?: Modalidade;
   };
+  try {
+    corpo = await request.json();
+  } catch {
+    return NextResponse.json({ erro: "Corpo da requisição inválido." }, { status: 400 });
+  }
+  const {
+    corretor_id: corretorId,
+    cliente_avulso: clienteAvulso,
+    data,
+    horario,
+    observacoes,
+    modalidade: modalidadePedida,
+  } = corpo;
 
   // Vídeo só é oferecido no front quando a visita está a mais de 1 dia de
   // distância — reconfere aqui pra um POST direto não conseguir marcar
@@ -74,6 +80,15 @@ export async function POST(request: NextRequest) {
   if (data < hojeISO()) {
     return NextResponse.json(
       { erro: "Não é possível agendar uma visita no passado." },
+      { status: 400 },
+    );
+  }
+
+  // Mesmo limite do link público (ver /api/publico/visitas/agendar) —
+  // um POST direto autenticado também não tinha teto de data.
+  if (diasEntre(hojeISO(), data) > 90) {
+    return NextResponse.json(
+      { erro: "Só é possível agendar com até 90 dias de antecedência." },
       { status: 400 },
     );
   }
