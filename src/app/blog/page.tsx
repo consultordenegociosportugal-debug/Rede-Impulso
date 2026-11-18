@@ -13,7 +13,7 @@ export default function BlogPage() {
     <>
       <Nav active="/blog" />
 
-      <div className="wrap-narrow" style={{ padding: "64px 0 80px", textAlign: "center" }}>
+      <div className="wrap-narrow" style={{ paddingTop: 64, paddingBottom: 80, textAlign: "center" }}>
         <span className="eyebrow">Blog</span>
         <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>Em breve</h1>
         <p className="muted">

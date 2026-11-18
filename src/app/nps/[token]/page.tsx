@@ -20,7 +20,7 @@ export default async function NpsPage({
 
   if (!admin) {
     return (
-      <div className="wrap" style={{ padding: "64px 0", textAlign: "center" }}>
+      <div className="wrap" style={{ paddingTop: 64, paddingBottom: 64, textAlign: "center" }}>
         <p className="muted">Serviço indisponível no momento.</p>
       </div>
     );
@@ -36,7 +36,7 @@ export default async function NpsPage({
 
   if (!visita) {
     return (
-      <div className="wrap" style={{ padding: "64px 0", textAlign: "center" }}>
+      <div className="wrap" style={{ paddingTop: 64, paddingBottom: 64, textAlign: "center" }}>
         <p className="muted">Link inválido ou expirado.</p>
       </div>
     );
@@ -57,7 +57,7 @@ export default async function NpsPage({
   const nomeCliente = visitaTyped.comprador?.nome ?? visitaTyped.cliente_avulso?.nome ?? "você";
 
   return (
-    <div className="wrap" style={{ padding: "64px 0", maxWidth: 560, margin: "0 auto" }}>
+    <div className="wrap" style={{ paddingTop: 64, paddingBottom: 64, maxWidth: 560, margin: "0 auto" }}>
       <div className="card" style={{ padding: 28, textAlign: "center" }}>
         {respostaExistente ? (
           <>

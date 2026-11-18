@@ -10,7 +10,7 @@ export default function NotFound() {
   return (
     <>
       <Nav active="" />
-      <div className="wrap" style={{ padding: "80px 0", textAlign: "center" }}>
+      <div className="wrap" style={{ paddingTop: 80, paddingBottom: 80, textAlign: "center" }}>
         <span className="eyebrow">404</span>
         <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>Essa página não existe</h1>
         <p className="muted mb-24">

@@ -11,7 +11,7 @@ import Link from "next/link";
 // pé mesmo que algo mais no app esteja quebrado.
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
   return (
-    <div className="wrap" style={{ padding: "80px 0", textAlign: "center" }}>
+    <div className="wrap" style={{ paddingTop: 80, paddingBottom: 80, textAlign: "center" }}>
       <span className="eyebrow">Ops</span>
       <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>Algo deu errado</h1>
       <p className="muted mb-24">

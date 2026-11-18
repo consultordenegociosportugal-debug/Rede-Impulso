@@ -106,7 +106,7 @@ export default async function RelatorioVisitasPage({
     <>
       <Nav active="/relatorio-visitas" />
 
-      <div className="wrap" style={{ padding: "48px 0 80px" }}>
+      <div className="wrap" style={{ paddingTop: 48, paddingBottom: 80 }}>
         <span className="eyebrow">{profile?.nome ?? "Relatório"}</span>
         <h1 style={{ fontSize: 24, margin: "6px 0 16px" }}>Relatório de visitas</h1>
 

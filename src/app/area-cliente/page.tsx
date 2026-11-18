@@ -49,7 +49,7 @@ export default async function AreaClientePage() {
     <>
       <Nav active="/area-cliente" />
 
-      <div className="wrap" style={{ padding: "48px 0 80px" }}>
+      <div className="wrap" style={{ paddingTop: 48, paddingBottom: 80 }}>
         <span className="eyebrow">Sua área</span>
         <h1 style={{ fontSize: 28, margin: "8px 0 4px" }}>Olá, {primeiroNome}</h1>
         <p className="muted">O que você procura hoje?</p>
