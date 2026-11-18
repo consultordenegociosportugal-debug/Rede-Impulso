@@ -1,8 +1,8 @@
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { AgendarPublicoForm } from "./agendar-publico-form";
-import { DistanciaAteEndereco } from "./distancia-ate-endereco";
+import { AgendarPublicoForm } from "@/components/agendar-publico-form";
+import { DistanciaAteEndereco } from "@/components/distancia-ate-endereco";
 
 type PerfilRow = {
   id: string;

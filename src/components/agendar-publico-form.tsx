@@ -14,6 +14,10 @@ const formatoDataLonga = new Intl.DateTimeFormat("pt-BR", {
   month: "short",
 });
 
+// Agendamento sem login — nome, WhatsApp e escolha de dia/horário, só
+// isso. Usado tanto no link público dedicado (/agendar/[corretorId])
+// quanto em /perfil-corretor para quem chega pela busca do site sem
+// estar logado (ver comentário em perfil-corretor/page.tsx).
 export function AgendarPublicoForm({
   corretorId,
   corretorNome,

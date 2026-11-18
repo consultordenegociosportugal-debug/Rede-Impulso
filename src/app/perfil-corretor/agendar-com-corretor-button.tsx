@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { hojeISO, diasEntre } from "@/lib/data";
 
 type Modalidade = "presencial" | "video";
@@ -20,13 +19,10 @@ const formatoDataLonga = new Intl.DateTimeFormat("pt-BR", {
 export function AgendarComCorretorButton({
   corretorId,
   corretorNome,
-  logado,
 }: {
   corretorId: string;
   corretorNome: string;
-  logado: boolean;
 }) {
-  const router = useRouter();
   const [status, setStatus] = useState<Status>("idle");
   const [data, setData] = useState(hojeISO());
   const [horario, setHorario] = useState<string | null>(null);
@@ -66,10 +62,6 @@ export function AgendarComCorretorButton({
   }, [status, data, corretorId]);
 
   function abrir() {
-    if (!logado) {
-      router.push(`/entrar?depois=/perfil-corretor?id=${corretorId}`);
-      return;
-    }
     setCarregandoHorarios(true);
     setHorario(null);
     setStatus("abrindo");

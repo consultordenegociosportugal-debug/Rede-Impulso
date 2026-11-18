@@ -1,6 +1,8 @@
 import { Nav } from "@/components/nav";
 import { createClient } from "@/lib/supabase/server";
 import { AgendarComCorretorButton } from "./agendar-com-corretor-button";
+import { AgendarPublicoForm } from "@/components/agendar-publico-form";
+import { DistanciaAteEndereco } from "@/components/distancia-ate-endereco";
 import styles from "./page.module.css";
 import { Footer } from "@/components/footer";
 import { instagramUrl, facebookUrl } from "@/lib/redes-sociais";
@@ -17,7 +19,7 @@ type PerfilRow = {
     estrelas: number;
     total_negocios: number;
     created_at: string;
-    organizacao: { nome: string } | null;
+    organizacao: { nome: string; endereco: string | null; latitude: number | null; longitude: number | null } | null;
   } | null;
 };
 
@@ -75,7 +77,7 @@ export default async function PerfilCorretorPage({
     supabase
       .from("profiles")
       .select(
-        "id, nome, role, rede_social, facebook, foto_url, verification_status, corretor_perfis!profile_id(estrelas, total_negocios, created_at, organizacao:organizacao_catalogo_id(nome))",
+        "id, nome, role, rede_social, facebook, foto_url, verification_status, corretor_perfis!profile_id(estrelas, total_negocios, created_at, organizacao:organizacao_catalogo_id(nome, endereco, latitude, longitude))",
       )
       .eq("id", id)
       .single(),
@@ -207,11 +209,26 @@ export default async function PerfilCorretorPage({
 
             {user?.id !== perfil.id && (
               <div className="mt-24">
-                <AgendarComCorretorButton
-                  corretorId={perfil.id}
-                  corretorNome={perfil.nome}
-                  logado={Boolean(user)}
-                />
+                {user ? (
+                  <AgendarComCorretorButton corretorId={perfil.id} corretorNome={perfil.nome} />
+                ) : (
+                  <>
+                    {cp.organizacao?.endereco && (
+                      <p className="hint" style={{ margin: "0 0 4px" }}>
+                        📍 {cp.organizacao.endereco}
+                      </p>
+                    )}
+                    {cp.organizacao?.latitude != null && cp.organizacao.longitude != null && (
+                      <DistanciaAteEndereco
+                        latitudeDestino={cp.organizacao.latitude}
+                        longitudeDestino={cp.organizacao.longitude}
+                      />
+                    )}
+                    <div className="mt-16">
+                      <AgendarPublicoForm corretorId={perfil.id} corretorNome={perfil.nome} />
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
