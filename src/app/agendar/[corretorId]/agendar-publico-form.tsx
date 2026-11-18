@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { TelefoneComPaisInput } from "@/components/telefone-com-pais-input";
 import { hojeISO, diasEntre } from "@/lib/data";
+import { DistanciaAteEndereco } from "./distancia-ate-endereco";
 
 type Status = "preenchendo" | "enviando" | "sucesso";
 type Modalidade = "presencial" | "video";
@@ -31,6 +32,7 @@ export function AgendarPublicoForm({
   const [erro, setErro] = useState<string | null>(null);
   const [confirmacao, setConfirmacao] = useState<string | null>(null);
   const [endereco, setEndereco] = useState<string | null>(null);
+  const [coordenadas, setCoordenadas] = useState<{ latitude: number; longitude: number } | null>(null);
   const [modalidade, setModalidade] = useState<Modalidade>("presencial");
   const [modalidadeConfirmada, setModalidadeConfirmada] = useState<Modalidade>("presencial");
   const podeSerVideo = diasEntre(hojeISO(), data) > 1;
@@ -80,6 +82,8 @@ export function AgendarPublicoForm({
       const dados = (await resposta.json()) as {
         erro?: string;
         endereco?: string | null;
+        latitude?: number | null;
+        longitude?: number | null;
         modalidade?: Modalidade;
       };
 
@@ -91,6 +95,11 @@ export function AgendarPublicoForm({
 
       setConfirmacao(`${formatoDataLonga.format(new Date(`${data}T${horario}`))}, ${horario}`);
       setEndereco(dados.endereco ?? null);
+      setCoordenadas(
+        dados.latitude != null && dados.longitude != null
+          ? { latitude: dados.latitude, longitude: dados.longitude }
+          : null,
+      );
       setModalidadeConfirmada(dados.modalidade ?? "presencial");
       setStatus("sucesso");
     } catch {
@@ -110,7 +119,17 @@ export function AgendarPublicoForm({
         {modalidadeConfirmada === "video" ? (
           <p className="hint">📹 Por vídeo — combine o link da chamada com {corretorNome}.</p>
         ) : (
-          endereco && <p className="hint">📍 Local: {endereco}</p>
+          endereco && (
+            <>
+              <p className="hint">📍 Local: {endereco}</p>
+              {coordenadas && (
+                <DistanciaAteEndereco
+                  latitudeDestino={coordenadas.latitude}
+                  longitudeDestino={coordenadas.longitude}
+                />
+              )}
+            </>
+          )
         )}
       </div>
     );

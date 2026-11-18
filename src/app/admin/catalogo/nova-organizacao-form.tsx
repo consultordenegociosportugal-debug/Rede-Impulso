@@ -98,21 +98,37 @@ export function NovaOrganizacaoForm({ cidades }: { cidades: Cidade[] }) {
     setErro(null);
 
     const supabase = createClient();
-    const { error } = await supabase.from("organizacoes_catalogo").insert({
-      nome: nome.trim(),
-      tipo,
-      cidade_id: cidadeId || null,
-      cnpj: cnpj.trim() || null,
-      email_gestor: emailGestor.trim() || null,
-      endereco: endereco.trim() || null,
-    });
+    const { data: nova, error } = await supabase
+      .from("organizacoes_catalogo")
+      .insert({
+        nome: nome.trim(),
+        tipo,
+        cidade_id: cidadeId || null,
+        cnpj: cnpj.trim() || null,
+        email_gestor: emailGestor.trim() || null,
+      })
+      .select("id")
+      .single();
 
-    setEnviando(false);
-
-    if (error) {
+    if (error || !nova) {
+      setEnviando(false);
       setErro("Não foi possível cadastrar.");
       return;
     }
+
+    // Endereço entra por uma segunda chamada (API route, não direto no
+    // insert acima) porque precisa ser geocodificado (lat/lng) pro
+    // cálculo de distância do link público funcionar — isso só roda no
+    // servidor (migração 0097, src/lib/geocodificar.ts).
+    if (endereco.trim()) {
+      await fetch("/api/admin/organizacoes/salvar-endereco", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ organizacaoId: nova.id, endereco: endereco.trim() }),
+      });
+    }
+
+    setEnviando(false);
 
     setNome("");
     setCnpj("");

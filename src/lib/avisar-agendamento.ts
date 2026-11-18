@@ -37,19 +37,31 @@ export async function avisarAgendamento(
     dataHoraIso: string;
     modalidade?: "presencial" | "video";
   },
-): Promise<{ precisaAvisarClienteManualmente: boolean; endereco: string | null; organizacaoNome: string | null }> {
+): Promise<{
+  precisaAvisarClienteManualmente: boolean;
+  endereco: string | null;
+  organizacaoNome: string | null;
+  latitude: number | null;
+  longitude: number | null;
+}> {
   const [{ data: corretor }, { data: corretorPerfil }] = await Promise.all([
     supabase.from("profiles").select("nome, email, telefone").eq("id", dados.corretorId).single(),
     supabase
       .from("corretor_perfis")
-      .select("organizacao:organizacao_catalogo_id(nome, email_gestor, endereco)")
+      .select("organizacao:organizacao_catalogo_id(nome, email_gestor, endereco, latitude, longitude)")
       .eq("profile_id", dados.corretorId)
       .single(),
   ]);
 
   const organizacao = (
     corretorPerfil as unknown as {
-      organizacao: { nome: string; email_gestor: string | null; endereco: string | null } | null;
+      organizacao: {
+        nome: string;
+        email_gestor: string | null;
+        endereco: string | null;
+        latitude: number | null;
+        longitude: number | null;
+      } | null;
     } | null
   )?.organizacao;
 
@@ -140,5 +152,7 @@ export async function avisarAgendamento(
     precisaAvisarClienteManualmente: Boolean(dados.clienteTelefone) && !whatsappCliente,
     endereco: organizacao?.endereco ?? null,
     organizacaoNome: organizacao?.nome ?? null,
+    latitude: organizacao?.latitude ?? null,
+    longitude: organizacao?.longitude ?? null,
   };
 }

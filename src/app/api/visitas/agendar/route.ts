@@ -261,8 +261,10 @@ export async function POST(request: NextRequest) {
 
   let precisaAvisarClienteManualmente = false;
   let endereco: string | null = null;
+  let latitude: number | null = null;
+  let longitude: number | null = null;
   if (clienteAvulso) {
-    ({ precisaAvisarClienteManualmente, endereco } = await avisarAgendamento(supabase, {
+    ({ precisaAvisarClienteManualmente, endereco, latitude, longitude } = await avisarAgendamento(supabase, {
       clienteNome: contatoAviso.nome || clienteAvulso.nome!.trim(),
       clienteEmail: contatoAviso.email,
       clienteTelefone: contatoAviso.telefone,
@@ -276,7 +278,7 @@ export async function POST(request: NextRequest) {
       .select("nome, email, telefone")
       .eq("id", user.id)
       .single();
-    ({ precisaAvisarClienteManualmente, endereco } = await avisarAgendamento(supabase, {
+    ({ precisaAvisarClienteManualmente, endereco, latitude, longitude } = await avisarAgendamento(supabase, {
       clienteNome: comprador?.nome ?? "Cliente",
       clienteEmail: comprador?.email ?? user.email ?? null,
       clienteTelefone: comprador?.telefone ?? null,
@@ -293,6 +295,8 @@ export async function POST(request: NextRequest) {
     precisaAvisarClienteManualmente,
     vinculadoAContaExistente,
     endereco,
+    latitude,
+    longitude,
     modalidade,
   });
 }

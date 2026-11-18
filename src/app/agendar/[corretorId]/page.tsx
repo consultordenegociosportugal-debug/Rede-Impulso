@@ -2,6 +2,7 @@ import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AgendarPublicoForm } from "./agendar-publico-form";
+import { DistanciaAteEndereco } from "./distancia-ate-endereco";
 
 type PerfilRow = {
   id: string;
@@ -9,7 +10,12 @@ type PerfilRow = {
   role: string;
   foto_url: string | null;
   corretor_perfis: {
-    organizacao: { nome: string; endereco: string | null } | null;
+    organizacao: {
+      nome: string;
+      endereco: string | null;
+      latitude: number | null;
+      longitude: number | null;
+    } | null;
   } | null;
 };
 
@@ -41,7 +47,7 @@ export default async function AgendarPublicoPage({
     ? await admin
         .from("profiles")
         .select(
-          "id, nome, role, foto_url, corretor_perfis!profile_id(organizacao:organizacao_catalogo_id(nome, endereco))",
+          "id, nome, role, foto_url, corretor_perfis!profile_id(organizacao:organizacao_catalogo_id(nome, endereco, latitude, longitude))",
         )
         .eq("id", corretorId)
         .single()
@@ -98,6 +104,12 @@ export default async function AgendarPublicoPage({
               <p className="hint mt-16" style={{ margin: "16px 0 0" }}>
                 📍 {organizacao.endereco}
               </p>
+            )}
+            {organizacao?.latitude != null && organizacao.longitude != null && (
+              <DistanciaAteEndereco
+                latitudeDestino={organizacao.latitude}
+                longitudeDestino={organizacao.longitude}
+              />
             )}
 
             <div className="mt-24">

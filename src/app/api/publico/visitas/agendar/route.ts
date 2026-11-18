@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const { endereco } = await avisarAgendamento(admin, {
+  const { endereco, latitude, longitude } = await avisarAgendamento(admin, {
     clienteNome: nomeLimpo,
     clienteEmail: null,
     clienteTelefone: telefone!.trim(),
@@ -149,6 +149,8 @@ export async function POST(request: NextRequest) {
     visitaId: visita.id,
     dataHora: visita.data_hora,
     endereco,
+    latitude,
+    longitude,
     modalidade,
   });
 }
