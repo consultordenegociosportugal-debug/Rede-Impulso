@@ -91,17 +91,11 @@ export function BuscaProfissionais() {
       async (posicao) => {
         try {
           const { latitude, longitude } = posicao.coords;
-          const chave = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
           const resp = await fetch(
-            `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${chave}&language=pt-BR`,
+            `/api/publico/geolocalizacao/cidade?lat=${latitude}&lng=${longitude}`,
           );
-          const dados = await resp.json();
-          type Componente = { types: string[]; long_name: string };
-          const componentes: Componente[] = dados.results?.[0]?.address_components ?? [];
-          const cidade =
-            componentes.find((c) => c.types.includes("administrative_area_level_2"))
-              ?.long_name ??
-            componentes.find((c) => c.types.includes("locality"))?.long_name;
+          const dados = (await resp.json()) as { cidade: string | null };
+          const cidade = dados.cidade;
 
           if (!cidade) {
             setErro("Não conseguimos identificar sua cidade. Tente buscar pelo nome.");
