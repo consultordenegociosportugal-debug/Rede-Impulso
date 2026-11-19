@@ -5,6 +5,7 @@ import { Footer } from "@/components/footer";
 import { createClient } from "@/lib/supabase/server";
 import { NovoClienteForm } from "./novo-cliente-form";
 import { ImportarClientesForm } from "./importar-clientes-form";
+import { NotasCliente } from "./notas-cliente";
 
 const PAPEIS_COM_CLIENTES = ["corretor"];
 
@@ -150,6 +151,7 @@ export default async function ClientesPage() {
                       <span className="badge badge-outline">sem visita futura</span>
                     )}
                   </div>
+                  <NotasCliente clienteId={cliente.id} />
                 </div>
               );
             })}
