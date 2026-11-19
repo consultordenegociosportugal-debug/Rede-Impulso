@@ -24,7 +24,7 @@ export async function GET(
 
   const { data, error } = await supabase
     .from("clientes_notas")
-    .select("id, texto, created_at")
+    .select("id, texto, created_at, lembrar_em, lembrete_concluido_em")
     .eq("cliente_avulso_id", clienteId)
     .order("created_at", { ascending: false });
 
@@ -49,7 +49,7 @@ export async function POST(
     return NextResponse.json({ erro: "Não autenticado." }, { status: 401 });
   }
 
-  let corpo: { texto?: string };
+  let corpo: { texto?: string; lembrar_em?: string };
   try {
     corpo = await request.json();
   } catch {
@@ -60,6 +60,12 @@ export async function POST(
   if (!texto) {
     return NextResponse.json({ erro: "Escreva alguma coisa na nota." }, { status: 400 });
   }
+
+  // Formato de <input type="date">, sem hora — não confia em qualquer
+  // string: só aceita YYYY-MM-DD, o resto vira "sem lembrete" em vez
+  // de guardar lixo que quebraria a comparação de data no painel.
+  const lembrarEm =
+    corpo.lembrar_em && /^\d{4}-\d{2}-\d{2}$/.test(corpo.lembrar_em) ? corpo.lembrar_em : null;
 
   const { data: cliente } = await supabase
     .from("clientes_avulsos")
@@ -72,8 +78,8 @@ export async function POST(
 
   const { data, error } = await supabase
     .from("clientes_notas")
-    .insert({ cliente_avulso_id: clienteId, corretor_id: user.id, texto })
-    .select("id, texto, created_at")
+    .insert({ cliente_avulso_id: clienteId, corretor_id: user.id, texto, lembrar_em: lembrarEm })
+    .select("id, texto, created_at, lembrar_em, lembrete_concluido_em")
     .single();
 
   if (error || !data) {

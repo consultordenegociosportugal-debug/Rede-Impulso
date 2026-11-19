@@ -8,6 +8,7 @@ import { VisitaAcoes } from "./visita-acoes";
 import { QuadroSemanal } from "./quadro-semanal";
 import { ViewToggle } from "./view-toggle";
 import { LinkPerfilPublico } from "./link-perfil-publico";
+import { LembreteAcao } from "./lembrete-acao";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
 import { hojeISO, diaBrasilia } from "@/lib/data";
 import { linkWhatsapp } from "@/lib/telefone";
@@ -37,6 +38,13 @@ const AVISO_GOOGLE: Record<string, string> = {
   erro: "Não foi possível conectar a Google Agenda. Tente de novo.",
   nao_configurado:
     "A integração com a Google Agenda ainda não foi configurada nesta instalação.",
+};
+
+type LembreteRow = {
+  id: string;
+  texto: string;
+  lembrar_em: string;
+  cliente_avulso: { nome: string; telefone: string | null } | null;
 };
 
 type VisitaRow = {
@@ -117,6 +125,18 @@ export default async function PainelNegociosPage({
     .or(`data_hora.gte.${inicioDeHojeIso},status.eq.confirmada`)
     .order("data_hora", { ascending: true });
   const visitas = (dadosVisitas ?? []) as unknown as VisitaRow[];
+
+  // Lembretes vencidos ou de hoje (ver migração 0099) — "pendente" é
+  // lembrar_em no passado ou hoje, não só hoje, senão um lembrete que
+  // o corretor deixou passar sem resolver simplesmente sumia.
+  const { data: dadosLembretes } = await supabase
+    .from("clientes_notas")
+    .select("id, texto, lembrar_em, cliente_avulso:cliente_avulso_id(nome, telefone)")
+    .eq("corretor_id", user.id)
+    .lte("lembrar_em", hojeISO())
+    .is("lembrete_concluido_em", null)
+    .order("lembrar_em", { ascending: true });
+  const lembretes = (dadosLembretes ?? []) as unknown as LembreteRow[];
 
   // Sinal pro corretor quando a agenda está vazia: hoje ele configura
   // disponibilidade e fica esperando sem nenhuma pista do porquê ninguém
@@ -224,6 +244,34 @@ export default async function PainelNegociosPage({
                 </>
               )}
             </p>
+          </div>
+        )}
+
+        {lembretes.length > 0 && (
+          <div className="mb-24">
+            <h2 style={{ fontSize: 18, margin: "0 0 12px" }}>
+              🔔 Lembretes ({lembretes.length})
+            </h2>
+            <div className="card" style={{ padding: "8px 20px" }}>
+              {lembretes.map((lembrete) => (
+                <div key={lembrete.id} className="list-row">
+                  <div
+                    className="flex between items-center"
+                    style={{ width: "100%", gap: 12, flexWrap: "wrap" }}
+                  >
+                    <div style={{ minWidth: 200, flex: 1 }}>
+                      <div style={{ fontWeight: 600, fontSize: 14 }}>
+                        {lembrete.cliente_avulso?.nome ?? "Cliente"}
+                      </div>
+                      <p className="hint" style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+                        {lembrete.texto}
+                      </p>
+                    </div>
+                    <LembreteAcao notaId={lembrete.id} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
