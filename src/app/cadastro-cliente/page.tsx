@@ -392,7 +392,7 @@ export default function CadastroClientePage() {
               <>
                 <div className={styles.resumo}>
                   <span aria-hidden="true">👤</span>
-                  <span>
+                  <span className={styles.resumoTexto}>
                     <strong>{nome.trim().split(" ")[0]}</strong> · {telefone}
                   </span>
                 </div>

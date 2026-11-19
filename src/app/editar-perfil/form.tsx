@@ -281,7 +281,7 @@ export function EditarPerfilForm({
     <form className="card mt-24" onSubmit={handleSubmit}>
       <div className={styles.resumo}>
         <span aria-hidden="true">👤</span>
-        <span>
+        <span className={styles.resumoTexto}>
           Conectado como <strong>{emailAtual}</strong> · {ROLE_LABEL[role] ?? role}
         </span>
       </div>

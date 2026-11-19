@@ -101,6 +101,10 @@
   color: var(--ink);
   font-weight: 600;
 }
+.resumoTexto {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
 
 /* ---------- Aceite dos termos ---------- */
 .termos {

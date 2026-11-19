@@ -244,7 +244,7 @@ export function CompletarCadastroForm({
     <form className="card mt-24" onSubmit={handleSubmit}>
       <div className={styles.resumo}>
         <span aria-hidden="true">👤</span>
-        <span>
+        <span className={styles.resumoTexto}>
           Conectado como <strong>{emailAtual}</strong>
         </span>
       </div>
