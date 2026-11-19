@@ -34,6 +34,13 @@ type StatusEvento = {
   errors?: { code: number; title: string; message?: string; error_data?: { details?: string } }[];
 };
 
+// Mascara o número nos logs — é PII de cliente, não precisa aparecer
+// inteiro num log de produção pra ser útil na hora de depurar.
+function mascarar(numero: string): string {
+  if (numero.length <= 4) return "****";
+  return `${"*".repeat(numero.length - 4)}${numero.slice(-4)}`;
+}
+
 type MensagemRecebida = {
   from: string;
   type: string;
@@ -125,18 +132,18 @@ export async function POST(request: NextRequest) {
       for (const status of valor.statuses ?? []) {
         if (status.status === "failed") {
           console.error(
-            `[whatsapp webhook] FALHOU — mensagem ${status.id} para ${status.recipient_id}:`,
+            `[whatsapp webhook] FALHOU — mensagem ${status.id} para ${mascarar(status.recipient_id)}:`,
             JSON.stringify(status.errors),
           );
         } else {
           console.log(
-            `[whatsapp webhook] mensagem ${status.id} para ${status.recipient_id}: ${status.status}`,
+            `[whatsapp webhook] mensagem ${status.id} para ${mascarar(status.recipient_id)}: ${status.status}`,
           );
         }
       }
 
       for (const mensagem of valor.messages ?? []) {
-        console.log(`[whatsapp webhook] mensagem recebida de ${mensagem.from} (${mensagem.type})`);
+        console.log(`[whatsapp webhook] mensagem recebida de ${mascarar(mensagem.from)} (${mensagem.type})`);
         if (mensagem.type === "button") {
           await processarRespostaLembrete(mensagem);
         }
