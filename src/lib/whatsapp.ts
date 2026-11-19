@@ -8,24 +8,20 @@
 // Cada corpo precisa ser criado com EXATAMENTE esse texto e esses nomes de
 // variável — a ordem dos {{N}} é a ordem dos parâmetros que o código manda.
 //
-// confirmacao_visita (PENDENTE DESDE 2026-11-18 — editado em
+// confirmacao_visita (aprovado de novo em 2026-11-19 — editado em
 // 2026-11-17 pra corrigir espaço faltando antes de cada variável,
-// tipo "OláAna!". A suposição de que "o antigo continua valendo até
-// aprovar" NÃO se confirmou nesta conta: checagem direta na Graph API
-// em 2026-11-18 mostrou os 4 templates abaixo com status PENDING,
-// sem nenhuma versão aprovada em paralelo, e um envio real falhou com
-// 404 (#132001) "Template name does not exist in the translation" —
-// ou seja, zero confirmação/lembrete/cancelamento/pedido de avaliação
-// por WhatsApp sai enquanto a Meta não aprovar. E-mail (resend.ts)
-// continua funcionando normalmente em paralelo.):
+// tipo "OláAna!", e ficou PENDING um dia inteiro sem nenhuma versão
+// aprovada em paralelo: editar um template aprovado nesta conta
+// substitui ele por completo, não existe "o antigo continua valendo
+// até aprovar". Não repetir esse susto sem avisar antes.):
 //   "Olá {{1}}! Passamos aqui para confirmar que sua visita com {{2}}
 //    está confirmada para o dia {{3}}, às {{4}}. Qualquer alteração, é
 //    só nos avisar por aqui mesmo. Até breve, equipe Rede Impulso!"
 //   {{1}} nome de quem recebe · {{2}} nome da contraparte · {{3}} data · {{4}} hora
 //
-// lembrete_visita (PENDENTE DESDE 2026-11-18, ver nota acima; mesma
-// correção de espaçamento + ganhou dois botões de resposta rápida —
-// "Confirmar presença" e "Preciso reagendar" — pra base da
+// lembrete_visita (aprovado de novo em 2026-11-19, ver nota acima;
+// mesma correção de espaçamento + ganhou dois botões de resposta
+// rápida — "Confirmar presença" e "Preciso reagendar" — pra base da
 // confirmação interativa):
 //   "Olá {{1}}! Passando aqui para lembrar que sua visita com {{2}} é
 //    hoje às {{3}}. Contamos com você! Equipe Rede Impulso."
@@ -34,15 +30,15 @@
 //   webhooks/whatsapp/route.ts), casada com a visita via
 //   lembrete_whatsapp_message_id (migração 0095).
 //
-// cancelamento_visita (PENDENTE DESDE 2026-11-18, ver nota acima;
-// mesma correção de espaçamento):
+// cancelamento_visita (aprovado de novo em 2026-11-19, ver nota
+// acima; mesma correção de espaçamento):
 //   "Olá {{1}}! Passando para avisar que sua visita com {{2}}, marcada
 //    para {{3}} às {{4}}, foi cancelada. Qualquer dúvida, é só nos
 //    chamar. Equipe Rede Impulso."
 //   {{1}} nome de quem recebe · {{2}} nome da contraparte · {{3}} data · {{4}} hora
 //
-// pedido_avaliacao (PENDENTE DESDE 2026-11-18, ver nota acima; mesma
-// correção de espaçamento):
+// pedido_avaliacao (aprovado de novo em 2026-11-19, ver nota acima;
+// mesma correção de espaçamento):
 //   "Olá {{1}}! Sua visita com {{2}} já aconteceu. Pode avaliar o
 //    atendimento? Leva menos de um minuto: {{3}} Obrigado!"
 //   {{1}} nome de quem recebe · {{2}} nome do corretor · {{3}} link da avaliação
@@ -56,29 +52,41 @@
 //   {{1}} nome do corretor · {{2}} total de visitas na semana · {{3}} confirmadas
 //
 // Os três abaixo (migração 0089, aprovação de vínculo corretor↔organização)
-// foram submetidos em 2026-11-17 e seguem em análise na Meta — ficam
+// foram submetidos em 2026-11-17 e aprovados em 2026-11-18 — ficam
 // prontos no código, mas enviarTemplateWhatsapp() nunca derruba nada: sem o
 // template aprovado a Meta só devolve erro, logado e ignorado — a
 // aprovação/recusa já foi gravada no banco antes de tentar mandar o aviso.
 //
-// solicitacao_vinculo_pendente (a submeter):
+// solicitacao_vinculo_pendente (aprovado):
 //   "Olá {{1}}! {{2}} pediu {{3}} na {{4}}, pela Rede Impulso. Acesse seu
 //    painel para aprovar ou recusar."
 //   {{1}} nome do gestor · {{2}} nome do corretor ·
 //   {{3}} "para se vincular" ou "para virar gestor também" ·
 //   {{4}} nome da organização
 //
-// resposta_vinculo_organizacao (a submeter):
+// resposta_vinculo_organizacao (aprovado):
 //   "Olá {{1}}! Seu pedido de vínculo com a {{2}} foi {{3}} na Rede
 //    Impulso."
 //   {{1}} nome do corretor · {{2}} nome da organização ·
 //   {{3}} "aprovado" ou "recusado"
 //
-// resposta_pedido_gestor (a submeter):
+// resposta_pedido_gestor (aprovado):
 //   "Olá {{1}}! Seu pedido para virar gestor da {{2}} foi {{3}} na Rede
 //    Impulso."
 //   {{1}} nome do corretor · {{2}} nome da organização ·
 //   {{3}} "aprovado" ou "recusado"
+//
+// aviso_novidade (migração nenhuma, submetido direto pela Graph API
+// em 2026-11-19 — categoria MARKETING, não Utilidade como os outros:
+// não é sobre uma visita de ninguém, é aviso de funcionalidade nova
+// do produto. Pensado pra ser reaproveitado em futuros lançamentos,
+// não só o das notas. Enviado manualmente hoje (não tem rota nem
+// botão no app ainda — é usado direto via enviarAvisoNovidadeWhatsapp,
+// chamado de um script quando o usuário pede pra avisar os
+// corretores de alguma coisa nova):
+//   "Olá {{1}}! Tem novidade no seu painel Rede Impulso: {{2}} Dá uma
+//    olhada quando puder!"
+//   {{1}} nome do corretor · {{2}} descrição curta da novidade
 
 import { paraE164 } from "@/lib/telefone";
 
@@ -323,6 +331,26 @@ export async function enviarRespostaVinculoWhatsapp(params: EnvioRespostaVinculo
     params.nomeCorretor,
     params.nomeOrganizacao,
     status,
+  ]);
+  return enviado;
+}
+
+type EnvioAvisoNovidade = {
+  telefone: string;
+  nomeCorretor: string;
+  descricaoNovidade: string;
+};
+
+// Uso manual (script/console), não tem rota nem botão no app — pra
+// quando o usuário pede pra avisar os corretores de alguma coisa nova
+// que lançou. Categoria MARKETING na Meta (ver comentário acima),
+// diferente dos outros templates: pede aprovação própria, só funciona
+// depois que aviso_novidade sair de PENDING.
+export async function enviarAvisoNovidadeWhatsapp(params: EnvioAvisoNovidade): Promise<boolean> {
+  const nomeTemplate = process.env.WHATSAPP_TEMPLATE_AVISO_NOVIDADE || "aviso_novidade";
+  const { enviado } = await enviarTemplateWhatsapp(params.telefone, nomeTemplate, [
+    params.nomeCorretor,
+    params.descricaoNovidade,
   ]);
   return enviado;
 }
