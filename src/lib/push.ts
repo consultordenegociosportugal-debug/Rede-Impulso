@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import * as webpush from "web-push";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 // Notificação push (Web Push) — pedido do usuário pra o corretor saber
