@@ -28,6 +28,10 @@ export function ResponderSolicitacaoButtons({ solicitacaoId }: { solicitacaoId: 
       return;
     }
 
+    // Avisa o Nav (componente separado, busca essa contagem sozinho no
+    // client) pra atualizar o número de "Solicitações (N)" sem precisar
+    // de reload — ver src/components/nav.tsx.
+    window.dispatchEvent(new Event("rede-impulso:solicitacoes-atualizadas"));
     router.refresh();
   }
 

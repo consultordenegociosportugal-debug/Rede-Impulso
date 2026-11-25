@@ -158,6 +158,32 @@ export function Nav({ active }: { active: string }) {
     return () => subscription.subscription.unsubscribe();
   }, []);
 
+  // O contador de "Solicitações (N)" é buscado uma vez (acima) e nunca
+  // de novo sozinho — router.refresh() na tela de solicitações só
+  // atualiza o Server Component da página, não este estado buscado
+  // aqui no client. Sem isto, aprovar/recusar uma solicitação deixava
+  // o número do menu desatualizado até o próximo reload de página.
+  useEffect(() => {
+    if (!user) return;
+    async function atualizarContagem() {
+      const supabase = createClient();
+      const { data: gestorPerfil } = await supabase
+        .from("gestor_perfis")
+        .select("organizacao_catalogo_id")
+        .eq("profile_id", user!.id)
+        .maybeSingle();
+      if (!gestorPerfil) return;
+      const { count } = await supabase
+        .from("solicitacoes_vinculo")
+        .select("id", { count: "exact", head: true })
+        .eq("organizacao_catalogo_id", gestorPerfil.organizacao_catalogo_id)
+        .eq("status", "pendente");
+      setSolicitacoesPendentes(count ?? 0);
+    }
+    window.addEventListener("rede-impulso:solicitacoes-atualizadas", atualizarContagem);
+    return () => window.removeEventListener("rede-impulso:solicitacoes-atualizadas", atualizarContagem);
+  }, [user]);
+
   async function handleLogout() {
     const supabase = createClient();
     await supabase.auth.signOut();
