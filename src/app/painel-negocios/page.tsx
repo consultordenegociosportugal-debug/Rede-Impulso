@@ -9,6 +9,7 @@ import { QuadroSemanal } from "./quadro-semanal";
 import { ViewToggle } from "./view-toggle";
 import { LinkPerfilPublico } from "./link-perfil-publico";
 import { LembreteAcao } from "./lembrete-acao";
+import { AtivarNotificacoes } from "@/components/ativar-notificacoes";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
 import { hojeISO, diaBrasilia } from "@/lib/data";
 import { linkWhatsapp } from "@/lib/telefone";
@@ -213,6 +214,7 @@ export default async function PainelNegociosPage({
             <Link href="/editar-perfil" className="btn btn-outline btn-sm">
               ✏️ Editar perfil
             </Link>
+            <AtivarNotificacoes />
           </div>
         </div>
 

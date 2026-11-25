@@ -4,6 +4,7 @@ import { rodapeTransacionalHtml } from "@/lib/email-rodape";
 import { enviarConfirmacaoWhatsapp } from "@/lib/whatsapp";
 import { escaparHtml } from "@/lib/escapar-html";
 import { linkWhatsapp } from "@/lib/telefone";
+import { enviarPushParaCorretor } from "@/lib/push";
 
 const formatoDataHora = new Intl.DateTimeFormat("pt-BR", {
   dateStyle: "full",
@@ -127,6 +128,11 @@ export async function avisarAgendamento(
   // mandar, então não vira aviso. A confirmação pro corretor é sempre
   // best-effort: ele já vê a visita no próprio painel, então uma falha
   // nela não precisa de aviso adicional na tela.
+  // Push pro corretor saber na hora, sem precisar abrir o painel — ver
+  // migração 0100/src/lib/push.ts. Best-effort igual o WhatsApp pra
+  // ele (nunca derruba o agendamento), mas AGUARDADO junto com o
+  // resto: numa function serverless, uma promise solta (sem await)
+  // pode nunca terminar de rodar depois da resposta já ter saído.
   const [whatsappCliente] = await Promise.all([
     dados.clienteTelefone
       ? enviarConfirmacaoWhatsapp({
@@ -146,6 +152,11 @@ export async function avisarAgendamento(
           horaFormatada,
         })
       : Promise.resolve(true),
+    enviarPushParaCorretor(supabase, dados.corretorId, {
+      titulo: "Nova visita agendada",
+      corpo: `${dados.clienteNome} marcou visita pra ${dataFormatada} às ${horaFormatada}.`,
+      url: "/painel-negocios",
+    }),
   ]);
 
   return {

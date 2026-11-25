@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { avisarCancelamento } from "@/lib/avisar-cancelamento";
+import { enviarPushParaCorretor } from "@/lib/push";
 import {
   lerConfig,
   tokenExpirado,
@@ -194,6 +195,14 @@ export async function POST(request: NextRequest) {
         dataHoraIso: visita.data_hora,
         motivoExtra: motivo?.trim() || undefined,
       }));
+      // Cliente cancelando é o caso que mais pega o corretor de surpresa
+      // (um horário que ele guardou simplesmente libera) — por isso só
+      // aqui, não no outro branch (o corretor já sabe que cancelou).
+      await enviarPushParaCorretor(supabase, visita.corretor_id, {
+        titulo: "Visita cancelada",
+        corpo: `${visita.comprador?.nome ?? "O cliente"} cancelou a visita.`,
+        url: "/painel-negocios",
+      });
     }
   } else {
     const interessado = visita.comprador ?? visita.cliente_avulso;

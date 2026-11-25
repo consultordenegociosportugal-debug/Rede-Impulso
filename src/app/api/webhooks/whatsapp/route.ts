@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarTextoLivreWhatsapp } from "@/lib/whatsapp";
+import { enviarPushParaCorretor } from "@/lib/push";
 
 // Até agora o app só sabia o que a Meta respondia na hora de mandar
 // (POST /messages) — e essa resposta só confirma que a Meta ACEITOU a
@@ -77,6 +78,11 @@ async function processarRespostaLembrete(mensagem: MensagemRecebida) {
       .update({ resposta_cliente: "confirmou", resposta_recebida_em: new Date().toISOString() })
       .eq("id", visita.id);
     await enviarTextoLivreWhatsapp(mensagem.from, "Combinado, te esperamos! ✅");
+    await enviarPushParaCorretor(admin, visita.corretor_id, {
+      titulo: "Cliente confirmou presença",
+      corpo: "Respondeu o lembrete confirmando que vai à visita.",
+      url: "/painel-negocios",
+    });
   } else if (textoBotao === "Preciso reagendar") {
     await admin
       .from("visitas")
@@ -87,6 +93,11 @@ async function processarRespostaLembrete(mensagem: MensagemRecebida) {
       mensagem.from,
       `Sem problemas! Escolha um novo horário por aqui: ${link}`,
     );
+    await enviarPushParaCorretor(admin, visita.corretor_id, {
+      titulo: "Cliente pediu reagendamento",
+      corpo: "Respondeu o lembrete dizendo que precisa reagendar.",
+      url: "/painel-negocios",
+    });
   }
 }
 

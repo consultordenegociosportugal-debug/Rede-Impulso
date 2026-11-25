@@ -44,3 +44,44 @@ self.addEventListener("fetch", (event) => {
   }
   // Tudo mais (páginas, API, dados): sem interceptar, vai direto pra rede.
 });
+
+// Notificação push (ver src/lib/push.ts) — o corretor só recebe isto
+// depois de clicar em "Ativar notificações" e autorizar o navegador;
+// nunca dispara sozinho.
+self.addEventListener("push", (event) => {
+  let dados = { titulo: "Rede Impulso", corpo: "Você tem uma notificação nova.", url: "/painel-negocios" };
+  try {
+    if (event.data) dados = { ...dados, ...event.data.json() };
+  } catch {
+    // payload sem JSON válido — usa o texto cru como corpo, pelo menos.
+    dados.corpo = event.data?.text() ?? dados.corpo;
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(dados.titulo, {
+      body: dados.corpo,
+      icon: "/icon-192.png",
+      badge: "/icon-192.png",
+      data: { url: dados.url },
+    }),
+  );
+});
+
+// Clicar na notificação foca uma aba já aberta do app (se tiver) em vez
+// de sempre abrir uma nova, e navega pra URL relevante.
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url ?? "/painel-negocios";
+
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientes) => {
+      for (const cliente of clientes) {
+        if (cliente.url.includes(self.location.origin) && "focus" in cliente) {
+          cliente.navigate(url);
+          return cliente.focus();
+        }
+      }
+      return self.clients.openWindow(url);
+    }),
+  );
+});
