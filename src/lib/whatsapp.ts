@@ -354,3 +354,30 @@ export async function enviarAvisoNovidadeWhatsapp(params: EnvioAvisoNovidade): P
   ]);
   return enviado;
 }
+
+type EnvioMensagemClienteParaCorretor = {
+  telefoneCorretor: string;
+  nomeCorretor: string;
+  nomeCliente: string;
+  textoCliente: string;
+};
+
+// Encaminha pro WhatsApp do próprio corretor uma mensagem de texto que
+// um cliente mandou (ver processarMensagemTexto no webhook) — além do
+// push e do card em /painel-negocios, porque WhatsApp é o canal
+// prioritário do produto (não o push, que depende do corretor ter
+// ativado e do navegador/SO dele cooperar). Reaproveita aviso_novidade
+// (MARKETING, já aprovado) por não existir ainda um template dedicado
+// pra isso — o corpo genérico cabe bem aqui.
+export async function enviarMensagemClienteParaCorretorWhatsapp(
+  params: EnvioMensagemClienteParaCorretor,
+): Promise<boolean> {
+  const nomeTemplate = process.env.WHATSAPP_TEMPLATE_AVISO_NOVIDADE || "aviso_novidade";
+  const textoTruncado =
+    params.textoCliente.length > 300 ? `${params.textoCliente.slice(0, 300)}…` : params.textoCliente;
+  const { enviado } = await enviarTemplateWhatsapp(params.telefoneCorretor, nomeTemplate, [
+    params.nomeCorretor,
+    `${params.nomeCliente} mandou uma mensagem: "${textoTruncado}"`,
+  ]);
+  return enviado;
+}

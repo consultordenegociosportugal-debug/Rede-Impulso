@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { enviarTextoLivreWhatsapp } from "@/lib/whatsapp";
+import { enviarTextoLivreWhatsapp, enviarMensagemClienteParaCorretorWhatsapp } from "@/lib/whatsapp";
 import { enviarPushParaCorretor } from "@/lib/push";
 import { paraE164, telefoneCanonico } from "@/lib/telefone";
 
@@ -197,6 +197,19 @@ async function processarMensagemTexto(mensagem: MensagemRecebida) {
     corpo: texto.length > 100 ? `${texto.slice(0, 100)}…` : texto,
     url: "/painel-negocios",
   });
+
+  // Também manda pro WhatsApp do próprio corretor — o push depende de
+  // ele ter ativado notificações (muitos ainda não ativaram), e
+  // WhatsApp é o canal prioritário do produto, não o push.
+  const { data: corretor } = await admin.from("profiles").select("nome, telefone").eq("id", corretorId).single();
+  if (corretor?.telefone) {
+    await enviarMensagemClienteParaCorretorWhatsapp({
+      telefoneCorretor: corretor.telefone,
+      nomeCorretor: corretor.nome,
+      nomeCliente,
+      textoCliente: texto,
+    });
+  }
 
   // Confirma recebimento pro cliente — sem isso ele manda a mensagem e
   // fica sem nenhum sinal de que alguém vai ver, mesmo ela agora indo
