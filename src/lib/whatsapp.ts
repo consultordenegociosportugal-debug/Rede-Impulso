@@ -366,18 +366,31 @@ type EnvioMensagemClienteParaCorretor = {
 // um cliente mandou (ver processarMensagemTexto no webhook) — além do
 // push e do card em /painel-negocios, porque WhatsApp é o canal
 // prioritário do produto (não o push, que depende do corretor ter
-// ativado e do navegador/SO dele cooperar). Reaproveita aviso_novidade
-// (MARKETING, já aprovado) por não existir ainda um template dedicado
-// pra isso — o corpo genérico cabe bem aqui.
+// ativado e do navegador/SO dele cooperar).
+//
+// mensagem_cliente_recebida (submetido em 2026-11-27, categoria
+// UTILITY, "Em análise"): tentou-se primeiro reaproveitar aviso_novidade
+// (MARKETING) pra isso, mas a Meta passou a bloquear a entrega com
+// "This message was not delivered to maintain healthy ecosystem
+// engagement" (código 131049) depois de só um punhado de envios de
+// teste seguidos pro mesmo número — categoria MARKETING é mais
+// agressivamente filtrada por spam que UTILITY. Até aprovar, essa
+// function simplesmente falha silenciosamente (enviarTemplateWhatsapp
+// já trata "template não existe"/pendente como enviado=false), sem
+// derrubar nada — o cliente continua tendo o push e o card no painel.
+//   "Olá {{1}}! {{2}} mandou uma mensagem pela Rede Impulso: "{{3}}"
+//    Acesse seu painel para responder."
+//   {{1}} nome do corretor · {{2}} nome do cliente · {{3}} texto da mensagem
 export async function enviarMensagemClienteParaCorretorWhatsapp(
   params: EnvioMensagemClienteParaCorretor,
 ): Promise<boolean> {
-  const nomeTemplate = process.env.WHATSAPP_TEMPLATE_AVISO_NOVIDADE || "aviso_novidade";
+  const nomeTemplate = process.env.WHATSAPP_TEMPLATE_MENSAGEM_CLIENTE || "mensagem_cliente_recebida";
   const textoTruncado =
     params.textoCliente.length > 300 ? `${params.textoCliente.slice(0, 300)}…` : params.textoCliente;
   const { enviado } = await enviarTemplateWhatsapp(params.telefoneCorretor, nomeTemplate, [
     params.nomeCorretor,
-    `${params.nomeCliente} mandou uma mensagem: "${textoTruncado}"`,
+    params.nomeCliente,
+    textoTruncado,
   ]);
   return enviado;
 }
