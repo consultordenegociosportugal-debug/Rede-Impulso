@@ -39,6 +39,24 @@ export function paraE164(telefone: string): string | null {
 }
 
 /**
+ * Versão "canônica" de um E.164 brasileiro pra COMPARAR dois números,
+ * nunca pra guardar ou enviar — tira o nono dígito do celular quando
+ * presente. O "from" que o WhatsApp manda no webhook de uma mensagem
+ * recebida às vezes vem sem esse dígito mesmo pro mesmo número que o
+ * cliente digitou com ele no agendamento (quirk conhecido de número
+ * brasileiro no WhatsApp), e aí uma comparação exata de E.164 nunca
+ * batia — o cliente escrevia de volta e o sistema nunca achava o
+ * cadastro dele. Números de outros países passam direto, sem o -1.
+ */
+export function telefoneCanonico(e164: string): string {
+  const digitos = e164.replace(/\D/g, "");
+  if (digitos.startsWith("55") && digitos.length === 13) {
+    return digitos.slice(0, 4) + digitos.slice(5);
+  }
+  return digitos;
+}
+
+/**
  * Link "wa.me" pra abrir uma conversa direto com esse número — sem isso,
  * depois da confirmação da visita o cliente não tinha nenhum jeito de falar
  * com o corretor além de esperar ele entrar em contato (a mensagem de

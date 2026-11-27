@@ -3,7 +3,7 @@ import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarTextoLivreWhatsapp } from "@/lib/whatsapp";
 import { enviarPushParaCorretor } from "@/lib/push";
-import { paraE164 } from "@/lib/telefone";
+import { paraE164, telefoneCanonico } from "@/lib/telefone";
 
 // Até agora o app só sabia o que a Meta respondia na hora de mandar
 // (POST /messages) — e essa resposta só confirma que a Meta ACEITOU a
@@ -120,6 +120,7 @@ async function processarMensagemTexto(mensagem: MensagemRecebida) {
 
   const telefoneE164 = paraE164(`+${mensagem.from}`);
   if (!telefoneE164) return;
+  const telefoneCanon = telefoneCanonico(telefoneE164);
 
   let corretorId: string | null = null;
   let visitaId: string | null = null;
@@ -129,7 +130,10 @@ async function processarMensagemTexto(mensagem: MensagemRecebida) {
     .from("clientes_avulsos")
     .select("id, nome, telefone, corretor_id")
     .not("telefone", "is", null);
-  const clienteAvulso = clientesAvulsos?.find((c) => paraE164(c.telefone!) === telefoneE164);
+  const clienteAvulso = clientesAvulsos?.find((c) => {
+    const e164 = paraE164(c.telefone!);
+    return e164 !== null && telefoneCanonico(e164) === telefoneCanon;
+  });
 
   if (clienteAvulso) {
     corretorId = clienteAvulso.corretor_id;
@@ -149,7 +153,10 @@ async function processarMensagemTexto(mensagem: MensagemRecebida) {
       .select("id, nome, telefone")
       .eq("role", "comprador")
       .not("telefone", "is", null);
-    const comprador = compradores?.find((c) => paraE164(c.telefone!) === telefoneE164);
+    const comprador = compradores?.find((c) => {
+      const e164 = paraE164(c.telefone!);
+      return e164 !== null && telefoneCanonico(e164) === telefoneCanon;
+    });
     if (comprador) {
       nomeCliente = comprador.nome;
       const { data: visita } = await admin
