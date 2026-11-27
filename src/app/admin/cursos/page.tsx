@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/require-admin";
 import { NovoCursoForm } from "./novo-curso-form";
 import { AlternarAtivoButton } from "./alternar-ativo-button";
 
@@ -25,24 +24,7 @@ type CursoRow = {
 };
 
 export default async function AdminCursosPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/entrar?depois=/admin/cursos");
-  }
-
-  const { data: meuPerfil } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-
-  if (!meuPerfil?.is_admin) {
-    redirect("/");
-  }
+  const { supabase } = await requireAdmin("/admin/cursos");
 
   const { data } = await supabase
     .from("cursos")

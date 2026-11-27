@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarTextoLivreWhatsapp } from "@/lib/whatsapp";
 import { enviarPushParaCorretor } from "@/lib/push";
+import { paraE164 } from "@/lib/telefone";
 
 // Até agora o app só sabia o que a Meta respondia na hora de mandar
 // (POST /messages) — e essa resposta só confirma que a Meta ACEITOU a
@@ -43,10 +44,12 @@ function mascarar(numero: string): string {
 }
 
 type MensagemRecebida = {
+  id: string;
   from: string;
   type: string;
   context?: { id?: string };
   button?: { text?: string; payload?: string };
+  text?: { body?: string };
 };
 
 // Resposta ao botão "Confirmar presença"/"Preciso reagendar" do
@@ -99,6 +102,102 @@ async function processarRespostaLembrete(mensagem: MensagemRecebida) {
       url: "/painel-negocios",
     });
   }
+}
+
+// Mensagem de TEXTO livre do cliente (não botão) — é o caminho real de
+// quem lê "qualquer alteração, é só nos avisar por aqui mesmo" na
+// confirmacao_visita/cancelamento_visita e responde direto. Acha o
+// corretor pelo telefone de quem mandou (cliente_avulso ou, se não
+// achar, a visita mais recente de um comprador logado com esse
+// telefone) — mesmo padrão de busca por telefone normalizado usado em
+// /api/publico/visitas/agendar.
+async function processarMensagemTexto(mensagem: MensagemRecebida) {
+  const texto = mensagem.text?.body?.trim();
+  if (!texto) return;
+
+  const admin = createAdminClient();
+  if (!admin) return;
+
+  const telefoneE164 = paraE164(`+${mensagem.from}`);
+  if (!telefoneE164) return;
+
+  let corretorId: string | null = null;
+  let visitaId: string | null = null;
+  let nomeCliente = "Cliente";
+
+  const { data: clientesAvulsos } = await admin
+    .from("clientes_avulsos")
+    .select("id, nome, telefone, corretor_id")
+    .not("telefone", "is", null);
+  const clienteAvulso = clientesAvulsos?.find((c) => paraE164(c.telefone!) === telefoneE164);
+
+  if (clienteAvulso) {
+    corretorId = clienteAvulso.corretor_id;
+    nomeCliente = clienteAvulso.nome;
+    const { data: visita } = await admin
+      .from("visitas")
+      .select("id")
+      .eq("cliente_avulso_id", clienteAvulso.id)
+      .neq("status", "cancelada")
+      .order("data_hora", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    visitaId = visita?.id ?? null;
+  } else {
+    const { data: compradores } = await admin
+      .from("profiles")
+      .select("id, nome, telefone")
+      .eq("role", "comprador")
+      .not("telefone", "is", null);
+    const comprador = compradores?.find((c) => paraE164(c.telefone!) === telefoneE164);
+    if (comprador) {
+      nomeCliente = comprador.nome;
+      const { data: visita } = await admin
+        .from("visitas")
+        .select("id, corretor_id")
+        .eq("comprador_id", comprador.id)
+        .neq("status", "cancelada")
+        .order("data_hora", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (visita) {
+        corretorId = visita.corretor_id;
+        visitaId = visita.id;
+      }
+    }
+  }
+
+  // Número desconhecido (nunca agendou com ninguém) — não tem corretor
+  // pra avisar, então só fica no log mesmo (já registrado por quem
+  // chamou esta função).
+  if (!corretorId) return;
+
+  const { error: erroInsercao } = await admin.from("mensagens_cliente").insert({
+    corretor_id: corretorId,
+    visita_id: visitaId,
+    nome_cliente: nomeCliente,
+    telefone: telefoneE164,
+    texto,
+    whatsapp_message_id: mensagem.id,
+  });
+  // 23505 = Meta reentregou o mesmo evento (já gravamos essa mensagem) — ignora.
+  if (erroInsercao && erroInsercao.code !== "23505") {
+    console.error("[whatsapp webhook] falha ao gravar mensagem de cliente:", erroInsercao);
+  }
+
+  await enviarPushParaCorretor(admin, corretorId, {
+    titulo: `Mensagem de ${nomeCliente}`,
+    corpo: texto.length > 100 ? `${texto.slice(0, 100)}…` : texto,
+    url: "/painel-negocios",
+  });
+
+  // Confirma recebimento pro cliente — sem isso ele manda a mensagem e
+  // fica sem nenhum sinal de que alguém vai ver, mesmo ela agora indo
+  // pro painel do corretor.
+  await enviarTextoLivreWhatsapp(
+    mensagem.from,
+    "Recebemos sua mensagem! O corretor vai te responder por aqui em breve.",
+  );
 }
 
 export async function POST(request: NextRequest) {
@@ -157,6 +256,8 @@ export async function POST(request: NextRequest) {
         console.log(`[whatsapp webhook] mensagem recebida de ${mascarar(mensagem.from)} (${mensagem.type})`);
         if (mensagem.type === "button") {
           await processarRespostaLembrete(mensagem);
+        } else if (mensagem.type === "text") {
+          await processarMensagemTexto(mensagem);
         }
       }
     }

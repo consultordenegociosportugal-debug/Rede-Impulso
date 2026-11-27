@@ -1,9 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/supabase/require-admin";
 import { CopiarLinkConviteBotao } from "./copiar-link-convite-botao";
 
 type OrganizacaoRow = {
@@ -12,6 +10,12 @@ type OrganizacaoRow = {
   tipo: "imobiliaria" | "construtora";
   email_gestor: string | null;
   cidade: { nome: string; uf: string } | null;
+};
+
+type OportunidadeRpc = {
+  organizacao_id: string;
+  total_corretores: number;
+  total_visitas: number;
 };
 
 const LABEL_TIPO: Record<OrganizacaoRow["tipo"], string> = {
@@ -25,82 +29,34 @@ const LABEL_TIPO: Record<OrganizacaoRow["tipo"], string> = {
 // É a prova social pronta pro convite — "N corretores da sua equipe já
 // usam a Rede Impulso" é bem mais forte que uma pitch fria.
 export default async function AdminOportunidadesGestorPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { supabase } = await requireAdmin("/admin/oportunidades-gestor");
 
-  if (!user) {
-    redirect("/entrar?depois=/admin/oportunidades-gestor");
-  }
-
-  const { data: meuPerfil } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-
-  if (!meuPerfil?.is_admin) {
-    redirect("/");
-  }
-
-  // Service role pra esse relatório: visitas não tem policy de leitura
-  // pra admin (só corretor dono, interessado, ou gestor da organização
-  // — migrações 0020/0048/0056/0057) — sem isso, a contagem de
-  // agendamentos sempre vinha zerada, mesmo com visitas de verdade.
-  const admin = createAdminClient();
-  if (!admin) {
-    redirect("/admin");
-  }
-
-  const [{ data: organizacoesData }, { data: corretoresData }, { data: gestoresData }] =
-    await Promise.all([
-      admin
-        .from("organizacoes_catalogo")
-        .select("id, nome, tipo, email_gestor, cidade:cidade_id(nome, uf)")
-        .order("nome", { ascending: true }),
-      admin
-        .from("corretor_perfis")
-        .select("profile_id, organizacao_catalogo_id")
-        .not("organizacao_catalogo_id", "is", null),
-      admin.from("gestor_perfis").select("organizacao_catalogo_id"),
-    ]);
+  // Contagem de corretor e de visita por organização roda no Postgres
+  // via RPC (migração 0101, security definer) em vez de buscar
+  // corretor_perfis e visitas inteiros pra agregar em JavaScript —
+  // visitas não tem policy de leitura pra admin (só corretor dono,
+  // interessado, ou gestor da organização — migrações
+  // 0020/0048/0056/0057), por isso a function roda com esse privilégio
+  // em vez de precisar da chave de service role aqui.
+  const [{ data: organizacoesData }, { data: oportunidadesData }] = await Promise.all([
+    supabase
+      .from("organizacoes_catalogo")
+      .select("id, nome, tipo, email_gestor, cidade:cidade_id(nome, uf)")
+      .order("nome", { ascending: true }),
+    supabase.rpc("oportunidades_gestor"),
+  ]);
 
   const organizacoes = (organizacoesData ?? []) as unknown as OrganizacaoRow[];
-  const corretores = (corretoresData ?? []) as { profile_id: string; organizacao_catalogo_id: string }[];
-  const orgsComGestor = new Set((gestoresData ?? []).map((g) => g.organizacao_catalogo_id));
-
-  const corretorIds = corretores.map((c) => c.profile_id);
-  const { data: visitasData } =
-    corretorIds.length > 0
-      ? await admin.from("visitas").select("corretor_id").in("corretor_id", corretorIds)
-      : { data: [] };
-
-  const visitasPorCorretor = new Map<string, number>();
-  for (const v of visitasData ?? []) {
-    visitasPorCorretor.set(v.corretor_id, (visitasPorCorretor.get(v.corretor_id) ?? 0) + 1);
-  }
-
-  const corretoresPorOrg = new Map<string, number>();
-  const visitasPorOrg = new Map<string, number>();
-  for (const c of corretores) {
-    corretoresPorOrg.set(
-      c.organizacao_catalogo_id,
-      (corretoresPorOrg.get(c.organizacao_catalogo_id) ?? 0) + 1,
-    );
-    visitasPorOrg.set(
-      c.organizacao_catalogo_id,
-      (visitasPorOrg.get(c.organizacao_catalogo_id) ?? 0) + (visitasPorCorretor.get(c.profile_id) ?? 0),
-    );
-  }
+  const porOrganizacao = new Map(
+    ((oportunidadesData ?? []) as OportunidadeRpc[]).map((o) => [o.organizacao_id, o]),
+  );
 
   const oportunidades = organizacoes
-    .map((org) => ({
-      org,
-      corretores: corretoresPorOrg.get(org.id) ?? 0,
-      visitas: visitasPorOrg.get(org.id) ?? 0,
-    }))
-    .filter((o) => o.corretores > 0 && !orgsComGestor.has(o.org.id))
+    .map((org) => {
+      const dados = porOrganizacao.get(org.id);
+      return { org, corretores: dados?.total_corretores ?? 0, visitas: dados?.total_visitas ?? 0 };
+    })
+    .filter((o) => o.corretores > 0)
     .sort((a, b) => b.corretores - a.corretores);
 
   return (

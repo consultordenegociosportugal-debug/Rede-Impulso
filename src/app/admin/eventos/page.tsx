@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/require-admin";
 
 const STATUS_LABEL: Record<string, string> = {
   solicitada: "Solicitada",
@@ -40,24 +39,7 @@ function rotulo(status: string) {
 }
 
 export default async function AdminEventosPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/entrar?depois=/admin/eventos");
-  }
-
-  const { data: meuPerfil } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-
-  if (!meuPerfil?.is_admin) {
-    redirect("/");
-  }
+  const { supabase } = await requireAdmin("/admin/eventos");
 
   const { data } = await supabase
     .from("visitas_eventos")

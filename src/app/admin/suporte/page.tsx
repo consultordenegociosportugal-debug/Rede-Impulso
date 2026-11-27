@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/require-admin";
 import { ResponderForm } from "./responder-form";
 
 type TicketRow = {
@@ -35,24 +34,7 @@ export default async function AdminSuportePage({
   searchParams: Promise<{ status?: string }>;
 }) {
   const { status } = await searchParams;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/entrar?depois=/admin/suporte");
-  }
-
-  const { data: meuPerfil } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-
-  if (!meuPerfil?.is_admin) {
-    redirect("/");
-  }
+  const { supabase } = await requireAdmin("/admin/suporte");
 
   const filtroStatus = status && ["aberto", "respondido", "fechado"].includes(status) ? status : null;
 

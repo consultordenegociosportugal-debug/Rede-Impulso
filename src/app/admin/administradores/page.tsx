@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/require-admin";
 import { BuscarEPromoverAdmin } from "./buscar-e-promover-admin";
 import { RemoverAdminBotao } from "./remover-admin-botao";
 
@@ -14,24 +13,7 @@ type AdminRow = {
 };
 
 export default async function AdminAdministradoresPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/entrar?depois=/admin/administradores");
-  }
-
-  const { data: meuPerfil } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-
-  if (!meuPerfil?.is_admin) {
-    redirect("/");
-  }
+  const { supabase, user } = await requireAdmin("/admin/administradores");
 
   const { data: adminsData } = await supabase
     .from("profiles")

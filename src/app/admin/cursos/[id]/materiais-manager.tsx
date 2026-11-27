@@ -17,6 +17,7 @@ export function MateriaisManager({ cursoId, materiais }: { cursoId: string; mate
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [abrindo, setAbrindo] = useState<string | null>(null);
+  const [removendo, setRemovendo] = useState<string | null>(null);
 
   async function enviarArquivo(e: React.FormEvent) {
     e.preventDefault();
@@ -75,9 +76,26 @@ export function MateriaisManager({ cursoId, materiais }: { cursoId: string; mate
   }
 
   async function remover(material: Material) {
+    if (!confirm(`Remover o material "${material.titulo}"? Essa ação não pode ser desfeita.`)) return;
+
+    setRemovendo(material.id);
+    setErro(null);
+
     const supabase = createClient();
+    // Apaga a linha primeiro: se isso falhar, o arquivo no storage
+    // continua intacto e nada muda pra quem usa o curso. Se fosse ao
+    // contrário (storage primeiro), uma falha no delete da linha deixava
+    // um material "fantasma" apontando pra um arquivo que já não existe
+    // mais — o botão "Abrir" quebrava sem nenhum aviso.
+    const { error: deleteError } = await supabase.from("curso_materiais").delete().eq("id", material.id);
+    if (deleteError) {
+      setRemovendo(null);
+      setErro("Não foi possível remover o material. Tente de novo.");
+      return;
+    }
+
     await supabase.storage.from("curso-materiais").remove([material.arquivo_url]);
-    await supabase.from("curso_materiais").delete().eq("id", material.id);
+    setRemovendo(null);
     router.refresh();
   }
 
@@ -105,8 +123,13 @@ export function MateriaisManager({ cursoId, materiais }: { cursoId: string; mate
                   >
                     {abrindo === m.id ? "…" : "Abrir"}
                   </button>
-                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => remover(m)}>
-                    Remover
+                  <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={() => remover(m)}
+                    disabled={removendo === m.id}
+                  >
+                    {removendo === m.id ? "…" : "Remover"}
                   </button>
                 </div>
               </div>

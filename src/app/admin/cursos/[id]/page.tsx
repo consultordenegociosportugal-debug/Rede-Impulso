@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/require-admin";
 import { EditarCursoForm } from "./editar-curso-form";
 import { MateriaisManager } from "./materiais-manager";
 import { MatriculasManager } from "./matriculas-manager";
@@ -13,24 +13,7 @@ export default async function AdminCursoDetalhePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect(`/entrar?depois=/admin/cursos/${id}`);
-  }
-
-  const { data: meuPerfil } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-
-  if (!meuPerfil?.is_admin) {
-    redirect("/");
-  }
+  const { supabase } = await requireAdmin(`/admin/cursos/${id}`);
 
   const [{ data: curso }, { data: materiaisData }, { data: matriculasData }] = await Promise.all([
     supabase

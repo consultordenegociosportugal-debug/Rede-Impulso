@@ -1,8 +1,7 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { Nav } from "@/components/nav";
 import { Footer } from "@/components/footer";
-import { createClient } from "@/lib/supabase/server";
+import { requireAdmin } from "@/lib/supabase/require-admin";
 import { NovaCidadeForm } from "./nova-cidade-form";
 import { NovaOrganizacaoForm } from "./nova-organizacao-form";
 import { ExcluirCatalogoButton } from "./excluir-catalogo-button";
@@ -25,24 +24,7 @@ const LABEL_TIPO: Record<OrganizacaoRow["tipo"], string> = {
 };
 
 export default async function AdminCatalogoPage() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/entrar?depois=/admin/catalogo");
-  }
-
-  const { data: meuPerfil } = await supabase
-    .from("profiles")
-    .select("is_admin")
-    .eq("id", user.id)
-    .single();
-
-  if (!meuPerfil?.is_admin) {
-    redirect("/");
-  }
+  const { supabase } = await requireAdmin("/admin/catalogo");
 
   const [{ data: cidadesData }, { data: organizacoesData }] = await Promise.all([
     supabase.from("cidades_catalogo").select("id, nome, uf").order("nome", { ascending: true }),

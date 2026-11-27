@@ -9,6 +9,7 @@ import { QuadroSemanal } from "./quadro-semanal";
 import { ViewToggle } from "./view-toggle";
 import { LinkPerfilPublico } from "./link-perfil-publico";
 import { LembreteAcao } from "./lembrete-acao";
+import { MensagemClienteAcao } from "./mensagem-cliente-acao";
 import { AtivarNotificacoes } from "@/components/ativar-notificacoes";
 import { googleCalendarConfigurado } from "@/lib/google-calendar";
 import { hojeISO, diaBrasilia } from "@/lib/data";
@@ -46,6 +47,14 @@ type LembreteRow = {
   texto: string;
   lembrar_em: string;
   cliente_avulso: { nome: string; telefone: string | null } | null;
+};
+
+type MensagemClienteRow = {
+  id: string;
+  nome_cliente: string;
+  telefone: string;
+  texto: string;
+  recebida_em: string;
 };
 
 type VisitaRow = {
@@ -138,6 +147,19 @@ export default async function PainelNegociosPage({
     .is("lembrete_concluido_em", null)
     .order("lembrar_em", { ascending: true });
   const lembretes = (dadosLembretes ?? []) as unknown as LembreteRow[];
+
+  // Mensagens de texto que o cliente mandou de volta pelo WhatsApp (ver
+  // migração 0102) — antes disto, só a resposta por BOTÃO do lembrete
+  // (confirmou/pediu reagendamento) chegava até aqui; uma mensagem
+  // livre tipo "posso mudar pra sexta?" ficava só no log do servidor,
+  // sem o corretor nunca ficar sabendo.
+  const { data: dadosMensagens } = await supabase
+    .from("mensagens_cliente")
+    .select("id, nome_cliente, telefone, texto, recebida_em")
+    .eq("corretor_id", user.id)
+    .is("lida_em", null)
+    .order("recebida_em", { ascending: false });
+  const mensagensCliente = (dadosMensagens ?? []) as MensagemClienteRow[];
 
   // Sinal pro corretor quando a agenda está vazia: hoje ele configura
   // disponibilidade e fica esperando sem nenhuma pista do porquê ninguém
@@ -246,6 +268,50 @@ export default async function PainelNegociosPage({
                 </>
               )}
             </p>
+          </div>
+        )}
+
+        {mensagensCliente.length > 0 && (
+          <div className="mb-24">
+            <h2 style={{ fontSize: 18, margin: "0 0 12px" }}>
+              📩 Mensagens de clientes ({mensagensCliente.length})
+            </h2>
+            <div className="card" style={{ padding: "8px 20px" }}>
+              {mensagensCliente.map((mensagem) => {
+                const linkCliente = linkWhatsapp(mensagem.telefone);
+                return (
+                  <div key={mensagem.id} className="list-row">
+                    <div
+                      className="flex between items-center"
+                      style={{ width: "100%", gap: 12, flexWrap: "wrap" }}
+                    >
+                      <div style={{ minWidth: 200, flex: 1 }}>
+                        <div style={{ fontWeight: 600, fontSize: 14 }}>
+                          {mensagem.nome_cliente}
+                          {linkCliente && (
+                            <>
+                              {" · "}
+                              <a
+                                href={linkCliente}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ textDecoration: "underline", fontWeight: 400 }}
+                              >
+                                💬 responder
+                              </a>
+                            </>
+                          )}
+                        </div>
+                        <p className="hint" style={{ margin: 0, whiteSpace: "pre-wrap" }}>
+                          “{mensagem.texto}”
+                        </p>
+                      </div>
+                      <MensagemClienteAcao mensagemId={mensagem.id} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </div>
         )}
 
