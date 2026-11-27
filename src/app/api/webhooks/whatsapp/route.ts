@@ -213,10 +213,14 @@ async function processarMensagemTexto(mensagem: MensagemRecebida) {
 
   // Confirma recebimento pro cliente — sem isso ele manda a mensagem e
   // fica sem nenhum sinal de que alguém vai ver, mesmo ela agora indo
-  // pro painel do corretor.
+  // pro painel do corretor. Já inclui o link público de agendamento
+  // (mesmo link usado em "Preciso reagendar" do lembrete, acima): quem
+  // escreveu "quero mudar o dia" já sai daqui com um jeito de resolver
+  // sozinho, sem precisar esperar o corretor ver e responder.
+  const linkAgendar = `https://www.redeimpulso.com.br/agendar/${corretorId}`;
   await enviarTextoLivreWhatsapp(
     mensagem.from,
-    "Recebemos sua mensagem! O corretor vai te responder por aqui em breve.",
+    `Recebemos sua mensagem! Se for sobre mudar o dia ou horário, você mesmo escolhe um novo aqui: ${linkAgendar} — ou, se preferir, aguarde que o corretor te chama por aqui.`,
   );
 }
 
